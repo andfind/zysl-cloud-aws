@@ -10,14 +10,17 @@ import org.springframework.stereotype.Component;
 @Component
 @Slf4j
 public class BizConstants {
-
-  // 权限默认标签
-  //    public static final String TAG_OWNER = "owner";
-  //    public static final String TAG_DOWNLOAD_AMOUT = "maxDownloadAmout";
-  //    public static final String TAG_VALIDITY = "validity";
-
+    
     @Autowired
     private BizConfig bizConfig;
+    
+    
+    //转pdf的水印标签位置
+    public static final Integer PDF_MARK_IMG_WIDTH = 300;
+    public static final Integer PDF_MARK_IMG_HEIGHT = 300;
+    public static final Integer PDF_MARK_TEXT_WIDTH = 300;
+    public static final Integer PDF_MARK_TEXT_HEIGHT = 300;
+
     
     // 分享默认目录
     public static final String SHARE_DEFAULT_FOLDER = "share";

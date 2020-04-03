@@ -22,7 +22,7 @@ public class BizUtil {
         if(fileName.indexOf(".") > -1){
             fileName = fileName.substring(0,fileName.lastIndexOf("."));
         }
-        fileName = "tmp_" + fileName + "_"+ dateStr + "_" + random.nextInt(1000) + "_";
+        fileName += "_"+ dateStr + "_" + random.nextInt(1000) + "_";
 
         return fileName;
     }

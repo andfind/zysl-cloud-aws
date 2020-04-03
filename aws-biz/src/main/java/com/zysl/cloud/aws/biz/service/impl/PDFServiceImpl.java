@@ -9,6 +9,8 @@ import com.itextpdf.text.pdf.PdfGState;
 import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfStamper;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
+import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.IPDFService;
 import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.utils.common.AppLogicException;
@@ -28,10 +30,12 @@ public class PDFServiceImpl implements IPDFService {
     private BizConfig bizConfig;
 
     @Override
-    public void addPdfImgMark(String InPdfFile, String outPdfFile, String markImagePath, int imgWidth,int imgHeight) {
+    public byte[] addPdfImgMark(byte[] inBuff, String markImagePath) {
+        byte[] outBuff = null;
+        OutputStream os = new ByteArrayOutputStream();
         try{
-            PdfReader reader = new PdfReader(InPdfFile, "PDF".getBytes());
-            PdfStamper stamp = new PdfStamper(reader, new FileOutputStream(new File(outPdfFile)));
+            PdfReader reader = new PdfReader(inBuff);
+            PdfStamper stamp = new PdfStamper(reader, os);
             PdfContentByte under;
 
             PdfGState gs1 = new PdfGState();
@@ -40,7 +44,7 @@ public class PDFServiceImpl implements IPDFService {
             // 插入图片水印
             Image img = Image.getInstance(markImagePath);
 
-            img.setAbsolutePosition(imgWidth, imgHeight); // 坐标
+            img.setAbsolutePosition(BizConstants.PDF_MARK_IMG_WIDTH, BizConstants.PDF_MARK_IMG_HEIGHT); // 坐标
             img.setRotation(-20);// 旋转 弧度
             img.setRotationDegrees(45);// 旋转 角度
             img.scaleAbsolute(200, 200);// 自定义大小
@@ -56,22 +60,32 @@ public class PDFServiceImpl implements IPDFService {
 
             stamp.close();// 关闭
             reader.close();
+    
+            outBuff = ((ByteArrayOutputStream) os).toByteArray();
+            os.close();
+    
+            return outBuff;
         }catch (Exception e){
             log.error("pdf加图片水印异常:{}",e);
+            throw new AppLogicException("paf add ImgMark error.");
         }
-
     }
 
+    
     @Override
-    public void addPdfTextMark(String inPdfFile, String outPdfFile, String textMark, int textWidth,int textHeight){
+    public byte[] addPdfTextMark(byte[] inBuff, String textMark){
+        byte[] outBuff = null;
+        int textWidth = BizConstants.PDF_MARK_TEXT_WIDTH;
+        int textHeight = BizConstants.PDF_MARK_TEXT_WIDTH;
+        OutputStream os = new ByteArrayOutputStream();
         try{
-            PdfReader reader = new PdfReader(inPdfFile, "PDF".getBytes());
-            PdfStamper stamp = new PdfStamper(reader, new FileOutputStream(new File(outPdfFile)));
-
+            PdfReader reader = new PdfReader(inBuff);
+            PdfStamper stamp = new PdfStamper(reader, os);
+            
             PdfContentByte under;
-
+            
             BaseFont font = BaseFont.createFont(bizConfig.FONT_FILE, BaseFont.IDENTITY_H, true); // 使用系统字体
-
+            
             int pageSize = reader.getNumberOfPages();// 原pdf文件的总页数
             for (int i = 1; i <= pageSize; i++) {
                 //under = stamp.getUnderContent(i);// 水印在之前文本下
@@ -84,14 +98,19 @@ public class PDFServiceImpl implements IPDFService {
                     under.showTextAligned(Element.ALIGN_CENTER, textMark, textWidth, textHeight + j*100, 45);//开始写入水印
                     under.endText();
                 }
-
+                
             }
             stamp.close();// 关闭
             reader.close();
+    
+            outBuff = ((ByteArrayOutputStream) os).toByteArray();
+            os.close();
+    
+            return outBuff;
         }catch (Exception e){
             log.error("pdf加文字水印异常:{}",e);
+            throw new AppLogicException(ErrCodeEnum.PDF_ADD_TEXT_MARK_ERROR.getCode());
         }
-
     }
 
     @Override
@@ -114,7 +133,7 @@ public class PDFServiceImpl implements IPDFService {
             return outBuff;
         }catch (Exception e){
             log.error("===addPwd===error:{}",e);
-            throw new AppLogicException("paf add pwd error.");
+            throw new AppLogicException(ErrCodeEnum.PDF_ADD_PWD_ERROR.getCode());
         }finally {
         }
     }

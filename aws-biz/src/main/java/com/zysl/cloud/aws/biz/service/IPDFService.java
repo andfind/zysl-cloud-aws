@@ -3,25 +3,19 @@ package com.zysl.cloud.aws.biz.service;
 public interface IPDFService {
     /**
      * pdf加图片水印
-     * @param inPdfFile
-     * @param outPdfFile
-     * @param markImagePath
-     * @param imgWidth
-     * @param imgHeight
      */
-    public void addPdfImgMark(String inPdfFile, String outPdfFile, String markImagePath,
-		int imgWidth, int imgHeight);
+    public byte[] addPdfImgMark(byte[] inBuff, String outPdfFile);
 
     /**
      * pdf加文字水印
-     * @param inPdfFile
-     * @param outPdfFile
+     * @description
+     * @author miaomingming
+     * @date 19:18 2020/4/3
+     * @param inBuff
      * @param textMark
-     * @param textWidth
-     * @param textHeight
-     */
-    public void addPdfTextMark(String inPdfFile, String outPdfFile, String textMark, int textWidth,
-		int textHeight);
+     * @return byte[]
+     **/
+    public byte[] addPdfTextMark(byte[] inBuff, String textMark);
 
     /**
      * pdf文件加密码

@@ -43,6 +43,9 @@ public enum  ErrCodeEnum  {
 	WORD_FILE_TO_PDF_ERROR(5110002, "word转pdf：转换异常."),
 	WORD_FILE_TO_PDF_SIZE_ZERO(5110003, "word转pdf：转换后文件大小为0."),
 	WORD_FILE_TO_PDF_ENCRYPTION_SIZE_ZERO(5110004, "word转pdf：加密后文件大小为0."),
+	PDF_ADD_PWD_ERROR(5110005, "PDF加密码处理异常."),
+	PDF_ADD_TEXT_MARK_ERROR(5110006, "PDF加文字水印处理异常"),
+	APOSE_SIGN_CHECK_ERROR(5110007, "apose签名校验异常"),
 
 	OBJECT_OP_AUTH_CHECK_FAILED(5210001, "数据操作权限：无权限"),
 	OBJECT_OP_AUTH_CHECK_DATA_FORMAT_ERROR(5210002, "数据操作权限：配置参数或head参数格式异常"),
