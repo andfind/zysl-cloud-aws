@@ -221,5 +221,5 @@ public interface FileSrv {
 	 * @return
 	 */
 	@PostMapping("/listParts")
-	BasePaginationResponse<FilePartInfoDTO> listParts(@RequestBody GetListPartRequest request);
+	BaseResponse<FilePartInfoDTO> listParts(@RequestBody GetListPartRequest request);
 }

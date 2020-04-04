@@ -64,8 +64,8 @@ public class FileController extends BaseController implements FileSrv {
 
 
 	@GetMapping("/curVer")
-	public String getCurVersion(){
-		return bizConfig.getCurVer();
+	public String getCurVersion(String name){
+		return bizConfig.getCurVer()+"->"+name;
 	}
 
 	@Override
@@ -822,8 +822,8 @@ public class FileController extends BaseController implements FileSrv {
 	}
 
 	@Override
-	public BasePaginationResponse<FilePartInfoDTO> listParts(GetListPartRequest request) {
-		return ServiceProvider.callList(request, GetListPartRequestV.class, FilePartInfoDTO.class, (req, page) ->{
+	public BaseResponse<FilePartInfoDTO> listParts(GetListPartRequest request) {
+		return ServiceProvider.call(request, GetListPartRequestV.class, FilePartInfoDTO.class, req ->{
 			S3ObjectBO t = new S3ObjectBO();
 			t.setBucketName(req.getBucketName());
 			setPathAndFileName(t, req.getFileId());
@@ -832,7 +832,11 @@ public class FileController extends BaseController implements FileSrv {
 			t.setUploadId(uploadId);
 
 			List<FilePartInfoBO> partBOList = fileService.listParts(t);
-			return BeanCopyUtil.copyList(partBOList, FilePartInfoDTO.class);
+			
+			FilePartInfoDTO dto = new FilePartInfoDTO();
+			dto.setETagList(BeanCopyUtil.copyList(partBOList, PartInfoDTO.class));
+			dto.setUploadId(uploadId);
+			return dto;
 		});
 	}
 

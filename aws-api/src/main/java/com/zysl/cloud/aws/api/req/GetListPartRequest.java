@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.api.req;
 
 import com.zysl.cloud.utils.common.BasePaginationRequest;
+import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -13,7 +14,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @ApiModel(description = "查询分区上传记录入参对象")
-public class GetListPartRequest extends BasePaginationRequest {
+public class GetListPartRequest extends BaseReqeust {
 
     private static final long serialVersionUID = 9034752905630620539L;
 

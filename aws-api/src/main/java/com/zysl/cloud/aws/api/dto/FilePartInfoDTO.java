@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.api.dto;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -16,23 +17,24 @@ import java.util.Date;
 @Getter
 @ApiModel(description = "查询分区上传记录返回对象")
 public class FilePartInfoDTO implements Serializable {
-    private static final long serialVersionUID = 8589091988763950331L;
-    @ApiModelProperty(value = "分区上传次数", name = "partNumber", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
-    private Integer partNumber;
-    @ApiModelProperty(value = "文件上传时间", name = "lastModified", dataType = SwaggerConstants.DATA_TYPE_STRING)
-    private Date lastModified;
-    @ApiModelProperty(value = "分区文件内容", name = "eTag", dataType = SwaggerConstants.DATA_TYPE_STRING)
-    private String eTag;
-    @ApiModelProperty(value = "分区文件大小", name = "size", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
-    private Integer size;
-
+    
+    private static final long serialVersionUID = 713457311306224690L;
+    @ApiModelProperty(value = "文件分片上传ID", name = "uploadId", dataType = SwaggerConstants.DATA_TYPE_STRING)
+    private String uploadId;
+    
+    @ApiModelProperty(value = "分片上传数据", name = "eTagList", dataType = SwaggerConstants.DATA_TYPE_ARRAY)
+    private List<PartInfoDTO> eTagList;
+    
     @Override
     public String toString() {
-        return "FilePartInfoDTO{" +
-                "partNumber=" + partNumber +
-                ", lastModified=" + lastModified +
-                ", eTag='" + eTag + '\'' +
-                ", size=" + size +
-                '}';
+        final StringBuffer sb = new StringBuffer("{\"FilePartInfoDTO\":{");
+        if (uploadId != null) {
+            sb.append("uploadId='").append(uploadId).append('\'');
+        }
+        if (eTagList != null) {
+            sb.append(", eTagList=").append(eTagList);
+        }
+        sb.append("}}");
+        return sb.toString();
     }
 }
