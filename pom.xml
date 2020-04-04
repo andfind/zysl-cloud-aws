@@ -26,6 +26,7 @@
     <module>aws-config</module>
     <module>aws-utils</module>
     <module>aws-web</module>
+    <module>aws-rule</module>
   </modules>
 
   <dependencies>

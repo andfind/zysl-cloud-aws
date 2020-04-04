@@ -16,7 +16,7 @@
 
     <dependency>
       <groupId>com.zysl.cloud</groupId>
-      <artifactId>aws-biz</artifactId>
+      <artifactId>aws-rule</artifactId>
       <version>${aws.version}</version>
     </dependency>
     <dependency>
