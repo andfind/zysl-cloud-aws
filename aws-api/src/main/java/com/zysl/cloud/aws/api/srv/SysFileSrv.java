@@ -4,6 +4,7 @@ import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
@@ -181,7 +182,7 @@ public interface SysFileSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.Boolean>
 	 **/
 	@PostMapping("/exist")
-	BaseResponse<Boolean> isExist(@RequestBody SysFileRequest request);
+	BaseResponse<Boolean> isExist(@RequestBody SysFileExistRequest request);
 	
 	/**
 	 * 查询文件版本列表

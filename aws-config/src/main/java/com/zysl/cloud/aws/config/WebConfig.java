@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.config;
 
+import java.util.List;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,4 +31,7 @@ public class WebConfig {
 	 **/
 	@Value("${download.max-file-size}")
 	private Integer downloadMaxFileSize;
+	
+	@Value("#{'${announcement.buckets}'.split(',')}")
+	public List<String> announcementBuckets;
 }

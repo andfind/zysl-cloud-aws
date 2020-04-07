@@ -13,6 +13,7 @@ import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.utils.DataAuthUtils;
 import com.zysl.cloud.aws.config.BizConfig;
+import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
@@ -60,6 +61,8 @@ public class FileController extends BaseController implements FileSrv {
 	IS3FileService fileService;
 	@Autowired
 	private BizConfig bizConfig;
+	@Autowired
+	private WebConfig webConfig;
 	@Autowired
 	private DataAuthUtils dataAuthUtils;
 
@@ -586,7 +589,7 @@ public class FileController extends BaseController implements FileSrv {
 		return ServiceProvider.call(request, FileExistRequestV.class, Boolean.class, req -> {
 			List<String> buckets = req.getBucketNames();
 			if(CollectionUtils.isEmpty(buckets)){
-				buckets = bizConfig.getAnnouncementBuckets();
+				buckets = webConfig.getAnnouncementBuckets();
 			}
 
 			if(!CollectionUtils.isEmpty(buckets)){

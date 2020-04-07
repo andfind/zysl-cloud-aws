@@ -10,6 +10,7 @@ import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.enums.OPAuthTypeEnum;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
@@ -19,6 +20,7 @@ import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
 import com.zysl.cloud.aws.api.srv.SysFileSrv;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
+import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
@@ -70,7 +72,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Autowired
 	private ISysDirManager sysDirManager;
 	@Autowired
-	private FileController fileController;
+	private IS3FileService s3FileService;
 	
 	@Override
 	public BaseResponse<String> mkdir(SysDirRequest request) {
@@ -261,10 +263,35 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	}
 	
 	@Override
-	public BaseResponse<Boolean> isExist(@RequestBody SysFileRequest request){
+	public BaseResponse<Boolean> isExist(@RequestBody SysFileExistRequest request){
 		return ServiceProvider.call(request, SysFileRequestV.class, Boolean.class, req -> {
-			setFileSystemDefault(request);
-			return sysFileManager.info(request) == null ? Boolean.FALSE : Boolean.TRUE;
+			
+			//增加默认path
+			if(CollectionUtils.isEmpty(request.getPaths())){
+				List<SysDirRequest> paths = new ArrayList<>();
+				List<String> buckets = webConfig.getAnnouncementBuckets();
+				if(CollectionUtils.isEmpty(buckets)){
+					for(String key:buckets){
+						SysDirRequest dirRequest = new SysDirRequest();
+						setFileSystemDefault(dirRequest);
+						dirRequest.setPath(key + ":/");
+						paths.add(dirRequest);
+					}
+				}
+			}
+			
+			if(!CollectionUtils.isEmpty(request.getPaths())){
+				for(SysDirRequest path:request.getPaths()){
+					SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
+					fileRequest.setFileName(request.getFileName());
+					fileRequest.setVersionId(request.getVersionId());
+					if(sysFileManager.info(fileRequest) != null){
+						return Boolean.TRUE;
+					}
+				}
+			}
+			
+			return Boolean.FALSE;
 		});
 	}
 	
