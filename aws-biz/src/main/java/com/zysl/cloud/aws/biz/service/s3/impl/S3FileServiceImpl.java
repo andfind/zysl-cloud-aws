@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.biz.service.s3.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
 import com.zysl.cloud.aws.biz.constant.S3Method;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
@@ -486,18 +487,22 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 					.versionId(t.getVersionId()).build();
 		}
 
-		HeadObjectResponse response = s3FactoryService.callS3Method(request, s3Client, S3Method.HEAD_OBJECT);
+		HeadObjectResponse response = s3FactoryService.callS3Method(request, s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
 		log.info("s3file.copy.getBaseInfo:{}", response);
 
-		t.setVersionId(response.versionId());
-		t.setContentLength(response.contentLength());
-		t.setExpires(DateUtils.from(response.expires()));
-		t.setLastModified(DateUtils.from(response.lastModified()));
-		t.setContentEncoding(response.contentEncoding());
-		t.setContentLanguage(response.contentLanguage());
-		t.setContentType(response.contentType());
-		t.setContentMD5(response.sseCustomerKeyMD5());
-		return t;
+		if(response != null){
+			t.setVersionId(response.versionId());
+			t.setContentLength(response.contentLength());
+			t.setExpires(DateUtils.from(response.expires()));
+			t.setLastModified(DateUtils.from(response.lastModified()));
+			t.setContentEncoding(response.contentEncoding());
+			t.setContentLanguage(response.contentLanguage());
+			t.setContentType(response.contentType());
+			t.setContentMD5(response.sseCustomerKeyMD5());
+			return t;
+		}
+		
+		return null;
 	}
 
 	@Override

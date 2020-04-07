@@ -15,7 +15,7 @@ public class CreateBucketRequest extends BaseReqeust {
 	private static final long serialVersionUID = -7490764197092211455L;
 
 
-	@ApiModelProperty(value = "服务器编号,由运维配置", name = "serverNo",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
+	@ApiModelProperty(value = "服务器编号,由运维配置", name = "serverNo",dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String serverNo;
 
 	@ApiModelProperty(value = "存储桶名称", name = "bucketName",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)

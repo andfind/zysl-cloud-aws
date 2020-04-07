@@ -15,6 +15,7 @@ import lombok.Getter;
 //507yyzz:
 //508yyzz:
 //511yyzz:文件类型转换相关，比如word、pdf
+//512yyzz:业务层操作异常
 //521yyzz:数据权限
 @Getter
 public enum  ErrCodeEnum  {
@@ -46,6 +47,13 @@ public enum  ErrCodeEnum  {
 	PDF_ADD_PWD_ERROR(5110005, "PDF加密码处理异常."),
 	PDF_ADD_TEXT_MARK_ERROR(5110006, "PDF加文字水印处理异常"),
 	APOSE_SIGN_CHECK_ERROR(5110007, "apose签名校验异常"),
+	
+	
+	COPY_SOURCE_NOT_EXIST(5120001, "复制源对象不存在."),
+	COPY_TARGET_EXIST(5120001, "复制时目标对象已存在."),
+	MOVE_SOURCE_NOT_EXIST(5120002, "移动源对象不存在."),
+	MOVE_TARGET_EXIST(5120002, "移动时目标对象已存在."),
+	
 
 	OBJECT_OP_AUTH_CHECK_FAILED(5210001, "数据操作权限：无权限"),
 	OBJECT_OP_AUTH_CHECK_DATA_FORMAT_ERROR(5210002, "数据操作权限：配置参数或head参数格式异常"),

@@ -7,7 +7,7 @@ import java.io.Serializable;
 import java.time.Instant;
 
 /**
- * 对象信息
+ * s3对象信息
  */
 @Getter
 @Setter
@@ -15,6 +15,8 @@ public class ObjectInfoBO implements Serializable {
 
     private static final long serialVersionUID = 8036080657342894989L;
 
+    //bucket
+    private String bucket;
     //对象名称
     private String key;
     //文件上传时间
@@ -23,14 +25,26 @@ public class ObjectInfoBO implements Serializable {
     private Long fileSize;
     //文件内容md5
     private String contentMd5;
-
+    
     @Override
     public String toString() {
-        return "FileInfo{" +
-                "key='" + key + '\'' +
-                ", uploadTime=" + uploadTime +
-                ", fileSize=" + fileSize +
-                ", contentMd5='" + contentMd5 + '\'' +
-                '}';
+        final StringBuffer sb = new StringBuffer("{\"ObjectInfoBO\":{");
+        if (bucket != null) {
+            sb.append("bucket='").append(bucket).append('\'');
+        }
+        if (key != null) {
+            sb.append(", key='").append(key).append('\'');
+        }
+        if (uploadTime != null) {
+            sb.append(", uploadTime=").append(uploadTime);
+        }
+        if (fileSize != null) {
+            sb.append(", fileSize=").append(fileSize);
+        }
+        if (contentMd5 != null) {
+            sb.append(", contentMd5='").append(contentMd5).append('\'');
+        }
+        sb.append("}}");
+        return sb.toString();
     }
 }

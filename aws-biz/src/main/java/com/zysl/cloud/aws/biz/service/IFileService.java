@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.biz.service;
 
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 
+import com.zysl.cloud.utils.common.AppLogicException;
 import java.util.List;
 
 /**

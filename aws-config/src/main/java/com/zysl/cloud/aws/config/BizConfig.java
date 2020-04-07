@@ -38,11 +38,7 @@ public class BizConfig {
     @Value("${application.version}")
     public String curVer;
 
-    /**
-     * 分片下载单次最大字长度，支持MB、KB、B
-     **/
-    @Value("${multipart.download.max-file-size}")
-    private String multipartDownloadMaxFileSize;
+ 
 
 
 

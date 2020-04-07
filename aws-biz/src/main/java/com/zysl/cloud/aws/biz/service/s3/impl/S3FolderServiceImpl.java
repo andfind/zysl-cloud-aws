@@ -12,6 +12,7 @@ import com.zysl.cloud.aws.domain.bo.ObjectInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.utils.StringUtils;
+import com.zysl.cloud.utils.common.MyPage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -375,37 +376,8 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		}
 		//查询目录下的对象信息
 		ListObjectsResponse response = s3FactoryService.callS3Method(request,s3, S3Method.LIST_OBJECTS);
-		//目录列表
-		List<CommonPrefix> prefixes = response.commonPrefixes();
-		List<ObjectInfoBO> folderList = Lists.newArrayList();
-		if(!CollectionUtils.isEmpty(prefixes)){
-			prefixes.forEach(obj -> {
-				ObjectInfoBO object = new ObjectInfoBO();
-				object.setKey(obj.prefix());
-				folderList.add(object);
-			});
-		}
-
-		//文件列表
-		List<S3Object> objectList = response.contents();
-		List<ObjectInfoBO> fileList = Lists.newArrayList();
-		if(!CollectionUtils.isEmpty(objectList)){
-			objectList.forEach(obj -> {
-				ObjectInfoBO object = new ObjectInfoBO();
-				object.setKey(obj.key());
-				object.setFileSize(obj.size());
-				object.setUploadTime(obj.lastModified());
-				fileList.add(object);
-			});
-		}
-
-
-		List<ObjectInfoBO> files = fileList.stream().filter(obj ->
-				!obj.getKey().equals(StringUtils.join(t.getPath() ,t.getFileName()))
-		).collect(Collectors.toList());
-
-		t.setFolderList(folderList);
-		t.setFileList(files);
+		//目录及文件列表
+		setFileListAndFolderList(t,response.commonPrefixes(),response.contents());
 
 		//查询目录的标签信息
 		List<TagBO> tagList = fileService.getTags(t);
@@ -489,5 +461,131 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 			return version.getVersionId();
 		}
 		return null;
+	}
+	
+	@Override
+	public S3ObjectBO list(S3ObjectBO t, MyPage myPage){
+		log.info("s3folder.list.param:{}", JSON.toJSONString(t));
+		//获取s3初始化对象
+		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
+		
+		//查询结果
+		List<CommonPrefix> commonPrefixes = new ArrayList<>();
+		List<S3Object> contents = new ArrayList<>();
+		//获取查询对象列表入参
+		int totalRecords = 0,preTotalRecords = 0;
+		String nextMarker = null;
+		ListObjectsResponse response = null;
+		ListObjectsRequest.Builder request = ListObjectsRequest.builder()
+											.bucket(t.getBucketName())
+											.prefix(t.getPath())
+											.delimiter("/");
+		//查询目录下的对象信息
+		while (response == null || response.isTruncated()){
+			preTotalRecords = totalRecords;
+			request.marker(nextMarker);
+			response = s3FactoryService.callS3Method(request.build(),s3, S3Method.LIST_OBJECTS);
+			nextMarker = response.nextMarker();
+			if(!CollectionUtils.isEmpty(response.contents())){
+				totalRecords += response.contents().size();
+			}
+			if(!CollectionUtils.isEmpty(response.commonPrefixes())){
+				totalRecords += response.commonPrefixes().size();
+			}
+			//根据当前记录数及传入的页码+每页数据读取读取
+			setFilesAndFolders(commonPrefixes,contents,response,myPage,preTotalRecords,totalRecords);
+		}
+		myPage.setTotalRecords(totalRecords);
+		//目录及文件列表
+		setFileListAndFolderList(t,commonPrefixes,contents);
+		
+		return t;
+	}
+	
+	public void setFileListAndFolderList(S3ObjectBO t,List<CommonPrefix> prefixes,List<S3Object> objectList){
+		List<ObjectInfoBO> folderList = Lists.newArrayList();
+		if(!CollectionUtils.isEmpty(prefixes)){
+			prefixes.forEach(obj -> {
+				ObjectInfoBO object = new ObjectInfoBO();
+				object.setBucket(t.getBucketName());
+				object.setKey(obj.prefix());
+				folderList.add(object);
+			});
+		}
+		
+		//文件列表
+		List<ObjectInfoBO> fileList = Lists.newArrayList();
+		if(!CollectionUtils.isEmpty(objectList)){
+			objectList.forEach(obj -> {
+				ObjectInfoBO object = new ObjectInfoBO();
+				object.setBucket(t.getBucketName());
+				object.setKey(obj.key());
+				object.setFileSize(obj.size());
+				object.setUploadTime(obj.lastModified());
+				fileList.add(object);
+			});
+		}
+		
+		List<ObjectInfoBO> files = fileList.stream().filter(obj ->
+			!obj.getKey().equals(StringUtils.join(t.getPath() ,t.getFileName()))
+		).collect(Collectors.toList());
+		
+		t.setFolderList(folderList);
+		t.setFileList(files);
+	}
+	/**
+	 *
+	 * @description
+	 * @author miaomingming
+	 * @date 10:44 2020/4/7
+	 * @param commonPrefixes
+	 * @param contents
+	 * @param response
+	 * @param myPage
+	 * @param curStart 记录数，从1开始
+	 * @param curEnd 记录数，从1开始
+	 * @return void
+	 **/
+	private void setFilesAndFolders(List<CommonPrefix> commonPrefixes,List<S3Object> contents,ListObjectsResponse response,MyPage myPage,Integer curStart,Integer curEnd){
+		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize()+1;
+		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize();
+		int start = 0,end=0;
+		//当前页数据差额
+		int needRecords = myPageEnd - myPageStart - commonPrefixes.size() - contents.size();
+		if(needRecords <= 0){
+			return;
+		}
+		//范围外
+		if(myPageStart > curEnd || myPageEnd < curStart){
+			return;
+		}
+		//范围内
+		if(myPageStart <= curStart && curEnd <= myPageEnd){
+			commonPrefixes.addAll(response.commonPrefixes());
+			contents.addAll(response.contents());
+			return;
+		}
+		//左范围交叉
+		if(curStart < myPageStart ){
+			start=myPageStart;
+			end=curEnd>myPageEnd? myPageEnd: curEnd;
+		}
+		//右范围交叉
+		if(curStart < myPageEnd){
+			start=myPageStart>curStart?curStart:myPageStart;
+			end=myPageEnd;
+		}
+		int max = end - start;
+		int addCount = 0;
+		for(int i=start-1;i<response.commonPrefixes().size() && i<max;i++){
+			commonPrefixes.add(response.commonPrefixes().get(i));
+			addCount = i+1;
+		}
+		start += addCount;
+		max = max - addCount;
+		for(int i=start-1;i<response.contents().size() && i<max;i++){
+			contents.add(response.contents().get(i));
+		}
+		
 	}
 }

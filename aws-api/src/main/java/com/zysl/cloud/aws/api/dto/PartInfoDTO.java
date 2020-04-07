@@ -14,7 +14,7 @@ public class PartInfoDTO {
 	
 	@ApiModelProperty(value = "分区上传次数", name = "partNumber", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
 	private Integer partNumber;
-	@ApiModelProperty(value = "分区文件内容", name = "eTag", dataType = SwaggerConstants.DATA_TYPE_STRING)
+	@ApiModelProperty(value = "分区文件内容MD5", name = "eTag", dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String eTag;
 	@ApiModelProperty(value = "分区文件大小", name = "size", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
 	private Integer size;

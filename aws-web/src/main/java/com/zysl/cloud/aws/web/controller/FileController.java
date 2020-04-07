@@ -18,6 +18,7 @@ import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.DateUtils;
+import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.validator.*;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.SpringContextUtil;
@@ -184,7 +185,7 @@ public class FileController extends BaseController implements FileSrv {
 				//获取标签中的文件名称
 				String tagValue = fileService.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
 				String fileId = StringUtils.isEmpty(tagValue) ? t.getFileName() : tagValue;
-				downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
+				HttpUtils.downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
 				return null;
 			}
 		});
@@ -206,34 +207,6 @@ public class FileController extends BaseController implements FileSrv {
 		}
 	}
 	
-	private void downloadFileByte(HttpServletRequest request,HttpServletResponse response,String fileName,byte[] bytes){
-		try {
-			//1下载文件流
-			OutputStream outputStream = response.getOutputStream();
-			response.setContentType("application/octet-stream");//告诉浏览器输出内容为流
-			response.setCharacterEncoding("UTF-8");
-			
-			String userAgent = request.getHeader("User-Agent").toUpperCase();//获取浏览器名（IE/Chome/firefox）
-			
-			
-			if (userAgent.contains("MSIE") ||
-				(userAgent.indexOf("GECKO")>0 && userAgent.indexOf("RV:11")>0)) {
-				fileName = URLEncoder.encode(fileName, "UTF-8");// IE浏览器
-			}else{
-				fileName = new String(fileName.getBytes("UTF-8"), "ISO8859-1");// 谷歌
-			}
-			response.setHeader("Content-Disposition", "attachment;fileName="+fileName);
-			
-			outputStream.write(bytes);
-			outputStream.flush();
-			outputStream.close();
-			
-		} catch (IOException e) {
-			log.error("--文件下载异常：--", e);
-			throw new AppLogicException(ErrCodeEnum.DOWNLOAD_FILE_ERROR.getCode());
-		}
-	}
-
 	@Override
 	public void shareDownloadFile(HttpServletResponse response, DownloadFileRequest request) {
 		ServiceProvider.call(request, DownloadFileRequestV.class, null, req ->{
@@ -407,16 +380,23 @@ public class FileController extends BaseController implements FileSrv {
 
 			//数据权限校验
 			fileService.checkDataOpAuth(t, OPAuthTypeEnum.READ.getCode());
-
-            S3ObjectBO s3ObjectBO = (S3ObjectBO)fileService.getBaseInfo(t);
-
-			Date date1 = s3ObjectBO.getLastModified();
-			Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
-			if(DateUtils.doCompareDate(date1, date2) < 0){
-				return s3ObjectBO.getContentLength() * 3/4;
+			
+			Object obj = fileService.getBaseInfo(t);
+			if(obj != null){
+				S3ObjectBO s3ObjectBO = (S3ObjectBO)obj;
+				Date date1 = s3ObjectBO.getLastModified();
+				Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
+				if(DateUtils.doCompareDate(date1, date2) < 0){
+					return s3ObjectBO.getContentLength() * 3/4;
+				}else{
+					return s3ObjectBO.getContentLength();
+				}
 			}else{
-				return s3ObjectBO.getContentLength();
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}
+   
+
+			
 		});
 	}
 
@@ -652,7 +632,7 @@ public class FileController extends BaseController implements FileSrv {
 			String range = request.getHeader("Range");
 			
 			//对Range数值做校验
-			Long[] byteLength = checkRange(range);
+			Long[] byteLength = HttpUtils.checkRange(range);
 			
 			S3ObjectBO t = new S3ObjectBO();
 			t.setBucketName(downRequest.getBucketName());
@@ -675,7 +655,7 @@ public class FileController extends BaseController implements FileSrv {
 			String fileId = StringUtils.isEmpty(tagValue) ? t.getFileName() : tagValue;
 			
 			//下载数据
-			downloadFileByte(request, response, fileId, s3ObjectBO.getBodys());
+			HttpUtils.downloadFileByte(request, response, fileId, s3ObjectBO.getBodys());
 
 			return null;
 		}catch (AppLogicException e){
@@ -689,50 +669,7 @@ public class FileController extends BaseController implements FileSrv {
 		}
     }
     
-    /**
-     * 校验range
-	 * 	支持以下3种格式
-	 * 	bytes=500-999` 表示第500-999字节范围的内容。
-	 * 	bytes=-500` 表示最后500字节的内容。
-	 * 	bytes=500-` 表示从第500字节开始到文件结束部分的内容。
-     * @description
-     * @author miaomingming
-     * @date 18:07 2020/4/2
-     * @param range
-     * @return java.lang.String
-     **/
-    private Long[] checkRange(String range){
-		Long[] byteLength = new Long[2];
-		byteLength[0] = 0L;
-		byteLength[1] = BizConstants.MULTI_DOWN_FILE_MAX_SIZE-1;
-		if(StringUtils.isBlank(range)){
-			return byteLength;
-		}
-		long start = 0,end = 0;
-		try{
-			String[] ranges = range.substring(6).split("-");
-			if(ranges.length != 2){
-				log.error("multi.download.range.format.error:{}",range);
-				throw new AppLogicException(ErrCodeEnum.MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR.getCode());
-			}
-			if(StringUtils.isNotBlank(ranges[0])){
-				start = Long.parseLong(ranges[0]);
-			}
-			if(StringUtils.isNotBlank(ranges[0])){
-				end = Long.parseLong(ranges[1]);
-			}
-			if(end - start >= BizConstants.MULTI_DOWN_FILE_MAX_SIZE - 1){
-				end = start + BizConstants.MULTI_DOWN_FILE_MAX_SIZE - 1;
-			}
-			
-			byteLength[0] = start;
-			byteLength[1] = end;
-			return byteLength;
-		}catch (Exception e){
-			log.error("multi.download.range.format.error:{},",range,e);
-			throw new AppLogicException(ErrCodeEnum.MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR.getCode());
-		}
-	}
+    
 
 	@Override
 	public BaseResponse<String> createMultipart(CreateMultipartRequest request) {
