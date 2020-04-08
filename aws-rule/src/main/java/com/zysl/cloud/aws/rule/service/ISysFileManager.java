@@ -119,7 +119,7 @@ public interface ISysFileManager {
 	 * @param bodys
 	 * @return void
 	 **/
-	void multiUploadBodys(SysFileMultiUploadRequest request,byte[] bodys);
+	String multiUploadBodys(SysFileMultiUploadRequest request,byte[] bodys);
 	
 	/**
 	 * 分片数据完成提交

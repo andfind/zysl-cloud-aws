@@ -191,16 +191,19 @@ public class SysFileManagerImpl implements ISysFileManager {
 	}
 	
 	@Override
-	public void multiUploadBodys(SysFileMultiUploadRequest request,byte[] bodys){
+	public String multiUploadBodys(SysFileMultiUploadRequest request,byte[] bodys){
 		log.info("multiUploadUpload-source:{}",request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
 			s3ObjectBO.setBodys(bodys);
+			s3ObjectBO.setUploadId(request.getUploadId());
 			s3ObjectBO.setPartNumber(request.getPartNumber());
 			
-			s3FileService.uploadPart(s3ObjectBO);
+			S3ObjectBO rst = (S3ObjectBO)s3FileService.uploadPart(s3ObjectBO);
+			return StringUtils.isBlank(rst.getETag()) ? null : rst.getETag().replaceAll("\"","");
 		}
+		return null;
 	}
 	
 	@Override
@@ -209,6 +212,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
+			s3ObjectBO.setUploadId(request.getUploadId());
 			s3ObjectBO.setETagList(BeanCopyUtil.copyList(request.getETagList(),MultipartUploadBO.class));
 			
 			s3FileService.completeMultipartUpload(s3ObjectBO);
@@ -233,6 +237,8 @@ public class SysFileManagerImpl implements ISysFileManager {
 			s3ObjectBO.setUploadId(uploadId);
 			
 			List<FilePartInfoBO> list  = s3FileService.listParts(s3ObjectBO);
+			
+			list.forEach(bo->bo.setETag(bo.getETag().replaceAll("\"","")));
 			
 			dto.setETagList(BeanCopyUtil.copyList(list, PartInfoDTO.class));
 		}

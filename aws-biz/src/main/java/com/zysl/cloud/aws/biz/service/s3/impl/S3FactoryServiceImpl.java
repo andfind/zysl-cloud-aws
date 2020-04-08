@@ -13,6 +13,7 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -147,9 +148,13 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		}catch (NoSuchKeyException e){
 			log.error("callS3Method.invoke({}).NoSuchKeyException",methodName);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
-		}catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e){
-			log.error("callS3Method.invoke({}).error",methodName);
+		}catch (IllegalAccessException | IllegalArgumentException  e){
+			log.error("callS3Method.invoke({}).error:{}",methodName,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_INVOKE_ERROR.getCode());
+		}catch (InvocationTargetException e){
+			String uuID = UUID.randomUUID().toString().replace("-","");
+			log.error("callS3Method.invoke({}).error=>uuID:{}:{}",methodName,uuID,e.getTargetException().getMessage());
+			throw new AppLogicException(uuID,ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
 		}catch (Exception e){
 			log.error("callS3Method.error({}):",methodName,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());

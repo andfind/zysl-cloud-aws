@@ -269,8 +269,8 @@ public class SysFileController extends BaseController implements SysFileSrv {
 				request.setPartNumber(1);
 			}
 			setFileSystemDefault(request);
-			sysFileManager.multiUploadBodys(request,bytes);
-			return RespCodeEnum.SUCCESS.getName();
+			
+			return sysFileManager.multiUploadBodys(request,bytes);
 		});
 		
 		
