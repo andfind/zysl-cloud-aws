@@ -495,14 +495,17 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 			//根据当前记录数及传入的页码+每页数据读取读取
 			setFilesAndFolders(commonPrefixes,contents,response,myPage,preTotalRecords+1,totalRecords);
 		}
-		myPage.setTotalRecords(totalRecords);
 		//目录及文件列表
-		setFileListAndFolderList(t,commonPrefixes,contents);
+		if(setFileListAndFolderList(t,commonPrefixes,contents)){
+			totalRecords--;
+		}
+		myPage.setTotalRecords(totalRecords);
 		
 		return t;
 	}
 	
-	public void setFileListAndFolderList(S3ObjectBO t,List<CommonPrefix> prefixes,List<S3Object> objectList){
+	public boolean setFileListAndFolderList(S3ObjectBO t,List<CommonPrefix> prefixes,List<S3Object> objectList){
+		boolean isExistLocalPath = Boolean.FALSE;//objectList是否存在本身路径对象
 		List<ObjectInfoBO> folderList = Lists.newArrayList();
 		if(!CollectionUtils.isEmpty(prefixes)){
 			prefixes.forEach(obj -> {
@@ -516,22 +519,24 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		//文件列表
 		List<ObjectInfoBO> fileList = Lists.newArrayList();
 		if(!CollectionUtils.isEmpty(objectList)){
-			objectList.forEach(obj -> {
+			for(S3Object obj:objectList){
+				if(obj.key().equals(StringUtils.join(t.getPath() ,t.getFileName()))){
+					isExistLocalPath = Boolean.TRUE;
+					continue;
+				}
 				ObjectInfoBO object = new ObjectInfoBO();
 				object.setBucket(t.getBucketName());
 				object.setKey(obj.key());
 				object.setFileSize(obj.size());
 				object.setUploadTime(obj.lastModified());
 				fileList.add(object);
-			});
+			}
 		}
 		
-		List<ObjectInfoBO> files = fileList.stream().filter(obj ->
-			!obj.getKey().equals(StringUtils.join(t.getPath() ,t.getFileName()))
-		).collect(Collectors.toList());
-		
 		t.setFolderList(folderList);
-		t.setFileList(files);
+		t.setFileList(fileList);
+		
+		return isExistLocalPath;
 	}
 	/**
 	 *

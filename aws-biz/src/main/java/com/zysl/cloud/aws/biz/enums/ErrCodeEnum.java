@@ -53,6 +53,7 @@ public enum  ErrCodeEnum  {
 	COPY_TARGET_EXIST(5120001, "复制时目标对象已存在."),
 	MOVE_SOURCE_NOT_EXIST(5120002, "移动源对象不存在."),
 	MOVE_TARGET_EXIST(5120002, "移动时目标对象已存在."),
+	COPY_SOURCE_SIZE_TOO_LONG(5120003, "复制/移动源对象过大."),
 	
 
 	OBJECT_OP_AUTH_CHECK_FAILED(5210001, "数据操作权限：无权限"),

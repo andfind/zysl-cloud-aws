@@ -11,8 +11,10 @@ import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
+import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
@@ -31,22 +33,25 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Autowired
 	private IS3FileService s3FileService;
+	@Autowired
+	private WebConfig webConfig;
 	
 	
 	@Override
 	public void copy(SysFileRequest source, SysFileRequest target, Boolean isOverWrite) {
 		log.info("copy-source:{},target:{}",source,target);
-		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
-			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
-			if(obj != null){
-				if(isOverWrite != null && !isOverWrite){
+		//不覆盖
+		if(isOverWrite == null || !isOverWrite){
+			if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
+				Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
+				if(obj != null){
 					log.info("-copy.target.is.exist:{}",target);
 					return;
 				}
 			}
 		}
 		
-		moveFile(source,target);
+		copyFile(source,target);
 	}
 	
 	@Override
@@ -54,12 +59,17 @@ public class SysFileManagerImpl implements ISysFileManager {
 		log.info("move-source:{},target:{}",source,target);
 		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
-			if(obj != null){
+			if(obj == null){
 				log.info("-move.target.is.exist:{}",target);
 				throw new AppLogicException(ErrCodeEnum.MOVE_TARGET_EXIST.getCode());
 			}
+			S3ObjectBO rst = (S3ObjectBO)obj;
+			if(rst.getContentLength() > webConfig.getCopyMaxFileSize() * 1024 * 1024L){
+				log.warn("move-source.size.must.lower.then:{}M",webConfig.getCopyMaxFileSize());
+				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_SIZE_TOO_LONG.getCode());
+			}
 		}
-		moveFile(source,target);
+		copyFile(source,target);
 		//删除源数据
 		delete(source);
 	}
@@ -214,7 +224,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 		return dto;
 	}
 	
-	private void moveFile(SysFileRequest source, SysFileRequest target){
+	private void copyFile(SysFileRequest source, SysFileRequest target){
 		byte[] bodys = null;
 		//源数据读取
 		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){

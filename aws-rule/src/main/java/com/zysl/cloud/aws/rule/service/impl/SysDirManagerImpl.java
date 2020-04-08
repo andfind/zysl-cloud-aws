@@ -94,18 +94,24 @@ public class SysDirManagerImpl implements ISysDirManager {
 				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_NOT_EXIST.getCode());
 			}
 		}
-		SysDirRequest dirRequest = null;
-		SysFileRequest sourceFile = null;
-		SysFileRequest targetFile = null;
+		String srcRoot = source.getPath();
+		SysDirRequest sourceDir = BeanCopyUtil.copy(source,SysDirRequest.class);
+		SysDirRequest targetDir = BeanCopyUtil.copy(target,SysDirRequest.class);
+		SysFileRequest sourceFile = BeanCopyUtil.copy(source,SysFileRequest.class);
+		SysFileRequest targetFile = BeanCopyUtil.copy(target,SysFileRequest.class);
 		for(SysFileDTO dto:list){
 			if(FileDirEnum.DIR.getCode().intValue() == dto.getIsFile()){
-				dirRequest = BeanCopyUtil.copy(target,SysDirRequest.class);
-				dirRequest.setPath(target.getPath() + dto.getPath().replace(source.getPath(),""));
-				mkdir(dirRequest);
+				sourceDir.setPath(dto.getPath());
+				targetDir.setPath(target.getPath() + dto.getPath().replace(srcRoot,""));
+				mkdir(targetDir);
+				
+				//迭代调用
+				copy(sourceDir,targetDir,isOverWrite);
 			}else{
-				sourceFile = BeanCopyUtil.copy(dto,SysFileRequest.class);
-				targetFile = BeanCopyUtil.copy(target,SysFileRequest.class);
-				dirRequest.setPath(target.getPath() + dto.getPath().replace(source.getPath(),""));
+				sourceFile.setPath(dto.getPath());
+				sourceFile.setFileName(dto.getFileName());
+				targetFile.setPath(target.getPath() + dto.getPath().replace(srcRoot,""));
+				targetFile.setFileName(dto.getFileName());
 				
 				sysFileManager.copy(sourceFile,targetFile,isOverWrite);
 			}

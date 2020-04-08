@@ -121,25 +121,32 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	@Override
 	public <T extends S3Response,R extends S3Request>T callS3MethodWithBody(R r, RequestBody requestBody,S3Client s3Client,String methodName) throws AppLogicException{
 		log.info("=callS3Method:service_name:{},methodName:{},param:{}=",S3Client.SERVICE_NAME,methodName, JSON.toJSONString(r));
-		T response;
+		T response = null;
 		try{
+			Object obj = null;
 			if(requestBody == null){
 				Method method = S3Client.class.getMethod(methodName, r.getClass());
-				response = (T)method.invoke(s3Client,r);
+				obj = method.invoke(s3Client,r);
 			}else{
 				Method method = S3Client.class.getMethod(methodName, r.getClass(),RequestBody.class);
-				response = (T)method.invoke(s3Client,r,requestBody);
+				obj =method.invoke(s3Client,r,requestBody);
+			}
+			if(obj != null){
+				response = (T)obj;
 			}
 
 			if(response == null || response.sdkHttpResponse() == null ){
 				log.error("callS3Method.invoke({})->no.response",methodName);
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_RESPONSE.getCode());
-			}else if(!response.sdkHttpResponse().isSuccessful()){
+			} else if(!response.sdkHttpResponse().isSuccessful()){
 				log.error("callS3Method.invoke({})->response.status.error:{}",methodName,response.sdkHttpResponse().statusCode());
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_RESPONSE_STATUS_ERROR.getCode());
 			}else{
 				log.info("callS3Method.invoke({}).success:{}",methodName, JSON.toJSONString(response));
 			}
+		}catch (NoSuchKeyException e){
+			log.error("callS3Method.invoke({}).NoSuchKeyException",methodName);
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e){
 			log.error("callS3Method.invoke({}).error",methodName);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_INVOKE_ERROR.getCode());
@@ -159,17 +166,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		T response = null;
 		try{
 			response = callS3MethodWithBody(r,null,s3Client,methodName);
-		}catch (NoSuchKeyException e){
-			log.error("callS3Method.invoke({})->NoSuchKeyException:",methodName);
-			if(throwLogicException){
-				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
-			}
-		}catch (AwsServiceException e){
-			log.error("callS3Method.invoke({})->AwsServiceException:",methodName);
-			if(throwLogicException){
-				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
-			}
-		}catch (Exception e) {//SdkClientException等
+		}catch (AppLogicException e) {//AppLogicException
 			log.error("callS3Method.error({}):", methodName, e);
 			if (throwLogicException) {
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
@@ -238,7 +235,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 21:39 2020/3/23
-	 * @param []
+	 * @param
 	 * @return void
 	 **/
 	private void amazonS3BucketInit(){

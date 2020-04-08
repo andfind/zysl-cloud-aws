@@ -115,6 +115,9 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			setFileSystemDefault(request.getTarget());
 			boolean isOverWrite = request.getIsOverWrite() == null || request.getIsOverWrite() == 1? Boolean.TRUE : Boolean.FALSE;
 			if(!StringUtils.isBlank(request.getSource().getFileName())){
+				if(StringUtils.isBlank(request.getTarget().getFileName())){
+					request.getTarget().setFileName(request.getSource().getFileName());
+				}
 				sysFileManager.copy(request.getSource(),request.getTarget(),isOverWrite);
 			}else{
 				SysDirRequest source = BeanCopyUtil.copy(request.getSource(),SysDirRequest.class);

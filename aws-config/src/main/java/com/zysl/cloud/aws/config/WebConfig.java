@@ -32,6 +32,16 @@ public class WebConfig {
 	@Value("${download.max-file-size}")
 	private Integer downloadMaxFileSize;
 	
+	
+	/**
+	 * 单次移动/复制文件最大byte，单位M
+	 **/
+	@Value("${copy.max-file-size}")
+	private Integer copyMaxFileSize;
+	
+	/**
+	 * 公告数据位置列表
+	 **/
 	@Value("#{'${announcement.buckets}'.split(',')}")
 	public List<String> announcementBuckets;
 }
