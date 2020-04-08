@@ -493,7 +493,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 				totalRecords += response.commonPrefixes().size();
 			}
 			//根据当前记录数及传入的页码+每页数据读取读取
-			setFilesAndFolders(commonPrefixes,contents,response,myPage,preTotalRecords,totalRecords);
+			setFilesAndFolders(commonPrefixes,contents,response,myPage,preTotalRecords+1,totalRecords);
 		}
 		myPage.setTotalRecords(totalRecords);
 		//目录及文件列表
@@ -549,13 +549,13 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	private void setFilesAndFolders(List<CommonPrefix> commonPrefixes,List<S3Object> contents,ListObjectsResponse response,MyPage myPage,Integer curStart,Integer curEnd){
 		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize()+1;
 		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize();
-		int start = 0,end=0;
+		int start = 0,end=curEnd;
 		//当前页数据差额
 		int needRecords = myPageEnd - myPageStart - commonPrefixes.size() - contents.size();
 		if(needRecords <= 0){
 			return;
 		}
-		//范围外
+		//查询结果在要求范围外
 		if(myPageStart > curEnd || myPageEnd < curStart){
 			return;
 		}
@@ -565,25 +565,23 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 			contents.addAll(response.contents());
 			return;
 		}
-		//左范围交叉
-		if(curStart < myPageStart ){
-			start=myPageStart;
-			end=curEnd>myPageEnd? myPageEnd: curEnd;
+		//左边界交叉
+		if(myPageStart>curStart){
+			start = myPageStart - curStart;
 		}
-		//右范围交叉
-		if(curStart < myPageEnd){
-			start=myPageStart>curStart?curStart:myPageStart;
-			end=myPageEnd;
+		//右边界交叉
+		if(curEnd > myPageEnd){
+			end = myPageEnd;
 		}
-		int max = end - start;
+		
 		int addCount = 0;
-		for(int i=start-1;i<response.commonPrefixes().size() && i<max;i++){
+		for(int i=start;i<response.commonPrefixes().size() && i<end;i++){
 			commonPrefixes.add(response.commonPrefixes().get(i));
 			addCount = i+1;
 		}
-		start += addCount;
-		max = max - addCount;
-		for(int i=start-1;i<response.contents().size() && i<max;i++){
+		start = start - addCount;
+		end = end - addCount;
+		for(int i=start;i<response.contents().size() && i<end;i++){
 			contents.add(response.contents().get(i));
 		}
 		

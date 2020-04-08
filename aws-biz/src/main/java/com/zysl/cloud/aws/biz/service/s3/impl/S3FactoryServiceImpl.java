@@ -141,7 +141,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 				log.info("callS3Method.invoke({}).success:{}",methodName, JSON.toJSONString(response));
 			}
 		}catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e){
-			log.error("callS3Method.invoke({}).error:",methodName,e);
+			log.error("callS3Method.invoke({}).error",methodName);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_INVOKE_ERROR.getCode());
 		}catch (Exception e){
 			log.error("callS3Method.error({}):",methodName,e);
@@ -193,7 +193,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 17:55 2020/3/23
-	 * @param []
+	 * @param
 	 * @return void
 	 **/
 	private void amazonS3ClientInit(){

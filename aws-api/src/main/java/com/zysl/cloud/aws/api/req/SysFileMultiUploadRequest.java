@@ -1,6 +1,5 @@
 package com.zysl.cloud.aws.api.req;
 
-import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -9,12 +8,14 @@ import lombok.Setter;
 
 @Setter
 @Getter
-@ApiModel(description = "文件系统分片文件操作请求对象")
-public class SysFileMultiRequest extends SysFileMultiStartRequest {
+@ApiModel(description = "文件系统分片文件上传操作请求对象")
+public class SysFileMultiUploadRequest extends SysFileMultiStartRequest {
 	
-	private static final long serialVersionUID = -796859476482005238L;
+	private static final long serialVersionUID = 1490875657829372134L;
 	@ApiModelProperty(value = "分片文件ID", name = "uploadId",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String uploadId;
+	@ApiModelProperty(value = "分片编号", name = "partNumber",required = true,dataType = SwaggerConstants.DATA_TYPE_NUMBER)
+	private Integer partNumber;
 	
 	
 	@Override

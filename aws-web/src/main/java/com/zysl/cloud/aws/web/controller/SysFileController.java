@@ -12,8 +12,10 @@ import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRenameRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
@@ -31,10 +33,13 @@ import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.validator.CompleteMultipartRequestV;
 import com.zysl.cloud.aws.web.validator.CopyObjectsRequestV;
+import com.zysl.cloud.aws.web.validator.CreateMultipartRequestV;
 import com.zysl.cloud.aws.web.validator.DownloadFileRequestV;
 import com.zysl.cloud.aws.web.validator.MultiDownloadFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirListRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirRequestV;
+import com.zysl.cloud.aws.web.validator.SysFileMultiCompleteRequestV;
+import com.zysl.cloud.aws.web.validator.SysFileMultiRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRenameRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
@@ -88,6 +93,16 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	public BasePaginationResponse<SysFileDTO> list(SysDirListRequest request) {
 		return ServiceProvider.callList(request, SysDirListRequestV.class, SysFileDTO.class, (req,myPage) -> {
 			setFileSystemDefault(request);
+			if(request.getPageSize() == null){
+				myPage.setPageSize(1000);
+			}
+			if(request.getPageSize() == -1){
+				myPage.setPageSize(999999999);
+				myPage.setPageNo(1);
+			}
+			if(request.getPageIndex() == null){
+				myPage.setPageNo(1);
+			}
 			return sysDirManager.list(request,myPage);
 		});
 	}
@@ -154,17 +169,10 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<SysFileDTO> upload(HttpServletRequest httpServletRequest, SysFileUploadRequest request) {
 		return ServiceProvider.call(request, null, SysFileDTO.class,req -> {
-			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			setFileSystemDefault(request);
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			
-			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)request;
-			byte[] bytes = null;
-			try {
-				bytes = multipartHttpServletRequest.getFile("file").getBytes();
-			} catch (IOException e) {
-				log.error("--uploadFile获取文件流异常--：{}", e);
-				throw new AppLogicException("获取文件流异常");
-			}
+			byte[] bytes = getBytesFromHttpRequest(httpServletRequest);
 			
 			boolean isOverWrite = request.getIsOverWrite() == null || request.getIsOverWrite() == 1 ? Boolean.TRUE : Boolean.FALSE;
 			sysFileManager.upload(fileRequest,bytes,isOverWrite);
@@ -210,6 +218,11 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			
 			if(StringUtils.isBlank(range)){
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
+				if(s3ObjectBO.getContentLength() > byteLength[1]){
+					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
+					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m必须分片下载.");
+					return baseResponse;
+				}
 			}
 			
 			range = StringUtils.join("bytes=",byteLength[0],"-",byteLength[1]);
@@ -239,27 +252,48 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	
 	@Override
 	public BaseResponse<String> multiUploadStart(SysFileMultiStartRequest request) {
-		return null;
+		return ServiceProvider.call(request, SysFileRequestV.class, String.class , req -> {
+			return sysFileManager.multiUploadStart(request);
+		});
 	}
 	
 	@Override
-	public BaseResponse<String> multiUploadData(HttpServletRequest req, SysFileMultiRequest request) {
-		return null;
+	public BaseResponse<String> multiUploadData(HttpServletRequest httpServletRequest, SysFileMultiUploadRequest request) {
+		return ServiceProvider.call(request, SysFileMultiRequestV.class, String.class , req -> {
+			byte[] bytes = getBytesFromHttpRequest(httpServletRequest);
+			
+			if(request.getPartNumber() == null){
+				request.setPartNumber(1);
+			}
+			
+			sysFileManager.multiUploadBodys(request,bytes);
+			return RespCodeEnum.SUCCESS.getName();
+		});
+		
+		
 	}
 	
 	@Override
-	public BaseResponse<String> multiUploadComplete(SysFileMultiRequest request) {
-		return null;
+	public BaseResponse<String> multiUploadComplete(SysFileMultiCompleteRequest request) {
+		return ServiceProvider.call(request, SysFileMultiCompleteRequestV.class, String.class, req -> {
+			sysFileManager.multiUploadComplete(request);
+			return RespCodeEnum.SUCCESS.getName();
+		});
 	}
 	
 	@Override
 	public BaseResponse<String> multiUploadAbort(SysFileMultiRequest request) {
-		return null;
+		return ServiceProvider.call(request, SysFileRequestV.class, String.class , req -> {
+			 sysFileManager.multiUploadAbort(request);
+			return RespCodeEnum.SUCCESS.getName();
+		});
 	}
 	
 	@Override
-	public BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(SysFileMultiRequest request) {
-		return null;
+	public BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(SysFileMultiStartRequest request) {
+		return ServiceProvider.call(request, SysFileRequestV.class, FilePartInfoDTO.class, req -> {
+			return sysFileManager.multiUploadInfoList(request);
+		});
 	}
 	
 	@Override
@@ -335,15 +369,16 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		if(StringUtils.isBlank(request.getServerNo())){
 			request.setServerNo(webConfig.getFileSystemServerNoDefault());
 		}
-		if(request.getPageSize() == null){
-			request.setPageSize(1000);
-		}
-		if(request.getPageSize() == -1){
-			request.setPageSize(999999999);
-			request.setPageIndex(1);
-		}
-		if(request.getPageIndex() == null){
-			request.setPageIndex(1);
+		
+	}
+	
+	private byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest)throws AppLogicException{
+		try {
+			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
+			return multipartHttpServletRequest.getFile("file").getBytes();
+		} catch (IOException e) {
+			log.error("--uploadFile获取文件流异常--：{}", e);
+			throw new AppLogicException("获取文件流异常");
 		}
 	}
 }

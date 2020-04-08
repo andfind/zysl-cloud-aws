@@ -498,7 +498,6 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			t.setContentEncoding(response.contentEncoding());
 			t.setContentLanguage(response.contentLanguage());
 			t.setContentType(response.contentType());
-			t.setContentMD5(response.sseCustomerKeyMD5());
 			return t;
 		}
 		

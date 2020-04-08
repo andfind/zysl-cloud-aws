@@ -56,7 +56,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 			S3ObjectBO s3ObjectBO = new S3ObjectBO();
 			ObjectFormatUtils.setBucketAndPath(s3ObjectBO,request.getPath());
 			S3ObjectBO rstBo = (S3ObjectBO)s3FolderService.list(s3ObjectBO,myPage);
-			if(CollectionUtils.isEmpty(rstBo.getFileList())){
+			if(!CollectionUtils.isEmpty(rstBo.getFileList())){
 				for(ObjectInfoBO bo:rstBo.getFileList()){
 					SysFileDTO dto = new SysFileDTO();
 					dto.setIsFile(FileDirEnum.FILE.getCode());
@@ -64,14 +64,16 @@ public class SysDirManagerImpl implements ISysDirManager {
 					dto.setContentMd5(bo.getContentMd5());
 					dto.setSize(bo.getFileSize());
 					ObjectFormatUtils.setPathAndFileName(dto,bo.getBucket(),bo.getKey());
+					list.add(dto);
 				}
 			}
-			if(CollectionUtils.isEmpty(rstBo.getFolderList())){
+			if(!CollectionUtils.isEmpty(rstBo.getFolderList())){
 				for(ObjectInfoBO bo:rstBo.getFolderList()){
 					SysFileDTO dto = new SysFileDTO();
 					dto.setIsFile(FileDirEnum.DIR.getCode());
 					dto.setLastModified(DateUtils.from(bo.getUploadTime()));
 					ObjectFormatUtils.setPathAndFileName(dto,bo.getBucket(),bo.getKey());
+					list.add(dto);
 				}
 			}
 			

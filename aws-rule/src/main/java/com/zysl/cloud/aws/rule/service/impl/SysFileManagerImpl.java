@@ -1,11 +1,19 @@
 package com.zysl.cloud.aws.rule.service.impl;
 
+import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
+import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
+import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
+import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
@@ -75,7 +83,8 @@ public class SysFileManagerImpl implements ISysFileManager {
 			if(obj != null){
 				S3ObjectBO rst = (S3ObjectBO)obj;
 				dto = new SysFileDTO();
-				dto.setContentMd5(rst.getContentMD5());
+				dto.setFileName(s3ObjectBO.getFileName());
+				dto.setIsFile(FileDirEnum.FILE.getCode());
 				dto.setLastModified(rst.getLastModified());
 				dto.setSize(rst.getContentLength());
 				dto.setVersionId(rst.getVersionId());
@@ -135,6 +144,74 @@ public class SysFileManagerImpl implements ISysFileManager {
 		}
 		
 		return null;
+	}
+	
+	@Override
+	public String multiUploadStart(SysFileMultiStartRequest request){
+		log.info("multiUploadStart-source:{}",request);
+		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
+			
+			return  s3FileService.createMultipartUpload(s3ObjectBO);
+		}
+		
+		return null;
+	}
+	
+	
+	@Override
+	public void multiUploadAbort(SysFileMultiRequest request){
+		log.info("multiUploadAbort-source:{}",request);
+		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
+			s3ObjectBO.setUploadId(request.getUploadId());
+			
+			s3FileService.abortMultipartUpload(s3ObjectBO);
+		}
+	}
+	
+	@Override
+	public void multiUploadBodys(SysFileMultiUploadRequest request,byte[] bodys){
+		log.info("multiUploadUpload-source:{}",request);
+		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
+			s3ObjectBO.setBodys(bodys);
+			s3ObjectBO.setPartNumber(request.getPartNumber());
+			
+			s3FileService.uploadPart(s3ObjectBO);
+		}
+	}
+	
+	@Override
+	public void multiUploadComplete(SysFileMultiCompleteRequest request){
+		log.info("multiUploadComplete-source:{}",request);
+		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
+			s3ObjectBO.setETagList(BeanCopyUtil.copyList(request.getETagList(),MultipartUploadBO.class));
+			
+			s3FileService.completeMultipartUpload(s3ObjectBO);
+		}
+	}
+	
+	@Override
+	public FilePartInfoDTO multiUploadInfoList(SysFileMultiStartRequest request){
+		log.info("multiUploadInfoList-source:{}",request);
+		FilePartInfoDTO dto = null;
+		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
+			S3ObjectBO rst  = (S3ObjectBO)s3FileService.listParts(s3ObjectBO);
+			
+			dto = new FilePartInfoDTO();
+			dto.setUploadId(rst.getUploadId());
+			dto.setETagList(BeanCopyUtil.copyList(rst.getETagList(), PartInfoDTO.class));
+		}
+		
+		return dto;
 	}
 	
 	private void moveFile(SysFileRequest source, SysFileRequest target){

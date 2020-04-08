@@ -6,8 +6,10 @@ import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRenameRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
@@ -138,7 +140,7 @@ public interface SysFileSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@PostMapping("/mu")
-	BaseResponse<String> multiUploadData(HttpServletRequest req, SysFileMultiRequest request);
+	BaseResponse<String> multiUploadData(HttpServletRequest req, SysFileMultiUploadRequest request);
 	
 	/**
 	 * 分片上传-完成
@@ -149,7 +151,7 @@ public interface SysFileSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@PostMapping("/mc")
-	BaseResponse<String> multiUploadComplete(@RequestBody SysFileMultiRequest request);
+	BaseResponse<String> multiUploadComplete(@RequestBody SysFileMultiCompleteRequest request);
 	
 	/**
 	 * 分片上传-取消
@@ -171,7 +173,7 @@ public interface SysFileSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.FilePartInfoDTO>
 	 **/
 	@PostMapping("/mq")
-	BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(@RequestBody SysFileMultiRequest request);
+	BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(@RequestBody SysFileMultiStartRequest request);
 	
 	/**
 	 * 文件是否存在
