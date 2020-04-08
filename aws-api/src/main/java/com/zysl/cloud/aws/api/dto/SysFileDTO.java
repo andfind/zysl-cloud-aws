@@ -25,8 +25,8 @@ public class SysFileDTO implements Serializable {
 	private Long size;
 	@ApiModelProperty(value = "最后修改时间", name = "lastModified", dataType = SwaggerConstants.DATA_TYPE_OBJECT)
 	private Date lastModified;
-	@ApiModelProperty(value = "文件内容md5", name = "contentMd5", dataType = SwaggerConstants.DATA_TYPE_STRING)
-	private String contentMd5;
+//	@ApiModelProperty(value = "文件内容md5", name = "contentMd5", dataType = SwaggerConstants.DATA_TYPE_STRING)
+//	private String contentMd5;
 	@ApiModelProperty(value = "versionId", name = "versionId", dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String versionId;
 	
@@ -47,9 +47,6 @@ public class SysFileDTO implements Serializable {
 		}
 		if (lastModified != null) {
 			sb.append(", lastModified=").append(lastModified);
-		}
-		if (contentMd5 != null) {
-			sb.append(", contentMd5='").append(contentMd5).append('\'');
 		}
 		if (versionId != null) {
 			sb.append(", versionId='").append(versionId).append('\'');

@@ -139,5 +139,5 @@ public interface ISysFileManager {
 	 * @param request
 	 * @return com.zysl.cloud.aws.api.dto.FilePartInfoDTO
 	 **/
-	FilePartInfoDTO multiUploadInfoList(SysFileMultiStartRequest request);
+	FilePartInfoDTO multiUploadInfo(SysFileMultiStartRequest request);
 }

@@ -80,7 +80,7 @@ public class S3FileServiceTest {
         t.setBucketName("test-yy05");
         t.setFileName("断点续传88.txt");
         t.setPath("");
-        String a = fileService.listMultipartUploads(t);
+        String a = fileService.getMultiUploadId(t);
         System.out.println("----a:"+a);
     }
 }

@@ -61,7 +61,6 @@ public class SysDirManagerImpl implements ISysDirManager {
 					SysFileDTO dto = new SysFileDTO();
 					dto.setIsFile(FileDirEnum.FILE.getCode());
 					dto.setLastModified(DateUtils.from(bo.getUploadTime()));
-					dto.setContentMd5(bo.getContentMd5());
 					dto.setSize(bo.getFileSize());
 					ObjectFormatUtils.setPathAndFileName(dto,bo.getBucket(),bo.getKey());
 					list.add(dto);

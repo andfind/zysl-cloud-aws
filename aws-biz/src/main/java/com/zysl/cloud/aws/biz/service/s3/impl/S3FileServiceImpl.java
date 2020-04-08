@@ -147,13 +147,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
             request = CreateMultipartUploadRequest.builder()
                     .bucket(t.getBucketName())
-                    .key(String.join(t.getPath(), t.getFileName()))
+                    .key(StringUtils.join(t.getPath(), t.getFileName()))
 //                    .tagging(String.valueOf(tagging))
                     .build();
 		}else{
             request = CreateMultipartUploadRequest.builder()
                     .bucket(t.getBucketName())
-                    .key(String.join(t.getPath(), t.getFileName()))
+                    .key(StringUtils.join(t.getPath(), t.getFileName()))
                     .build();
         }
 
@@ -170,7 +170,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 		UploadPartRequest request = UploadPartRequest.builder()
 				.bucket(t.getBucketName())
-				.key(String.join(t.getPath(), t.getFileName()))
+				.key(StringUtils.join(t.getPath(), t.getFileName()))
 				.uploadId(t.getUploadId())
 				.partNumber(t.getPartNumber())
 				.build();
@@ -199,7 +199,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		CompleteMultipartUploadRequest request =
 				CompleteMultipartUploadRequest.builder()
 						.bucket(t.getBucketName())
-						.key(String.join(t.getPath(), t.getFileName()))
+						.key(StringUtils.join(t.getPath(), t.getFileName()))
 						.uploadId(t.getUploadId())
 						.multipartUpload(CompletedMultipartUpload.builder()
 								.parts(completedParts).build())
@@ -221,7 +221,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		
 		AbortMultipartUploadRequest request = AbortMultipartUploadRequest.builder()
 											.bucket(t.getBucketName())
-											.key(String.join(t.getPath(), t.getFileName()))
+											.key(StringUtils.join(t.getPath(), t.getFileName()))
 											.uploadId(t.getUploadId())
 											.build();
 			
@@ -250,7 +250,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 		ListPartsRequest request = ListPartsRequest.builder()
 				.bucket(t.getBucketName())
-				.key(String.join(t.getPath(), t.getFileName()))
+				.key(StringUtils.join(t.getPath(), t.getFileName()))
 				.uploadId(t.getUploadId())
 				.build();
 
@@ -272,8 +272,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 	}
 
 	@Override
-	public String listMultipartUploads(S3ObjectBO t) {
-		log.info("s3file.listMultipartUploads.param:{}", JSON.toJSONString(t));
+	public String getMultiUploadId(S3ObjectBO t) {
+		log.info("s3file.getMultiUploadId.param:{}", JSON.toJSONString(t));
 
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
@@ -281,8 +281,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 		ListMultipartUploadsRequest request = ListMultipartUploadsRequest.builder()
 				.bucket(t.getBucketName())
-				.prefix(String.join(t.getPath(), t.getFileName()))
-				.maxUploads(1)
+				.prefix(StringUtils.join(t.getPath(),t.getFileName()))
 				.build();
 		ListMultipartUploadsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_MULTIPART_UPLOADS);
 

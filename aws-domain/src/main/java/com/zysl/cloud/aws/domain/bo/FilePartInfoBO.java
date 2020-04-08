@@ -15,14 +15,27 @@ public class FilePartInfoBO implements Serializable {
     private Date lastModified;
     private String eTag;
     private Integer size;
-
+    private String uploadId;
+    
     @Override
     public String toString() {
-        return "FilePartInfoBO{" +
-                "partNumber=" + partNumber +
-                ", lastModified=" + lastModified +
-                ", eTag='" + eTag + '\'' +
-                ", size=" + size +
-                '}';
+        final StringBuffer sb = new StringBuffer("{\"FilePartInfoBO\":{");
+        if (partNumber != null) {
+            sb.append("partNumber=").append(partNumber);
+        }
+        if (lastModified != null) {
+            sb.append(", lastModified=").append(lastModified);
+        }
+        if (eTag != null) {
+            sb.append(", eTag='").append(eTag).append('\'');
+        }
+        if (size != null) {
+            sb.append(", size=").append(size);
+        }
+        if (uploadId != null) {
+            sb.append(", uploadId='").append(uploadId).append('\'');
+        }
+        sb.append("}}");
+        return sb.toString();
     }
 }

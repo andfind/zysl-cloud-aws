@@ -208,11 +208,10 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			
 			
 			//获取标签中的文件名称
-			Object obj = sysFileManager.info(downRequest);
-			if(obj == null){
+			SysFileDTO fileDTO = sysFileManager.info(downRequest);
+			if(fileDTO == null){
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}
-			S3ObjectBO s3ObjectBO = (S3ObjectBO)obj;
 			
 			//从头信息取Range:bytes=0-1000
 			String range = request.getHeader("Range");
@@ -221,7 +220,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			
 			if(StringUtils.isBlank(range)){
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
-				if(s3ObjectBO.getContentLength() > byteLength[1]){
+				if(fileDTO.getSize() > byteLength[1]){
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
 					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m必须分片下载.");
 					return baseResponse;
@@ -233,13 +232,13 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			byte[] bodys = sysFileManager.getFileBodys(downRequest,range);
 			
 			//设置响应头：Content-Range: bytes 0-2000/4932
-			byteLength[1] = byteLength[1] > s3ObjectBO.getContentLength()-1 ? s3ObjectBO.getContentLength()-1 : byteLength[1];
-			String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",s3ObjectBO.getContentLength());
+			byteLength[1] = byteLength[1] > fileDTO.getSize()-1 ? fileDTO.getSize()-1 : byteLength[1];
+			String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",fileDTO.getSize());
 			response.setHeader("Content-Range",rspRange);
 			
 			
 			//下载数据
-			HttpUtils.downloadFileByte(request,response,s3ObjectBO.getFileName(),bodys);
+			HttpUtils.downloadFileByte(request,response,fileDTO.getFileName(),bodys);
 			
 			return null;
 		}catch (AppLogicException e){
@@ -256,6 +255,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadStart(SysFileMultiStartRequest request) {
 		return ServiceProvider.call(request, SysFileRequestV.class, String.class , req -> {
+			setFileSystemDefault(request);
 			return sysFileManager.multiUploadStart(request);
 		});
 	}
@@ -268,7 +268,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			if(request.getPartNumber() == null){
 				request.setPartNumber(1);
 			}
-			
+			setFileSystemDefault(request);
 			sysFileManager.multiUploadBodys(request,bytes);
 			return RespCodeEnum.SUCCESS.getName();
 		});
@@ -279,6 +279,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadComplete(SysFileMultiCompleteRequest request) {
 		return ServiceProvider.call(request, SysFileMultiCompleteRequestV.class, String.class, req -> {
+			setFileSystemDefault(request);
 			sysFileManager.multiUploadComplete(request);
 			return RespCodeEnum.SUCCESS.getName();
 		});
@@ -286,8 +287,9 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	
 	@Override
 	public BaseResponse<String> multiUploadAbort(SysFileMultiRequest request) {
-		return ServiceProvider.call(request, SysFileRequestV.class, String.class , req -> {
-			 sysFileManager.multiUploadAbort(request);
+		return ServiceProvider.call(request, SysFileMultiRequestV.class, String.class , req -> {
+			setFileSystemDefault(request);
+			sysFileManager.multiUploadAbort(request);
 			return RespCodeEnum.SUCCESS.getName();
 		});
 	}
@@ -295,7 +297,8 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(SysFileMultiStartRequest request) {
 		return ServiceProvider.call(request, SysFileRequestV.class, FilePartInfoDTO.class, req -> {
-			return sysFileManager.multiUploadInfoList(request);
+			setFileSystemDefault(request);
+			return sysFileManager.multiUploadInfo(request);
 		});
 	}
 	
@@ -349,6 +352,14 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		}
 	}
 	
+	private void setFileSystemDefault(SysFileMultiStartRequest request){
+		if(StringUtils.isBlank(request.getType())){
+			request.setType(webConfig.getFileSystemTypeDefault());
+		}
+		if(StringUtils.isBlank(request.getServerNo())){
+			request.setServerNo(webConfig.getFileSystemServerNoDefault());
+		}
+	}
 	private void setFileSystemDefault(SysFileRequest request){
 		if(StringUtils.isBlank(request.getType())){
 			request.setType(webConfig.getFileSystemTypeDefault());

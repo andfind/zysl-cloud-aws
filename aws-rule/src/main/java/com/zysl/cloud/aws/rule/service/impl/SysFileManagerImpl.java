@@ -11,21 +11,23 @@ import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
-import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.config.WebConfig;
+import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -114,7 +116,6 @@ public class SysFileManagerImpl implements ISysFileManager {
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(request));
 			if(obj != null && isOverWrite != null && !isOverWrite){
 				log.info("-upload.source.is.exist:{}",request);
-				throw new AppLogicException(ErrCodeEnum.MOVE_TARGET_EXIST.getCode());
 			}
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			s3ObjectBO.setBodys(bodys);
@@ -163,6 +164,13 @@ public class SysFileManagerImpl implements ISysFileManager {
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
 			
+			//已存在分片上传对象
+			FilePartInfoDTO dto = multiUploadInfo(request);
+			if(dto != null){
+				log.warn("multiUploadStart.exist:{}",request);
+				throw new AppLogicException(ErrCodeEnum.MULTI_UPLOAD_START_FILE_EXIST.getCode());
+			}
+			
 			return  s3FileService.createMultipartUpload(s3ObjectBO);
 		}
 		
@@ -208,17 +216,25 @@ public class SysFileManagerImpl implements ISysFileManager {
 	}
 	
 	@Override
-	public FilePartInfoDTO multiUploadInfoList(SysFileMultiStartRequest request){
+	public FilePartInfoDTO multiUploadInfo(SysFileMultiStartRequest request){
 		log.info("multiUploadInfoList-source:{}",request);
 		FilePartInfoDTO dto = null;
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
-			S3ObjectBO rst  = (S3ObjectBO)s3FileService.listParts(s3ObjectBO);
 			
+			String uploadId = s3FileService.getMultiUploadId(s3ObjectBO);
+			
+			if(StringUtils.isBlank(uploadId)){
+				return null;
+			}
 			dto = new FilePartInfoDTO();
-			dto.setUploadId(rst.getUploadId());
-			dto.setETagList(BeanCopyUtil.copyList(rst.getETagList(), PartInfoDTO.class));
+			dto.setUploadId(uploadId);
+			s3ObjectBO.setUploadId(uploadId);
+			
+			List<FilePartInfoBO> list  = s3FileService.listParts(s3ObjectBO);
+			
+			dto.setETagList(BeanCopyUtil.copyList(list, PartInfoDTO.class));
 		}
 		
 		return dto;

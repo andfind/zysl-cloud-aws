@@ -6,7 +6,6 @@ import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.enums.OPAuthTypeEnum;
 import com.zysl.cloud.aws.api.req.*;
 import com.zysl.cloud.aws.api.srv.FileSrv;
-import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
@@ -43,7 +42,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -768,7 +766,7 @@ public class FileController extends BaseController implements FileSrv {
 			t.setBucketName(req.getBucketName());
 			setPathAndFileName(t, req.getFileId());
 
-			String uploadId = fileService.listMultipartUploads(t);
+			String uploadId = fileService.getMultiUploadId(t);
 			t.setUploadId(uploadId);
 
 			List<FilePartInfoBO> partBOList = fileService.listParts(t);

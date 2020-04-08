@@ -114,5 +114,5 @@ public interface IS3FileService<T> extends IFileService<T> {
 	 *
 	 * @param t
 	 */
-	String listMultipartUploads(T t);
+	String getMultiUploadId(T t);
 }

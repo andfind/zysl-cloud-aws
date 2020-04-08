@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.rule.utils;
 
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
+import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.utils.StringUtils;
@@ -84,12 +85,11 @@ public class ObjectFormatUtils {
 	 **/
 	public static SysFileDTO  s3ObjectBOToSysFileDTO(S3ObjectBO bo){
 		SysFileDTO dto = new SysFileDTO();
-		dto.setContentMd5(bo.getContentMD5());
+		dto.setIsFile(FileDirEnum.FILE.getCode());
 		dto.setVersionId(bo.getVersionId());
 		dto.setSize(bo.getContentLength());
 		dto.setLastModified(bo.getLastModified());
-		dto.setFileName(bo.getFileName());
-		dto.setPath(bo.getBucketName() + ":/" + bo.getPath());
+		setPathAndFileName(dto,bo.getBucketName(),bo.getFileName());
 		
 		return dto;
 	}

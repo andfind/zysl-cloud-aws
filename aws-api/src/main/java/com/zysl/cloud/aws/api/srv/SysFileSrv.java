@@ -194,7 +194,7 @@ public interface SysFileSrv {
 	 * @param request
 	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<com.zysl.cloud.aws.api.req.SysFileRequest>
 	 **/
-	@PostMapping("/listVersions")
+	@PostMapping("/versions")
 	BasePaginationResponse<SysFileDTO> listVersions(@RequestBody SysFileListRequest request);
 	
 }
