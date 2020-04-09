@@ -34,6 +34,7 @@ import com.zysl.cloud.aws.rule.service.ISysDirManager;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
+import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
 import com.zysl.cloud.aws.web.validator.CompleteMultipartRequestV;
 import com.zysl.cloud.aws.web.validator.CopyObjectsRequestV;
 import com.zysl.cloud.aws.web.validator.CreateMultipartRequestV;
@@ -81,11 +82,13 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	private ISysDirManager sysDirManager;
 	@Autowired
 	private IS3FileService s3FileService;
+	@Autowired
+	private ReqDefaultUtils reqDefaultUtils;
 	
 	@Override
 	public BaseResponse<String> mkdir(SysDirRequest request) {
 		return ServiceProvider.call(request, SysDirRequestV.class, String.class, req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			sysDirManager.mkdir(request);
 			
 			return RespCodeEnum.SUCCESS.getName();
@@ -95,7 +98,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BasePaginationResponse<SysFileDTO> list(SysDirListRequest request) {
 		return ServiceProvider.callList(request, SysDirListRequestV.class, SysFileDTO.class, (req,myPage) -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			if(request.getPageSize() == null){
 				myPage.setPageSize(1000);
 			}
@@ -114,8 +117,8 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	public BaseResponse<String> copy(SysFileRenameRequest request) {
 		return ServiceProvider.call(request, SysFileRenameRequestV.class, String.class, req -> {
 			
-			setFileSystemDefault(request.getSource());
-			setFileSystemDefault(request.getTarget());
+			reqDefaultUtils.setFileSystemDefault(request.getSource());
+			reqDefaultUtils.setFileSystemDefault(request.getTarget());
 			boolean isOverWrite = request.getIsOverWrite() == null || request.getIsOverWrite() == 1? Boolean.TRUE : Boolean.FALSE;
 			if(!StringUtils.isBlank(request.getSource().getFileName())){
 				if(StringUtils.isBlank(request.getTarget().getFileName())){
@@ -135,8 +138,8 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> move(SysFileRenameRequest request) {
 		return ServiceProvider.call(request, SysFileRenameRequestV.class, String.class, req -> {
-			setFileSystemDefault(request.getSource());
-			setFileSystemDefault(request.getTarget());
+			reqDefaultUtils.setFileSystemDefault(request.getSource());
+			reqDefaultUtils.setFileSystemDefault(request.getTarget());
 			if(!StringUtils.isBlank(request.getSource().getFileName())){
 				sysFileManager.move(request.getSource(),request.getTarget());
 			}else{
@@ -153,7 +156,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> delete(SysFileRequest request) {
 		return ServiceProvider.call(request, SysDirRequestV.class, String.class, req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			if(!StringUtils.isBlank(request.getFileName())){
 				sysFileManager.delete(request);
 			}else{
@@ -167,7 +170,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<SysFileDTO> info(SysFileRequest request) {
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.info(request);
 		});
 	}
@@ -175,10 +178,10 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<SysFileDTO> upload(HttpServletRequest httpServletRequest, SysFileUploadRequest request) {
 		return ServiceProvider.call(request, null, SysFileDTO.class,req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			
-			byte[] bytes = getBytesFromHttpRequest(httpServletRequest);
+			byte[] bytes = HttpUtils.getBytesFromHttpRequest(httpServletRequest);
 			
 			boolean isOverWrite = request.getIsOverWrite() == null || request.getIsOverWrite() == 1 ? Boolean.TRUE : Boolean.FALSE;
 			sysFileManager.upload(fileRequest,bytes,isOverWrite);
@@ -194,7 +197,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	public BaseResponse<String> download(HttpServletRequest request, HttpServletResponse response, SysFileDownloadRequest downRequest) {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
-		setFileSystemDefault(downRequest);
+		reqDefaultUtils.setFileSystemDefault(downRequest);
 		
 		try{
 			validator(baseResponse,downRequest, SysFileRequestV.class);
@@ -255,7 +258,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadStart(SysFileMultiStartRequest request) {
 		return ServiceProvider.call(request, SysFileRequestV.class, String.class , req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.multiUploadStart(request);
 		});
 	}
@@ -263,12 +266,12 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadData(HttpServletRequest httpServletRequest, SysFileMultiUploadRequest request) {
 		return ServiceProvider.call(request, SysFileMultiRequestV.class, String.class , req -> {
-			byte[] bytes = getBytesFromHttpRequest(httpServletRequest);
+			byte[] bytes = HttpUtils.getBytesFromHttpRequest(httpServletRequest);
 			
 			if(request.getPartNumber() == null){
 				request.setPartNumber(1);
 			}
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			
 			return sysFileManager.multiUploadBodys(request,bytes);
 		});
@@ -279,7 +282,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadComplete(SysFileMultiCompleteRequest request) {
 		return ServiceProvider.call(request, SysFileMultiCompleteRequestV.class, String.class, req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			sysFileManager.multiUploadComplete(request);
 			return RespCodeEnum.SUCCESS.getName();
 		});
@@ -288,7 +291,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadAbort(SysFileMultiRequest request) {
 		return ServiceProvider.call(request, SysFileMultiRequestV.class, String.class , req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			sysFileManager.multiUploadAbort(request);
 			return RespCodeEnum.SUCCESS.getName();
 		});
@@ -297,7 +300,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(SysFileMultiStartRequest request) {
 		return ServiceProvider.call(request, SysFileRequestV.class, FilePartInfoDTO.class, req -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.multiUploadInfo(request);
 		});
 	}
@@ -305,63 +308,14 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BasePaginationResponse<SysFileDTO> listVersions(@RequestBody SysFileListRequest request){
 		return ServiceProvider.callList(request, SysFileRequestV.class, SysFileDTO.class, (req,myPage) -> {
-			setFileSystemDefault(request);
+			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.listVersions(request);
 		});
 	}
 	
-	private void setFileSystemDefault(SysFileListRequest request){
-		if(StringUtils.isBlank(request.getType())){
-			request.setType(webConfig.getFileSystemTypeDefault());
-		}
-		if(StringUtils.isBlank(request.getServerNo())){
-			request.setServerNo(webConfig.getFileSystemServerNoDefault());
-		}
-	}
 	
-	private void setFileSystemDefault(SysFileMultiStartRequest request){
-		if(StringUtils.isBlank(request.getType())){
-			request.setType(webConfig.getFileSystemTypeDefault());
-		}
-		if(StringUtils.isBlank(request.getServerNo())){
-			request.setServerNo(webConfig.getFileSystemServerNoDefault());
-		}
-	}
-	private void setFileSystemDefault(SysFileRequest request){
-		if(StringUtils.isBlank(request.getType())){
-			request.setType(webConfig.getFileSystemTypeDefault());
-		}
-		if(StringUtils.isBlank(request.getServerNo())){
-			request.setServerNo(webConfig.getFileSystemServerNoDefault());
-		}
-	}
-	private void setFileSystemDefault(SysDirRequest request){
-		if(StringUtils.isBlank(request.getType())){
-			request.setType(webConfig.getFileSystemTypeDefault());
-		}
-		if(StringUtils.isBlank(request.getServerNo())){
-			request.setServerNo(webConfig.getFileSystemServerNoDefault());
-		}
-	}
-	private void setFileSystemDefault(SysDirListRequest request){
-		if(StringUtils.isBlank(request.getType())){
-			request.setType(webConfig.getFileSystemTypeDefault());
-		}
-		if(StringUtils.isBlank(request.getServerNo())){
-			request.setServerNo(webConfig.getFileSystemServerNoDefault());
-		}
-		
-	}
 	
-	private byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest)throws AppLogicException{
-		try {
-			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
-			return multipartHttpServletRequest.getFile("file").getBytes();
-		} catch (IOException e) {
-			log.error("--uploadFile获取文件流异常--：{}", e);
-			throw new AppLogicException("获取文件流异常");
-		}
-	}
+
 	
 	//临时数据校验，是否对象拥有者
 	private boolean checkOwner(SysFileDownloadRequest request){

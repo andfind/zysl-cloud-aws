@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 @Slf4j
 @Component
@@ -61,6 +62,17 @@ public class HttpUtils {
 		}
 	}
 	
+	/**
+	 * 下载文件流
+	 * @description
+	 * @author miaomingming
+	 * @date 11:19 2020/4/9
+	 * @param request
+	 * @param response
+	 * @param fileName
+	 * @param bodys
+	 * @return void
+	 **/
 	public static void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys){
 		try {
 			//1下载文件流
@@ -89,6 +101,21 @@ public class HttpUtils {
 		}
 	}
 	
-	
-
+	/**
+	 * 从HttpServletRequest读取上传文件流
+	 * @description
+	 * @author miaomingming
+	 * @date 11:18 2020/4/9
+	 * @param httpServletRequest
+	 * @return byte[]
+	 **/
+	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest)throws AppLogicException{
+		try {
+			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
+			return multipartHttpServletRequest.getFile("file").getBytes();
+		} catch (IOException e) {
+			log.error("--uploadFile获取文件流异常--：{}", e);
+			throw new AppLogicException("获取文件流异常");
+		}
+	}
 }

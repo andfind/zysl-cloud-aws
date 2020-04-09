@@ -154,7 +154,13 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		}catch (InvocationTargetException e){
 			String uuID = UUID.randomUUID().toString().replace("-","");
 			log.error("callS3Method.invoke({}).error=>uuID:{}:{}",methodName,uuID,e.getTargetException().getMessage());
-			throw new AppLogicException(uuID,ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
+			if(e.getTargetException() instanceof NoSuchKeyException){
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+			}else{
+				throw new AppLogicException(uuID,ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
+			}
+			
+			
 		}catch (Exception e){
 			log.error("callS3Method.error({}):",methodName,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());

@@ -104,8 +104,35 @@ public class AposeWordServiceImpl implements IWordService {
             }
         }
     }
-
-
+    
+    @Override
+    public byte[] changeWordToPDF(byte[] inBuff){
+        log.info("===changeWordToPDF===inBuff.length",inBuff == null ? 0: inBuff.length);
+    
+        if(inBuff == null || inBuff.length == 0){
+            return null;
+        }
+    
+        byte[] outBuff = null;
+        OutputStream os = new ByteArrayOutputStream();
+        try{
+            // step 1.word转pdf
+            outBuff = changeWordToByApose(inBuff,SaveFormat.PDF);
+        
+            return outBuff;
+        }catch (Exception e){
+            log.error("转换pdf时office异常:",e);
+            throw new AppLogicException(ErrCodeEnum.WORD_FILE_TO_PDF_ERROR.getCode());
+        }finally {
+            try {
+                if(os != null){
+                    os.close();
+                }
+            } catch (IOException e) {
+                log.error("===changeWordToPDF===stream close error ：{}", e);
+            }
+        }
+    }
 
     private boolean getLicense() {
         boolean result = false;

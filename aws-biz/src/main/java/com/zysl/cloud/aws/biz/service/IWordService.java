@@ -16,6 +16,16 @@ public interface IWordService {
      * @param toFormatType
      */
     byte[] changeWordToByApose(byte[] inBuff,Integer toFormatType);
+    
+    /**
+     * word转pdf
+     * @description
+     * @author miaomingming
+     * @date 11:35 2020/4/9
+     * @param inBuff
+     * @return byte[]
+     **/
+    byte[] changeWordToPDF(byte[] inBuff);
 
 
 }

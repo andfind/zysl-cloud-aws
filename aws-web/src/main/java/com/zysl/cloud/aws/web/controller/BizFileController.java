@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.UploadFieDTO;
+import com.zysl.cloud.aws.api.req.BizFileOfficeToPdfRequest;
 import com.zysl.cloud.aws.api.req.BizFileShareRequest;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
@@ -22,6 +23,8 @@ import com.zysl.cloud.aws.api.srv.BizFileSrv;
 import com.zysl.cloud.aws.api.srv.SysFileSrv;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
+import com.zysl.cloud.aws.biz.service.IPDFService;
+import com.zysl.cloud.aws.biz.service.IWordService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.WebConfig;
@@ -30,8 +33,10 @@ import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysDirManager;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
+import com.zysl.cloud.aws.utils.BizUtil;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
+import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
 import com.zysl.cloud.aws.web.validator.ShareFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirListRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirRequestV;
@@ -74,11 +79,15 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	@Autowired
 	private ISysFileManager sysFileManager;
 	@Autowired
-	private ISysDirManager sysDirManager;
-	@Autowired
 	private IS3FileService s3FileService;
 	@Autowired
 	private BizConfig bizConfig;
+	@Autowired
+	private ReqDefaultUtils reqDefaultUtils;
+	@Autowired
+	private IWordService wordService;
+	@Autowired
+	IPDFService pdfService;
 	
 	
 	@Override
@@ -92,7 +101,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				if(CollectionUtils.isEmpty(buckets)){
 					for(String key:buckets){
 						SysDirRequest dirRequest = new SysDirRequest();
-						setFileSystemDefault(dirRequest);
+						reqDefaultUtils.setFileSystemDefault(dirRequest);
 						dirRequest.setPath(key + ":/");
 						paths.add(dirRequest);
 					}
@@ -233,6 +242,75 @@ public class BizFileController extends BaseController implements BizFileSrv {
 		return baseResponse;
 	}
 	
+	@Override
+	public BaseResponse<SysFileDTO> officeToPdf(@RequestBody BizFileOfficeToPdfRequest request){
+		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
+			reqDefaultUtils.setFileSystemDefault(request);
+			//step 0.校验
+			String fileName = request.getFileName().toLowerCase();
+			if(!(fileName.endsWith("doc") || fileName.endsWith("docx")
+				|| fileName.endsWith("ppt") || fileName.endsWith("pptx"))){
+				throw new AppLogicException(ErrCodeEnum.FILE_TO_PDF_TYPE_LIMIT.getCode());
+			}
+			//step 1.数据读取
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
+			S3ObjectBO rst = (S3ObjectBO)s3FileService.getInfoAndBody(s3ObjectBO);
+			byte[] bodys = rst.getBodys();
+			if(bodys == null || bodys.length == 0){
+				log.warn("officeToPdf.noSuchKey:{}",request);
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+			}
+			
+			//step 2.转换
+			if(fileName.endsWith("doc") || fileName.endsWith("docx")){
+				bodys = wordService.changeWordToPDF(bodys);
+			}else if(fileName.endsWith("ppt") || fileName.endsWith("pptx")){
+			
+			}
+			if(bodys == null || bodys.length == 0){
+				log.warn("officeToPdf.toPdf.bodys.is.null:{}",request);
+				throw new AppLogicException("step2",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
+			}
+			//step 3.水印
+			if(!StringUtils.isBlank(request.getTextMark())){
+				bodys = pdfService.addPdfTextMark(bodys,request.getTextMark());
+				if(bodys == null || bodys.length == 0){
+					log.warn("officeToPdf.addMark.bodys.is.null:{}",request);
+					throw new AppLogicException("step3",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
+				}
+			}
+			
+			//step 4.加密
+			if(!StringUtils.isBlank(request.getUserPwd()) && !StringUtils.isBlank(request.getOwnerPwd())){
+				bodys = pdfService.addPwd(bodys,request.getUserPwd(),request.getOwnerPwd());
+				if(bodys == null || bodys.length == 0){
+					log.warn("officeToPdf.addPwd.bodys.is.null:{}",request);
+					throw new AppLogicException("step4",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
+				}
+			}
+			
+			//step 5.上传新文件
+			//修改bucket及文件名
+			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
+			if(fileRequest.getPath().indexOf(":") > -1){
+				String path = request.getPath();
+				path = bizConfig.getWORD_TO_PDF_BUCKET_NAME() + path.substring(path.indexOf(":"));
+				fileRequest.setPath(path);
+			}
+			
+			if(fileName.indexOf(".") > -1){
+				fileRequest.setFileName(fileName.substring(0,fileName.lastIndexOf(".")) + ".pdf");
+			}
+			
+			sysFileManager.upload(fileRequest,bodys,Boolean.TRUE);
+			
+			
+			//step 6.查询并返回
+			
+			return sysFileManager.info(fileRequest);
+		});
+	}
+	
 	/**
 	 * 检查是否分享文件，并更新分享次数等
 	 * @description
@@ -279,13 +357,6 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	}
 	
 	
-	private void setFileSystemDefault(SysDirRequest request){
-		if(StringUtils.isBlank(request.getType())){
-			request.setType(webConfig.getFileSystemTypeDefault());
-		}
-		if(StringUtils.isBlank(request.getServerNo())){
-			request.setServerNo(webConfig.getFileSystemServerNoDefault());
-		}
-	}
+	
 	
 }

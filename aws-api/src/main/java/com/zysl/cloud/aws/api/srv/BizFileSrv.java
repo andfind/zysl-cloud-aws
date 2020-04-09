@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.api.srv;
 
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.UploadFieDTO;
+import com.zysl.cloud.aws.api.req.BizFileOfficeToPdfRequest;
 import com.zysl.cloud.aws.api.req.BizFileShareRequest;
 import com.zysl.cloud.aws.api.req.DownloadFileRequest;
 import com.zysl.cloud.aws.api.req.GetVideoRequest;
@@ -66,4 +67,15 @@ public interface BizFileSrv {
 	 **/
 	@GetMapping("/videoDownload")
 	BaseResponse<String> vedioFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downloadRequest);
+	
+	/**
+	 * office转pdf
+	 * @description
+	 * @author miaomingming
+	 * @date 9:32 2020/4/9
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.SysFileDTO>
+	 **/
+	@PostMapping("/office2pdf")
+	BaseResponse<SysFileDTO> officeToPdf(@RequestBody BizFileOfficeToPdfRequest request);
 }
