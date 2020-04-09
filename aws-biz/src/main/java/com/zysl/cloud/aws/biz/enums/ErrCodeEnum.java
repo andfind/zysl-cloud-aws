@@ -60,6 +60,9 @@ public enum  ErrCodeEnum  {
 	OBJECT_OP_AUTH_CHECK_FAILED(5210001, "数据操作权限：无权限"),
 	OBJECT_OP_AUTH_CHECK_DATA_FORMAT_ERROR(5210002, "数据操作权限：配置参数或head参数格式异常"),
 	OBJECT_OP_AUTH_CHECK_ERROR(5210003, "数据操作权限：计算权限异常"),
+	FILE_IS_NOT_SHARED(5210004, "文件未设置共享."),
+	FILE_SHARED_DOWNLOAD_MAX_TIMES(5210005, "文件共享下载达到最大次数."),
+	FILE_SHARED_DOWNLOAD_TIMEOUT(5210006, "文件共享下载时间超期."),
 	;
 
 	private Integer code;

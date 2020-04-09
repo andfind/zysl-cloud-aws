@@ -22,7 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -536,30 +538,39 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 					.range(t.getRange()).versionId(t.getVersionId()).build();
 		}
 
-		
-		ResponseBytes<GetObjectResponse> objectAsBytes = s3.getObject(request,
-				ResponseTransformer.toBytes());
-		GetObjectResponse objectResponse = objectAsBytes.response();
-
-		Date date1 = Date.from(objectResponse.lastModified());
-		Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
-
-		byte[] bytes = objectAsBytes.asByteArray();
-		log.info("--asByteArray结束时间--:{}", System.currentTimeMillis());
-		if(DateUtils.doCompareDate(date1, date2) < 0){
-			//进行解码
-			BASE64Decoder decoder = new BASE64Decoder();
-			byte[] fileContent = new byte[0];
-			try {
-				fileContent = decoder.decodeBuffer(new String(bytes));
-			} catch (IOException e) {
-				log.error("--download文件流转换异常：{}--", e);
+		try{
+			ResponseBytes<GetObjectResponse> objectAsBytes = s3.getObject(request,ResponseTransformer.toBytes());
+			GetObjectResponse objectResponse = objectAsBytes.response();
+			
+			Date date1 = Date.from(objectResponse.lastModified());
+			Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
+			
+			byte[] bytes = objectAsBytes.asByteArray();
+			log.info("--asByteArray结束时间--:{}", System.currentTimeMillis());
+			if(DateUtils.doCompareDate(date1, date2) < 0){
+				//进行解码
+				BASE64Decoder decoder = new BASE64Decoder();
+				byte[] fileContent = new byte[0];
+				try {
+					fileContent = decoder.decodeBuffer(new String(bytes));
+				} catch (IOException e) {
+					log.error("--download文件流转换异常：{}--", e);
+				}
+				t.setBodys(fileContent);
+				return t;
+			}else {
+				t.setBodys(bytes);
+				return t;
 			}
-			t.setBodys(fileContent);
-			return t;
-		}else {
-			t.setBodys(bytes);
-			return t;
+		}catch (NoSuchKeyException e){
+			log.info("s3file.getInfoAndBody.NoSuchKeyException:{},msg:", JSON.toJSONString(t),e);
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+		}catch (AwsServiceException | SdkClientException  e){
+			log.info("s3file.getInfoAndBody.AwsServiceException:{},msg:", JSON.toJSONString(t),e);
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
+		}catch (Exception e){
+			log.info("s3file.getInfoAndBody.Exception:{},msg:", JSON.toJSONString(t),e);
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}
 	}
 

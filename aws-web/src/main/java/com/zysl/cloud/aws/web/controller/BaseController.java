@@ -2,7 +2,18 @@ package com.zysl.cloud.aws.web.controller;
 
 import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
+import com.zysl.cloud.aws.web.validator.SysFileRequestV;
+import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.SpringContextUtil;
 import com.zysl.cloud.utils.StringUtils;
+import com.zysl.cloud.utils.common.BaseResponse;
+import com.zysl.cloud.utils.enums.RespCodeEnum;
+import com.zysl.cloud.utils.validator.BeanValidator;
+import com.zysl.cloud.utils.validator.IValidator;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import org.springframework.util.CollectionUtils;
 
 public class BaseController extends com.zysl.cloud.utils.common.BaseController {
 
@@ -53,6 +64,19 @@ public class BaseController extends com.zysl.cloud.utils.common.BaseController {
 		}
 		if(s3ObjectBO == null){
 			s3ObjectBO = new S3ObjectBO();
+		}
+	}
+	
+	public<T extends IValidator,D extends Serializable> void validator(BaseResponse baseResponse,D req,Class<T>  tClass){
+		List<String> validate = new ArrayList<>();
+		T validator = BeanCopyUtil.copy(req, tClass);
+		BeanValidator beanValidator = SpringContextUtil.getBean("beanValidator", BeanValidator.class);
+		validate = beanValidator.validate(validator, BeanValidator.CASE_DEFAULT);
+		
+		if(!CollectionUtils.isEmpty(validate)){
+			baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
+			baseResponse.setMsg(RespCodeEnum.ILLEGAL_PARAMETER.getName());
+			baseResponse.setValidations(validate);
 		}
 	}
 	

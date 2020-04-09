@@ -8,8 +8,10 @@ import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.UploadFieDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.enums.OPAuthTypeEnum;
+import com.zysl.cloud.aws.api.req.DownloadFileRequest;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
@@ -30,6 +32,7 @@ import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysDirManager;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
+import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.validator.CompleteMultipartRequestV;
 import com.zysl.cloud.aws.web.validator.CopyObjectsRequestV;
@@ -188,21 +191,17 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	
 	@ResponseBody
 	@Override
-	public BaseResponse<String> download(HttpServletRequest request, HttpServletResponse response, SysFileRequest downRequest) {
+	public BaseResponse<String> download(HttpServletRequest request, HttpServletResponse response, SysFileDownloadRequest downRequest) {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		setFileSystemDefault(downRequest);
 		
-		List<String> validate = new ArrayList<>();
 		try{
-			SysFileRequestV validator = BeanCopyUtil.copy(downRequest, SysFileRequestV.class);
-			BeanValidator beanValidator = SpringContextUtil.getBean("beanValidator", BeanValidator.class);
-			validate = beanValidator.validate(validator, BeanValidator.CASE_DEFAULT);
+			validator(baseResponse,downRequest, SysFileRequestV.class);
 			
-			if(!CollectionUtils.isEmpty(validate)){
-				baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
-				baseResponse.setMsg(RespCodeEnum.ILLEGAL_PARAMETER.getName());
-				baseResponse.setValidations(validate);
+			//临时权限校验
+			if(!checkOwner(downRequest)){
+				baseResponse.setCode(ErrCodeEnum.OBJECT_OP_AUTH_CHECK_FAILED.getCode());
 				return baseResponse;
 			}
 			
@@ -210,7 +209,8 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			//获取标签中的文件名称
 			SysFileDTO fileDTO = sysFileManager.info(downRequest);
 			if(fileDTO == null){
-				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+				baseResponse.setCode(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+				return baseResponse;
 			}
 			
 			//从头信息取Range:bytes=0-1000
@@ -303,39 +303,6 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	}
 	
 	@Override
-	public BaseResponse<Boolean> isExist(@RequestBody SysFileExistRequest request){
-		return ServiceProvider.call(request, SysFileRequestV.class, Boolean.class, req -> {
-			
-			//增加默认path
-			if(CollectionUtils.isEmpty(request.getPaths())){
-				List<SysDirRequest> paths = new ArrayList<>();
-				List<String> buckets = webConfig.getAnnouncementBuckets();
-				if(CollectionUtils.isEmpty(buckets)){
-					for(String key:buckets){
-						SysDirRequest dirRequest = new SysDirRequest();
-						setFileSystemDefault(dirRequest);
-						dirRequest.setPath(key + ":/");
-						paths.add(dirRequest);
-					}
-				}
-			}
-			
-			if(!CollectionUtils.isEmpty(request.getPaths())){
-				for(SysDirRequest path:request.getPaths()){
-					SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
-					fileRequest.setFileName(request.getFileName());
-					fileRequest.setVersionId(request.getVersionId());
-					if(sysFileManager.info(fileRequest) != null){
-						return Boolean.TRUE;
-					}
-				}
-			}
-			
-			return Boolean.FALSE;
-		});
-	}
-	
-	@Override
 	public BasePaginationResponse<SysFileDTO> listVersions(@RequestBody SysFileListRequest request){
 		return ServiceProvider.callList(request, SysFileRequestV.class, SysFileDTO.class, (req,myPage) -> {
 			setFileSystemDefault(request);
@@ -394,5 +361,24 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			log.error("--uploadFile获取文件流异常--：{}", e);
 			throw new AppLogicException("获取文件流异常");
 		}
+	}
+	
+	//临时数据校验，是否对象拥有者
+	private boolean checkOwner(SysFileDownloadRequest request){
+		if(!StringUtils.isEmpty(request.getUserId())){
+			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
+			//查询标签
+			List<TagBO> list = s3FileService.getTags(s3ObjectBO);
+			//需要校验权限
+			for (TagBO tag : list) {
+				//判断标签可以是否是owner
+				if(S3TagKeyEnum.OWNER.getCode().equals(tag.getKey()) &&
+					request.getUserId().equals(tag.getValue())){
+					return Boolean.TRUE;
+				}
+			}
+			return Boolean.FALSE;
+		}
+		return Boolean.TRUE;
 	}
 }

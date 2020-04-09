@@ -4,6 +4,7 @@ import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
@@ -117,7 +118,7 @@ public interface SysFileSrv {
 	 * @return void
 	 **/
 	@GetMapping("/download")
-	BaseResponse<String> download(HttpServletRequest req, HttpServletResponse rsp,SysFileRequest request);
+	BaseResponse<String> download(HttpServletRequest req, HttpServletResponse rsp, SysFileDownloadRequest request);
 	
 	/**
 	 * 分片上传-启动
@@ -175,16 +176,7 @@ public interface SysFileSrv {
 	@PostMapping("/mq")
 	BaseResponse<FilePartInfoDTO> multiUploadInfoQuery(@RequestBody SysFileMultiStartRequest request);
 	
-	/**
-	 * 文件是否存在
-	 * @description
-	 * @author miaomingming
-	 * @date 17:01 2020/4/7
-	 * @param request
-	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.Boolean>
-	 **/
-	@PostMapping("/exist")
-	BaseResponse<Boolean> isExist(@RequestBody SysFileExistRequest request);
+	
 	
 	/**
 	 * 查询文件版本列表
