@@ -1,9 +1,7 @@
 package com.zysl.cloud.aws.web.utils;
 
-import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
-import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.IOException;
@@ -33,7 +31,7 @@ public class HttpUtils {
 	public static Long[] checkRange(String range){
 		Long[] byteLength = new Long[2];
 		byteLength[0] = 0L;
-		byteLength[1] = BizConstants.MULTI_UPLOAD_FILE_MAX_SIZE-1;
+		byteLength[1] = BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE -1;
 		if(StringUtils.isBlank(range)){
 			return byteLength;
 		}
@@ -50,8 +48,8 @@ public class HttpUtils {
 			if(StringUtils.isNotBlank(ranges[0])){
 				end = Long.parseLong(ranges[1]);
 			}
-			if(end - start >= BizConstants.MULTI_UPLOAD_FILE_MAX_SIZE - 1){
-				end = start + BizConstants.MULTI_UPLOAD_FILE_MAX_SIZE - 1;
+			if(end - start >= BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE - 1){
+				end = start + BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE - 1;
 			}
 			
 			byteLength[0] = start;

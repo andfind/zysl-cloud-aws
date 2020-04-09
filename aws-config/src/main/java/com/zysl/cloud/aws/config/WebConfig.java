@@ -21,10 +21,10 @@ public class WebConfig {
 	public String fileSystemServerNoDefault;
 	
 	/**
-	 * 分片上传单次最大字长度，支持MB、KB、B
+	 * 分片下载单次最大字长度，支持MB、KB、B
 	 **/
-	@Value("${multipart.upload.max-file-size}")
-	private String multipartUploadMaxFileSize;
+	@Value("${multipart.download.max-file-size}")
+	private String multipartDownloadMaxFileSize;
 	
 	/**
 	 * 单次下载最大长度，单位M
