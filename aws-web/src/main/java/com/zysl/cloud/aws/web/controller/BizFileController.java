@@ -24,6 +24,7 @@ import com.zysl.cloud.aws.api.srv.SysFileSrv;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.IPDFService;
+import com.zysl.cloud.aws.biz.service.IPPTService;
 import com.zysl.cloud.aws.biz.service.IWordService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.config.BizConfig;
@@ -87,7 +88,9 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	@Autowired
 	private IWordService wordService;
 	@Autowired
-	IPDFService pdfService;
+	private IPDFService pdfService;
+	@Autowired
+	private IPPTService pptService;
 	
 	
 	@Override
@@ -203,7 +206,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	
 	@Override
 	@ResponseBody
-	public BaseResponse<String> vedioFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downRequest){
+	public BaseResponse<String> videoFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downRequest){
 		log.error("vedioFileDownload.param:{}:", JSON.toJSONString(downRequest));
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
@@ -265,7 +268,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			if(fileName.endsWith("doc") || fileName.endsWith("docx")){
 				bodys = wordService.changeWordToPDF(bodys);
 			}else if(fileName.endsWith("ppt") || fileName.endsWith("pptx")){
-			
+				bodys = pptService.changePPTToPDF(bodys);
 			}
 			if(bodys == null || bodys.length == 0){
 				log.warn("officeToPdf.toPdf.bodys.is.null:{}",request);
@@ -299,7 +302,8 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			}
 			
 			if(fileName.indexOf(".") > -1){
-				fileRequest.setFileName(fileName.substring(0,fileName.lastIndexOf(".")) + ".pdf");
+				fileName = fileName.substring(0,fileName.lastIndexOf("."));
+				fileName += StringUtils.join("_",System.currentTimeMillis(),".pdf");
 			}
 			
 			sysFileManager.upload(fileRequest,bodys,Boolean.TRUE);

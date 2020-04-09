@@ -1,22 +1,25 @@
 package com.zysl.cloud.aws.biz.test;
 
-import com.aspose.words.Document;
-import com.aspose.words.SaveFormat;
+import com.aspose.slides.License;
+import com.aspose.slides.Presentation;
+import com.aspose.slides.SaveFormat;
+import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.utils.common.AppLogicException;
-import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class AposeTest {
 	
 	public static void main(String[] args){
+		long start = System.currentTimeMillis();
 		System.out.println("---start---");
 		AposeTest test = new AposeTest();
-		test.testRenameDir();
-		System.out.println("---end---");
+		test.testPPT();
+		System.out.println("---end---used:" + (System.currentTimeMillis() - start));
 	}
 	
 	public void testRenameDir(){
@@ -67,30 +70,49 @@ public class AposeTest {
 	
 	
 	public void testPPT(){
-		String fileName = "/data/tmp/1.pptx";
-		String outFileName = "/data/tmp/1.pdf";
+		String fileName = "D:/data/tmp/1.pptx";
+		String outFileName = "D:/data/tmp/1.pdf";
 		try{
-			Document doc = new Document(fileName);
+			getLicense();
+			
+			Presentation pres = new Presentation(fileName);
+			
 			//创建文件
-			FileOutputStream fileOS = new FileOutputStream(new File(outFileName));
+			FileOutputStream out = new FileOutputStream(new File(outFileName));
 			// 保存转换的pdf文件
-			doc.save(fileOS, SaveFormat.PDF);
+			pres.save(out, SaveFormat.Pdf);
+			out.close();
 		}catch (Exception e){
 			e.printStackTrace();
 		}
 	}
 	
-	public void testWord(){
-		String fileName = "/data/tmp/1.docx";
-		String outFileName = "/data/tmp/1.pdf";
-		try{
-			Document doc = new Document(fileName);
-			//创建文件
-			FileOutputStream fileOS = new FileOutputStream(new File(outFileName));
-			// 保存转换的pdf文件
-			doc.save(fileOS, SaveFormat.PDF);
-		}catch (Exception e){
-			e.printStackTrace();
+//	public void testWord(){
+//		String fileName = "/data/tmp/1.docx";
+//		String outFileName = "/data/tmp/1.pdf";
+//		try{
+//			Document doc = new Document(fileName);
+//			//创建文件
+//			FileOutputStream fileOS = new FileOutputStream(new File(outFileName));
+//			// 保存转换的pdf文件
+//			doc.save(fileOS, SaveFormat.PDF);
+//		}catch (Exception e){
+//			e.printStackTrace();
+//		}
+//	}
+	
+	private boolean getLicense() {
+		boolean result = false;
+		try {
+//      String licenseFile = "D:\\data\\libs\\java\\ppt\\Aspose\\aspose-slides-19.3\\license.xml";
+			String licenseFile = "D:\\data\\git\\zysl-cloud-aws\\aws-web\\src\\main\\resources\\license.xml";
+			InputStream is = new FileInputStream(new File(licenseFile));
+			License aposeLic = new License();
+			aposeLic.setLicense(is);
+			result = true;
+		} catch (Exception e) {
+			throw new AppLogicException(ErrCodeEnum.APOSE_SIGN_CHECK_ERROR.getCode());
 		}
+		return result;
 	}
 }

@@ -47,6 +47,9 @@ public enum  ErrCodeEnum  {
 	PDF_ADD_PWD_ERROR(5110005, "PDF加密码处理异常."),
 	PDF_ADD_TEXT_MARK_ERROR(5110006, "PDF加文字水印处理异常"),
 	APOSE_SIGN_CHECK_ERROR(5110007, "apose签名校验异常"),
+	FILE_TO_PDF_TYPE_LIMIT(5110008, "转pdf的源文件类型只支持word和ppt"),
+	FILE_TO_PDF_BODY_NULL(5110009, "office转pdf的异常，转换结果数据为空"),
+	PPT_FILE_TO_PDF_ERROR(5110009, "ppt转pdf的异常"),
 	
 	
 	COPY_SOURCE_NOT_EXIST(5120001, "复制源对象不存在."),
@@ -59,8 +62,6 @@ public enum  ErrCodeEnum  {
 	FILE_SHARED_DOWNLOAD_MAX_TIMES(5120008, "文件共享下载达到最大次数."),
 	FILE_SHARED_DOWNLOAD_TIMEOUT(5120009, "文件共享下载时间超期."),
 	
-	FILE_TO_PDF_TYPE_LIMIT(5120101, "转pdf的源文件类型只支持word和ppt"),
-	FILE_TO_PDF_BODY_NULL(5120102, "office转pdf的异常，转换结果数据为空"),
 
 	OBJECT_OP_AUTH_CHECK_FAILED(5210001, "数据操作权限：无权限"),
 	OBJECT_OP_AUTH_CHECK_DATA_FORMAT_ERROR(5210002, "数据操作权限：配置参数或head参数格式异常"),

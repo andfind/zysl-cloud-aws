@@ -489,7 +489,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 
 		HeadObjectResponse response = s3FactoryService.callS3Method(request, s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
-		log.info("s3file.copy.getBaseInfo:{}", response);
+		log.info("s3file.getBaseInfo:{}", response);
 
 		if(response != null){
 			t.setVersionId(response.versionId());

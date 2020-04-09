@@ -66,7 +66,7 @@ public interface BizFileSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@GetMapping("/videoDownload")
-	BaseResponse<String> vedioFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downloadRequest);
+	BaseResponse<String> videoFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downloadRequest);
 	
 	/**
 	 * office转pdf
