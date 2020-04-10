@@ -80,6 +80,16 @@ public class BaseController extends com.zysl.cloud.utils.common.BaseController {
 		}
 	}
 	
+	public String createEsLogMsg(String bizStepName,String... msgs){
+		StringBuffer sb = new StringBuffer(64);
+		sb.append(bizStepName).append(" ");
+		if(msgs != null){
+			for(String key:msgs){
+				sb.append(key).append(" ");
+			}
+		}
+		return sb.toString().trim();
+	}
 
 
 	public static void main(String[] args) {

@@ -2,15 +2,38 @@
 <configuration>
     <contextName>logback</contextName>
     <springProperty scope="context" name="demo" source="spring.application.name"/>
-    <property name="business_type" value="paas"/>
+    <property name="business_type" value="fileSystem"/>
     <property name="app_name" value="zysl-cloud-aws"/>
     <property name="log.path" value="/data/applogs/${app_name}"/>
     <!--控台输出-->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!--<filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator> &lt;!&ndash; 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator &ndash;&gt;
+                <expression>return message.contains("eslog");</expression>
+            </evaluator>
+            <OnMatch>DENY</OnMatch>
+            <OnMismatch>ACCEPT</OnMismatch>
+        </filter>-->
         <encoder>
-            <pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} %-5level ${business_type} ${app_name} [%thread:%logger{40}:%line] -%msg%n</pattern>
+            <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [${app_name}] [%-20.20thread] [%-5level] [%-40.40logger{40}:%-4.4line] - %msg%n </pattern>
         </encoder>
     </appender>
+    <!--控台输出,提交给es-->
+    <appender name="STDOUT-ES" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+            <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator"> <!-- 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
+                <expression>return formattedMessage.contains("ES_LOG");</expression>
+            </evaluator>
+            <OnMatch>ACCEPT</OnMatch>
+            <OnMismatch>DENY</OnMismatch>
+        </filter>
+        <encoder>
+            <pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} %-5level ${business_type} ${app_name} %msg%n</pattern>
+        </encoder>
+    </appender>
+
+
+
     <!--不带过滤器，记录所有-->
     <appender name="INFO_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <File>${log.path}/info.log</File>
@@ -51,6 +74,7 @@
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
+        <appender-ref ref="STDOUT-ES"/>
         <appender-ref ref="INFO_FILE"/>
         <appender-ref ref="ERROR_FILE"/>
     </root>

@@ -37,7 +37,7 @@ public enum  ErrCodeEnum  {
 	
 	S3_BUCKET_OBJECT_NOT_EXIST(5020101, "创建对象已存在."),
 	DOWNLOAD_FILE_ERROR(5020102, "下载文件异常."),
-	MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR(5020102, "分片下载文件时提交range格式异常."),
+	MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR(5020103, "分片下载文件时提交range格式异常."),
 
 
 	WORD_FILE_NOT_EXIST(5110001, "word转pdf：找不到原始文件."),
@@ -49,7 +49,7 @@ public enum  ErrCodeEnum  {
 	APOSE_SIGN_CHECK_ERROR(5110007, "apose签名校验异常"),
 	FILE_TO_PDF_TYPE_LIMIT(5110008, "转pdf的源文件类型只支持word和ppt"),
 	FILE_TO_PDF_BODY_NULL(5110009, "office转pdf的异常，转换结果数据为空"),
-	PPT_FILE_TO_PDF_ERROR(5110009, "ppt转pdf的异常"),
+	PPT_FILE_TO_PDF_ERROR(5110010, "ppt转pdf的异常"),
 	
 	
 	COPY_SOURCE_NOT_EXIST(5120001, "复制源对象不存在."),

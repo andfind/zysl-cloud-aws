@@ -26,4 +26,9 @@ public class SysFileUploadRequest extends SysFileRequest {
 			.append(super.toString()).append("}");
 		return sb.toString();
 	}
+	
+	@Override
+	public String getEsLogMsg() {
+		return super.getEsLogMsg();
+	}
 }

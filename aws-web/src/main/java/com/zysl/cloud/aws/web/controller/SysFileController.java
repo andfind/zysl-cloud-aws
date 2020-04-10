@@ -1,18 +1,10 @@
 package com.zysl.cloud.aws.web.controller;
 
-import com.google.common.collect.Lists;
-import com.netflix.discovery.converters.Auto;
-import com.zysl.cloud.aws.api.dto.DownloadFileDTO;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
-import com.zysl.cloud.aws.api.dto.UploadFieDTO;
-import com.zysl.cloud.aws.api.enums.DownTypeEnum;
-import com.zysl.cloud.aws.api.enums.OPAuthTypeEnum;
-import com.zysl.cloud.aws.api.req.DownloadFileRequest;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
-import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
@@ -25,9 +17,7 @@ import com.zysl.cloud.aws.api.srv.SysFileSrv;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
-import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
 import com.zysl.cloud.aws.config.WebConfig;
-import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysDirManager;
@@ -35,11 +25,6 @@ import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
-import com.zysl.cloud.aws.web.validator.CompleteMultipartRequestV;
-import com.zysl.cloud.aws.web.validator.CopyObjectsRequestV;
-import com.zysl.cloud.aws.web.validator.CreateMultipartRequestV;
-import com.zysl.cloud.aws.web.validator.DownloadFileRequestV;
-import com.zysl.cloud.aws.web.validator.MultiDownloadFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirListRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileMultiCompleteRequestV;
@@ -47,28 +32,20 @@ import com.zysl.cloud.aws.web.validator.SysFileMultiRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRenameRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
-import com.zysl.cloud.utils.SpringContextUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
-import com.zysl.cloud.utils.validator.BeanValidator;
-import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import sun.misc.BASE64Encoder;
 
 @Slf4j
 @RestController
@@ -92,7 +69,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			sysDirManager.mkdir(request);
 			
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"mkdir");
 	}
 	
 	@Override
@@ -110,7 +87,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 				myPage.setPageNo(1);
 			}
 			return sysDirManager.list(request,myPage);
-		});
+		},"listDir");
 	}
 	
 	@Override
@@ -132,7 +109,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			}
 			
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"copy");
 	}
 	
 	@Override
@@ -149,7 +126,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			}
 			
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"move");
 		
 	}
 	
@@ -164,7 +141,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 				sysDirManager.delete(source);
 			}
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"delete");
 	}
 	
 	@Override
@@ -172,7 +149,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.info(request);
-		});
+		},"info");
 	}
 	
 	@Override
@@ -189,7 +166,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			//设置返回参数
 			SysFileDTO dto = sysFileManager.info(fileRequest);
 			return dto;
-		});
+		},"upload");
 	}
 	
 	@ResponseBody
@@ -201,6 +178,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		
 		try{
 			validator(baseResponse,downRequest, SysFileRequestV.class);
+			log.info("download {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			
 			//临时权限校验
 			if(!checkOwner(downRequest)){
@@ -242,14 +220,16 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			
 			//下载数据
 			HttpUtils.downloadFileByte(request,response,fileDTO.getFileName(),bodys);
-			
+			log.info("download {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			return null;
 		}catch (AppLogicException e){
-			log.error("multiDownloadFile.AppLogicException:",e);
+			log.error("download.AppLogicException:",e);
+			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 			return baseResponse;
 		}catch (Exception e){
-			log.error("multiDownloadFile.Exception:",e);
+			log.error("download.Exception:",e);
+			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 			return baseResponse;
 		}
@@ -260,7 +240,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		return ServiceProvider.call(request, SysFileRequestV.class, String.class , req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.multiUploadStart(request);
-		});
+		},"multiUploadStart");
 	}
 	
 	@Override
@@ -274,7 +254,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			reqDefaultUtils.setFileSystemDefault(request);
 			
 			return sysFileManager.multiUploadBodys(request,bytes);
-		});
+		},"multiUploadData");
 		
 		
 	}
@@ -285,7 +265,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			reqDefaultUtils.setFileSystemDefault(request);
 			sysFileManager.multiUploadComplete(request);
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"multiUploadComplete");
 	}
 	
 	@Override
@@ -294,7 +274,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			reqDefaultUtils.setFileSystemDefault(request);
 			sysFileManager.multiUploadAbort(request);
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"multiUploadAbort");
 	}
 	
 	@Override
@@ -302,7 +282,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		return ServiceProvider.call(request, SysFileRequestV.class, FilePartInfoDTO.class, req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.multiUploadInfo(request);
-		});
+		},"multiUploadInfoQuery");
 	}
 	
 	@Override
@@ -310,7 +290,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		return ServiceProvider.callList(request, SysFileRequestV.class, SysFileDTO.class, (req,myPage) -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			return sysFileManager.listVersions(request);
-		});
+		},"listVersions");
 	}
 	
 	

@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
@@ -37,6 +38,20 @@ public class SysFileRenameRequest extends BaseReqeust {
 		}
 		sb.append("},\"super-SysFileRenameRequest\":")
 			.append(super.toString()).append("}");
+		return sb.toString();
+	}
+	
+	@Override
+	public String getEsLogMsg() {
+		StringBuffer sb = new StringBuffer(64);
+		if(source != null){
+			sb.append(StringUtils.join(source.getPath(),source.getFileName()))
+				.append(" ");
+		}
+		if(target != null){
+			sb.append(StringUtils.join(target.getPath(),target.getFileName()));
+		}
+		
 		return sb.toString();
 	}
 }

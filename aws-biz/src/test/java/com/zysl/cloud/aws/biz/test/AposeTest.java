@@ -4,6 +4,7 @@ import com.aspose.slides.License;
 import com.aspose.slides.Presentation;
 import com.aspose.slides.SaveFormat;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,7 +19,9 @@ public class AposeTest {
 		long start = System.currentTimeMillis();
 		System.out.println("---start---");
 		AposeTest test = new AposeTest();
-		test.testPPT();
+		String a="11";
+		String b=null;
+		System.out.println(StringUtils.join(a,b));
 		System.out.println("---end---used:" + (System.currentTimeMillis() - start));
 	}
 	

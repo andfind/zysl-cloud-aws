@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BasePaginationRequest;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
@@ -38,5 +39,10 @@ public class SysDirListRequest extends BasePaginationRequest {
 		sb.append("},\"super-SysDirListRequest\":")
 			.append(super.toString()).append("}");
 		return sb.toString();
+	}
+	
+	@Override
+	public String getEsLogMsg(){
+		return this.path;
 	}
 }

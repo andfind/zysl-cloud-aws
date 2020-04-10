@@ -117,20 +117,22 @@ public class FileController extends BaseController implements FileSrv {
 
 	@Override
 	public BaseResponse<UploadFieDTO> uploadFile(HttpServletRequest request) {
-		return ServiceProvider.call(request, null, UploadFieDTO.class,req -> {
-
+		BaseResponse<UploadFieDTO> baseResponse = new BaseResponse<>();
+		baseResponse.setSuccess(Boolean.FALSE);
+		
+		try{
 			S3ObjectBO s3Object = new S3ObjectBO();
 			s3Object.setBucketName(request.getParameter("bucketName"));
 			setPathAndFileName(s3Object,request.getParameter("fileId"));
-
-
+			
+			
 			//数据权限校验
 			fileService.checkDataOpAuth(s3Object, OPAuthTypeEnum.READ.getCode());
-
+			
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)request;
 			byte[] bytes = null;
 			try {
-					bytes = multipartHttpServletRequest.getFile("file").getBytes();
+				bytes = multipartHttpServletRequest.getFile("file").getBytes();
 			} catch (IOException e) {
 				log.error("--uploadFile获取文件流异常--：{}", e);
 				throw new AppLogicException("获取文件流异常");
@@ -144,18 +146,25 @@ public class FileController extends BaseController implements FileSrv {
 				tag.setValue(request.getParameter("fileName"));
 				tagList.add(tag);
 			}
-
+			
 			s3Object.setTagList(fileService.addTags(s3Object, tagList));
-
+			
 			S3ObjectBO s3ObjectBO = (S3ObjectBO)fileService.create(s3Object);
-
+			
 			//设置返回参数
 			UploadFieDTO uploadFieDTO = new UploadFieDTO();
 			uploadFieDTO.setFolderName(s3ObjectBO.getBucketName());
 			uploadFieDTO.setFileName(StringUtils.join(s3ObjectBO.getPath(), s3ObjectBO.getFileName()));
 			uploadFieDTO.setVersionId(s3ObjectBO.getVersionId());
-			return uploadFieDTO;
-		});
+			
+			baseResponse.setModel(uploadFieDTO);
+		}catch (AppLogicException e){
+			baseResponse.setCode(e.getExceptionCode());
+			baseResponse.setMsg(e.getMessage());
+		}catch (Exception e){
+			baseResponse.setMsg(e.getMessage());
+		}
+		return baseResponse;
 	}
 
 	@Override
@@ -309,38 +318,46 @@ public class FileController extends BaseController implements FileSrv {
 
     @Override
     public void getVideo(HttpServletResponse response, GetVideoRequest request) {
-        ServiceProvider.call(request, GetVideoRequestV.class, String.class, req -> {
-            S3ObjectBO t = new S3ObjectBO();
-            t.setBucketName(req.getBucketName());
-            setPathAndFileName(t, req.getFileId());
-            t.setVersionId(req.getVersionId());
-
-
+		BaseResponse<MultipartUploadRequest> baseResponse = new BaseResponse<>();
+		baseResponse.setSuccess(Boolean.FALSE);
+	
+		try{
+			S3ObjectBO t = new S3ObjectBO();
+			t.setBucketName(request.getBucketName());
+			setPathAndFileName(t, request.getFileId());
+			t.setVersionId(request.getVersionId());
+			
+			
 			//数据权限校验
 			fileService.checkDataOpAuth(t, OPAuthTypeEnum.READ.getCode());
-
-            S3ObjectBO s3ObjectBO = (S3ObjectBO) fileService.getInfoAndBody(t);
-            byte[] bytes = s3ObjectBO.getBodys();
-            response.reset();
-            //设置头部类型
-            response.setContentType("video/mp4;charset=UTF-8");
-            ServletOutputStream out = null;
-            try {
-                out = response.getOutputStream();
-                out.write(bytes);
-                out.flush();
-            } catch (IOException e) {
-                log.error("--文件流转换异常：--", e);
-            }finally {
-                try {
-                    out.close();
-                } catch (IOException e) {
-
-                }
-                out = null;
-            }
-            return null;
-        });
+			
+			S3ObjectBO s3ObjectBO = (S3ObjectBO) fileService.getInfoAndBody(t);
+			byte[] bytes = s3ObjectBO.getBodys();
+			response.reset();
+			//设置头部类型
+			response.setContentType("video/mp4;charset=UTF-8");
+			ServletOutputStream out = null;
+			try {
+				out = response.getOutputStream();
+				out.write(bytes);
+				out.flush();
+			} catch (IOException e) {
+				log.error("--文件流转换异常：--", e);
+			}finally {
+				try {
+					out.close();
+				} catch (IOException e) {
+				
+				}
+				out = null;
+			}
+			return ;
+		}catch (AppLogicException e){
+			baseResponse.setCode(e.getExceptionCode());
+			baseResponse.setMsg(e.getMessage());
+		}catch (Exception e){
+			baseResponse.setMsg(e.getMessage());
+		}
     }
 
     @Override
@@ -694,16 +711,18 @@ public class FileController extends BaseController implements FileSrv {
 
 	@Override
 	public BaseResponse<MultipartUploadRequest> uploadPart(HttpServletRequest request) {
-		return ServiceProvider.call(request, null, MultipartUploadRequest.class, req -> {
-
+		BaseResponse<MultipartUploadRequest> baseResponse = new BaseResponse<>();
+		baseResponse.setSuccess(Boolean.FALSE);
+		
+		try{
 			S3ObjectBO t = new S3ObjectBO();
 			t.setBucketName(request.getParameter("bucketName"));
 			setPathAndFileName(t, request.getParameter("fileId"));
 			t.setUploadId(request.getParameter("uploadId"));
 			t.setPartNumber(
-					StringUtils.isEmpty(request.getParameter("partNumber")) ? 1 : Integer.parseInt(request.getParameter("partNumber")));
+				StringUtils.isEmpty(request.getParameter("partNumber")) ? 1 : Integer.parseInt(request.getParameter("partNumber")));
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)request;
-
+			
 			byte[] bytes = null;
 			try {
 				bytes = multipartHttpServletRequest.getFile("file").getBytes();
@@ -712,14 +731,20 @@ public class FileController extends BaseController implements FileSrv {
 				throw new AppLogicException("获取文件流异常");
 			}
 			t.setBodys(bytes);
-
+			
 			S3ObjectBO s3ObjectBO = (S3ObjectBO)fileService.uploadPart(t);
 			MultipartUploadRequest response = new MultipartUploadRequest();
 			response.setPartNumber(s3ObjectBO.getPartNumber());
 			response.setETag(s3ObjectBO.getETag());
-
-			return response;
-		});
+			
+			baseResponse.setModel(response);
+		}catch (AppLogicException e){
+			baseResponse.setCode(e.getExceptionCode());
+			baseResponse.setMsg(e.getMessage());
+		}catch (Exception e){
+			baseResponse.setMsg(e.getMessage());
+		}
+		return baseResponse;
 	}
 
 	@Override

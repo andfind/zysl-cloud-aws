@@ -123,7 +123,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			}
 			
 			return Boolean.FALSE;
-		});
+		},"isExist");
 	}
 	
 	@Override
@@ -171,7 +171,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				fileRequest.setServerNo(webConfig.getFileSystemServerNoDefault());
 			}
 			return sysFileManager.info(fileRequest);
-		});
+		},"shareFile");
 	}
 	
 	@Override
@@ -183,6 +183,8 @@ public class BizFileController extends BaseController implements BizFileSrv {
 		try{
 			validator(baseResponse,downRequest, SysFileRequestV.class);
 			
+			log.info("shareFileDownload {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(downRequest);
 			S3ObjectBO s3ObjectBO = (S3ObjectBO) s3FileService.getInfoAndBody(src);
 			List<TagBO> tagBOList = checkAndSetShareDownload(s3ObjectBO);
@@ -192,13 +194,16 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			
 			//执行下载
 			HttpUtils.downloadFileByte(request,response,downRequest.getFileName(),s3ObjectBO.getBodys());
+			log.info("shareFileDownload {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			return null;
 		}catch (AppLogicException e){
 			log.error("shareFileDownload.AppLogicException:{}:", JSON.toJSONString(downRequest),e);
+			log.error("shareFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 		}catch (Exception e){
 			log.error("shareFileDownload.Exception:{}:", JSON.toJSONString(downRequest),e);
+			log.error("shareFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;
@@ -212,6 +217,8 @@ public class BizFileController extends BaseController implements BizFileSrv {
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
 			validator(baseResponse,downRequest, SysFileRequestV.class);
+			log.info("videoFileDownload {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(downRequest);
 			S3ObjectBO s3ObjectBO = (S3ObjectBO) s3FileService.getInfoAndBody(src);
 			
@@ -233,13 +240,16 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				}
 				out = null;
 			}
+			log.info("videoFileDownload {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			return null;
 		}catch (AppLogicException e){
 			log.error("vedioFileDownload.AppLogicException:{}:", JSON.toJSONString(downRequest),e);
+			log.error("videoFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 		}catch (Exception e){
 			log.error("vedioFileDownload.Exception:{}:", JSON.toJSONString(downRequest),e);
+			log.error("videoFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;
@@ -297,7 +307,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			if(fileRequest.getPath().indexOf(":") > -1){
 				String path = request.getPath();
-				path = bizConfig.getWORD_TO_PDF_BUCKET_NAME() + path.substring(path.indexOf(":"));
+				path = bizConfig.getPdfDefaultRootPath() + path.substring(path.indexOf(":")+1);
 				fileRequest.setPath(path);
 			}
 			
@@ -312,7 +322,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			//step 6.查询并返回
 			
 			return sysFileManager.info(fileRequest);
-		});
+		},"officeToPdf");
 	}
 	
 	/**

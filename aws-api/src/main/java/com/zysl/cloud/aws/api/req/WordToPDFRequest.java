@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -10,7 +11,7 @@ import lombok.Setter;
 @Setter
 @Getter
 @ApiModel(description = "word转pdf的请求对象")
-public class WordToPDFRequest implements Serializable {
+public class WordToPDFRequest extends BaseReqeust {
 
   private static final long serialVersionUID = 3231659254522990103L;
   @ApiModelProperty(value = "文件夹名称", name = "bucketName", dataType = SwaggerConstants.DATA_TYPE_STRING, required = true)

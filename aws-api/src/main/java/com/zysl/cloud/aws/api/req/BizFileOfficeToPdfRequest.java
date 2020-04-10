@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -36,5 +37,10 @@ public class BizFileOfficeToPdfRequest extends SysFileRequest {
 		sb.append("},\"super-BizFileOfficeToPdfRequest\":")
 			.append(super.toString()).append("}");
 		return sb.toString();
+	}
+	
+	@Override
+	public String getEsLogMsg() {
+		return StringUtils.join(this.getPath(),this.getFileName());
 	}
 }

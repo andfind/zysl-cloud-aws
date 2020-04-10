@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BasePaginationRequest;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
@@ -22,6 +23,7 @@ public class SysFileListRequest extends BasePaginationRequest {
 	
 	@ApiModelProperty(value = "路径", name = "path",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String path;
+	
 	@ApiModelProperty(value = "文件名", name = "fileName",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String fileName;
 	
@@ -43,5 +45,10 @@ public class SysFileListRequest extends BasePaginationRequest {
 		sb.append("},\"super-SysFileListRequest\":")
 			.append(super.toString()).append("}");
 		return sb.toString();
+	}
+	
+	@Override
+	public String getEsLogMsg() {
+		return StringUtils.join(this.getPath(),this.getFileName());
 	}
 }

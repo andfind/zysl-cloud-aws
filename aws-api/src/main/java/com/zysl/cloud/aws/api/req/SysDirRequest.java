@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
@@ -38,5 +39,10 @@ public class SysDirRequest extends BaseReqeust {
 		sb.append("},\"super-SysDirRequest\":")
 			.append(super.toString()).append("}");
 		return sb.toString();
+	}
+	
+	@Override
+	public String getEsLogMsg() {
+		return this.path;
 	}
 }
