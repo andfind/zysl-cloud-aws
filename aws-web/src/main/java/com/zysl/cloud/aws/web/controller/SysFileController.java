@@ -154,7 +154,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	
 	@Override
 	public BaseResponse<SysFileDTO> upload(HttpServletRequest httpServletRequest, SysFileUploadRequest request) {
-		return ServiceProvider.call(request, null, SysFileDTO.class,req -> {
+		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class,req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			

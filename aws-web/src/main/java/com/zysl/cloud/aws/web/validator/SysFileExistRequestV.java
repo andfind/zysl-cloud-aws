@@ -7,6 +7,7 @@ import com.zysl.cloud.utils.validator.IValidator;
 import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -14,7 +15,7 @@ import lombok.Setter;
 @Getter
 public class SysFileExistRequestV implements IValidator {
 	
-	@NotBlank
+	@NotNull
 	private List<SysDirRequest> paths;
 	
 	@NotBlank

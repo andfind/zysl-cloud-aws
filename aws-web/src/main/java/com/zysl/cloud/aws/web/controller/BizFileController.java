@@ -41,6 +41,7 @@ import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
 import com.zysl.cloud.aws.web.validator.ShareFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirListRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirRequestV;
+import com.zysl.cloud.aws.web.validator.SysFileExistRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileMultiCompleteRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileMultiRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRenameRequestV;
@@ -95,7 +96,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	
 	@Override
 	public BaseResponse<Boolean> isExist(@RequestBody SysFileExistRequest request){
-		return ServiceProvider.call(request, SysFileRequestV.class, Boolean.class, req -> {
+		return ServiceProvider.call(request, SysFileExistRequestV.class, Boolean.class, req -> {
 			
 			//增加默认path
 			if(CollectionUtils.isEmpty(request.getPaths())){
@@ -314,13 +315,13 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			if(fileName.indexOf(".") > -1){
 				fileName = fileName.substring(0,fileName.lastIndexOf("."));
 				fileName += StringUtils.join("_",System.currentTimeMillis(),".pdf");
+				fileRequest.setFileName(fileName);
 			}
 			
 			sysFileManager.upload(fileRequest,bodys,Boolean.TRUE);
 			
 			
 			//step 6.查询并返回
-			
 			return sysFileManager.info(fileRequest);
 		},"officeToPdf");
 	}

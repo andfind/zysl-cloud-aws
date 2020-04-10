@@ -62,7 +62,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 		log.info("move-source:{},target:{}",source,target);
 		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
-			if(obj == null){
+			if(obj != null){
 				log.info("-move.target.is.exist:{}",target);
 				throw new AppLogicException(ErrCodeEnum.MOVE_TARGET_EXIST.getCode());
 			}
