@@ -304,50 +304,37 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
 		DeleteObjectsRequest deleteObjectsRequest = null;
-		if(DeleteStoreEnum.COVER.getCode().equals(t.getDeleteStore())){
-			if(StringUtils.isEmpty(t.getVersionId())){
-				//删除整个文件信息, 先查询文件的版本信息
-				List<S3ObjectBO> objectList = getVersions(t);
-
-				List<ObjectIdentifier> objects = Lists.newArrayList();
-				//查询文件的版本信息
-				if(!CollectionUtils.isEmpty(objectList)){
-					objectList.forEach(obj -> {
-						ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-								.key(obj.getFileName())
-								.versionId(obj.getVersionId()).build();
-						objects.add(objectIdentifier);
-					});
-				}
-				//删除列表
-				Delete delete = Delete.builder().objects(objects).build();
-				//逻辑删除
-				deleteObjectsRequest = DeleteObjectsRequest.builder()
-						.bucket(t.getBucketName())
-						.delete(delete)
-						.build();
-			}else{
-				//删除文件指定版本信息
-				ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-						.key(StringUtils.join(t.getPath() ,t.getFileName()))
-						.versionId(t.getVersionId()).build();
-				List<ObjectIdentifier> objects = new ArrayList<>();
-				objects.add(objectIdentifier);
-				Delete delete = Delete.builder().objects(objects).build();
-
-				//逻辑删除
-				deleteObjectsRequest = DeleteObjectsRequest.builder()
-						.bucket(t.getBucketName())
-						.delete(delete)
-						.build();
-			}
-		}else{
+		
+		//逻辑删除或者指定版本号
+		if(StringUtils.isNotBlank(t.getVersionId()) || DeleteStoreEnum.NOCOVER.getCode().equals(t.getDeleteStore())){
 			ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-					.key(StringUtils.join(t.getPath() ,t.getFileName())).build();
+				.key(StringUtils.join(t.getPath() ,t.getFileName()))
+				.versionId(t.getVersionId()).build();
 			List<ObjectIdentifier> objects = new ArrayList<>();
 			objects.add(objectIdentifier);
 			Delete delete = Delete.builder().objects(objects).build();
+			
+			//逻辑删除
+			deleteObjectsRequest = DeleteObjectsRequest.builder()
+				.bucket(t.getBucketName())
+				.delete(delete)
+				.build();
+		}else if(DeleteStoreEnum.COVER.getCode().equals(t.getDeleteStore())){
+			//删除整个文件信息, 先查询文件的版本信息
+			List<S3ObjectBO> objectList = getVersions(t);
 
+			List<ObjectIdentifier> objects = Lists.newArrayList();
+			//查询文件的版本信息
+			if(!CollectionUtils.isEmpty(objectList)){
+				objectList.forEach(obj -> {
+					ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
+							.key(obj.getFileName())
+							.versionId(obj.getVersionId()).build();
+					objects.add(objectIdentifier);
+				});
+			}
+			//删除列表
+			Delete delete = Delete.builder().objects(objects).build();
 			//逻辑删除
 			deleteObjectsRequest = DeleteObjectsRequest.builder()
 					.bucket(t.getBucketName())
