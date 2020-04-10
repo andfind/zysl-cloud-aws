@@ -18,8 +18,8 @@
       <artifactId>aspose-words</artifactId>
     </dependency>
     <dependency>
-      <groupId>aspose.slides</groupId>
-      <artifactId>slides</artifactId>
+      <groupId>com.aspose</groupId>
+      <artifactId>aspose-slides</artifactId>
     </dependency>
     <dependency>
       <groupId>software.amazon.awssdk</groupId>

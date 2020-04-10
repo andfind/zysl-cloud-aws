@@ -168,6 +168,7 @@
           </execution>
         </executions>
       </plugin>
+
        <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
@@ -178,6 +179,9 @@
               <classpathPrefix>libs/</classpathPrefix>
               <!--<mainClass>***.***.Application</mainClass>-->
             </manifest>
+            <manifestEntries>
+              <Class-Path>. libs/aspose-slides-19.3.jar libs/aspose-words-16.8.0.jar</Class-Path>
+            </manifestEntries>
           </archive>
           <excludes>
             <exclude>simsun.ttc</exclude>  <!-- 业务jar中过滤文件，在jar包外控制 -->

@@ -25,7 +25,7 @@ public class ObjectFormatUtils {
 			s3ObjectBO.setBucketName(filePath.substring(0,filePath.indexOf(":")));
 			s3ObjectBO.setPath(filePath.substring(filePath.indexOf(":")+2));
 			//s3的路径不需要/开头，但是需要/结尾
-			if(!s3ObjectBO.getPath().endsWith("/")){
+			if(!s3ObjectBO.getPath().endsWith("/") && s3ObjectBO.getPath().length() > 0){
 				s3ObjectBO.setPath(s3ObjectBO.getPath()+"/");
 			}
 		}

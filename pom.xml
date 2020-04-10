@@ -59,14 +59,14 @@
         <artifactId>aspose-words</artifactId>
         <version>16.8.0</version>
         <scope>system</scope>
-        <systemPath>D:/data/libs/aspose-words-16.8.0-jdk16.jar</systemPath>
+        <systemPath>D:/data/libs/aspose-words-16.8.0.jar</systemPath>
       </dependency>
       <dependency>
-        <groupId>aspose.slides</groupId>
-        <artifactId>slides</artifactId>
+        <groupId>com.aspose</groupId>
+        <artifactId>aspose-slides</artifactId>
         <version>19.3</version>
         <scope>system</scope>
-        <systemPath>D:/data/libs/aspose.slides-19.3.jar</systemPath>
+        <systemPath>D:/data/libs/aspose-slides-19.3.jar</systemPath>
       </dependency>
 
       <dependency>

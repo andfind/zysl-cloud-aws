@@ -3,18 +3,15 @@ package com.zysl.cloud.aws.biz.service.impl;
 import com.aspose.words.Document;
 import com.aspose.words.License;
 import com.aspose.words.SaveFormat;
-import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.IPDFService;
 import com.zysl.cloud.aws.biz.service.IWordService;
 import com.zysl.cloud.aws.config.BizConfig;
-import com.zysl.cloud.utils.FileUtils;
-import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -138,9 +135,13 @@ public class AposeWordServiceImpl implements IWordService {
         boolean result = false;
         try {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("license.xml");
+            if(is == null){
+                is = new FileInputStream(new File(bizConfig.getAwsConfigPath() + "/license.xml"));
+            }
             License aposeLic = new License();
             aposeLic.setLicense(is);
             result = true;
+            is.close();
         } catch (Exception e) {
             log.error("--apose校验异常：{}--", e);
             throw new AppLogicException(ErrCodeEnum.APOSE_SIGN_CHECK_ERROR.getCode());

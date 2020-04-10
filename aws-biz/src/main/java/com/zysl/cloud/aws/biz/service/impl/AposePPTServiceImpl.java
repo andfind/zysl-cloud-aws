@@ -5,19 +5,25 @@ import com.aspose.slides.Presentation;
 import com.aspose.slides.SaveFormat;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.IPPTService;
+import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Slf4j
 @Service
 public class AposePPTServiceImpl implements IPPTService {
-
+    
+    @Autowired
+    private BizConfig bizConfig;
     
     @Override
     public byte[] changePPTToPDF(byte[] inBuff){
@@ -63,9 +69,13 @@ public class AposePPTServiceImpl implements IPPTService {
         boolean result = false;
         try {
             InputStream is = this.getClass().getClassLoader().getResourceAsStream("license.xml");
+            if(is == null){
+                is = new FileInputStream(new File(bizConfig.getAwsConfigPath() + "/license.xml"));
+            }
             License aposeLic = new License();
             aposeLic.setLicense(is);
             result = true;
+            is.close();
         } catch (Exception e) {
             log.error("--apose校验异常：{}--", e);
             throw new AppLogicException(ErrCodeEnum.APOSE_SIGN_CHECK_ERROR.getCode());

@@ -37,8 +37,8 @@ public class BizConfig {
     @Value("${application.version}")
     public String curVer;
 
- 
-
+    @Value("${aws.config.path}")
+    public String awsConfigPath;
 
 
 }
