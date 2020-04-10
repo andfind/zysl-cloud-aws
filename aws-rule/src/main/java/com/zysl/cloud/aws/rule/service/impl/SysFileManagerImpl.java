@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.rule.service.impl;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
+import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
@@ -80,7 +81,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	public void delete(SysFileRequest request) {
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
-			
+			s3ObjectBO.setDeleteStore(DeleteStoreEnum.NOCOVER.getCode());
 			s3FileService.delete(s3ObjectBO);
 		}
 	}
