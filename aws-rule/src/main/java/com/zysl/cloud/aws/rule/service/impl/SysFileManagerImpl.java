@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.rule.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
@@ -62,9 +63,17 @@ public class SysFileManagerImpl implements ISysFileManager {
 		log.info("move-source:{},target:{}",source,target);
 		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
-			if(obj != null){
+			if(obj != null  ){
 				log.info("-move.target.is.exist:{}",target);
 				throw new AppLogicException(ErrCodeEnum.MOVE_TARGET_EXIST.getCode());
+			}
+
+		}
+		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
+			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(source));
+			if(obj == null){
+				log.info("-move.source.is.not.exist:{}",source);
+				throw new AppLogicException(ErrCodeEnum.MOVE_SOURCE_NOT_EXIST.getCode());
 			}
 			S3ObjectBO rst = (S3ObjectBO)obj;
 			if(rst.getContentLength() > webConfig.getCopyMaxFileSize() * 1024 * 1024L){
@@ -72,6 +81,9 @@ public class SysFileManagerImpl implements ISysFileManager {
 				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_SIZE_TOO_LONG.getCode());
 			}
 		}
+		
+		
+		
 		copyFile(source,target);
 		//删除源数据
 		delete(source);

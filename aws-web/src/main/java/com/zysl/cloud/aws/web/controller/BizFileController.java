@@ -182,7 +182,9 @@ public class BizFileController extends BaseController implements BizFileSrv {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
-			validator(baseResponse,downRequest, SysFileRequestV.class);
+			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
+				return baseResponse;
+			}
 			
 			log.info("shareFileDownload {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			
@@ -217,7 +219,9 @@ public class BizFileController extends BaseController implements BizFileSrv {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
-			validator(baseResponse,downRequest, SysFileRequestV.class);
+			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
+				return baseResponse;
+			}
 			log.info("videoFileDownload {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(downRequest);

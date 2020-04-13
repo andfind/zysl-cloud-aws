@@ -34,12 +34,12 @@ public class BizConstants {
         try{
             if(StringUtils.isNotBlank(webConfig.getMultipartDownloadMaxFileSize())){
                 String data = webConfig.getMultipartDownloadMaxFileSize();
-                if (data.endsWith("B")) {
-                    MULTI_DOWNLOAD_FILE_MAX_SIZE = Long.parseLong(data.substring(0,data.length()-1));
-                }else if (data.endsWith("KB")) {
+                if (data.endsWith("KB")) {
                     MULTI_DOWNLOAD_FILE_MAX_SIZE = Long.parseLong(data.substring(0,data.length()-2)) * 1024;
                 }else if(data.endsWith("MB")){
                     MULTI_DOWNLOAD_FILE_MAX_SIZE = Long.parseLong(data.substring(0,data.length()-2))  * 1024  * 1024;
+                }else if (data.endsWith("B")) {
+                    MULTI_DOWNLOAD_FILE_MAX_SIZE = Long.parseLong(data.substring(0,data.length()-1));
                 }
             }
         }catch (Exception e){

@@ -67,7 +67,7 @@ public class BaseController extends com.zysl.cloud.utils.common.BaseController {
 		}
 	}
 	
-	public<T extends IValidator,D extends Serializable> void validator(BaseResponse baseResponse,D req,Class<T>  tClass){
+	public<T extends IValidator,D extends Serializable> boolean validator(BaseResponse baseResponse,D req,Class<T>  tClass){
 		List<String> validate = new ArrayList<>();
 		T validator = BeanCopyUtil.copy(req, tClass);
 		BeanValidator beanValidator = SpringContextUtil.getBean("beanValidator", BeanValidator.class);
@@ -77,7 +77,9 @@ public class BaseController extends com.zysl.cloud.utils.common.BaseController {
 			baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
 			baseResponse.setMsg(RespCodeEnum.ILLEGAL_PARAMETER.getName());
 			baseResponse.setValidations(validate);
+			return Boolean.FALSE;
 		}
+		return Boolean.TRUE;
 	}
 	
 	public String createEsLogMsg(String bizStepName,String... msgs){

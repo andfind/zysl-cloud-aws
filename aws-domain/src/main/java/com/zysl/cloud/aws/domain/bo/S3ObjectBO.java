@@ -38,5 +38,48 @@ public class S3ObjectBO extends BaseFileBO implements Serializable {
 	List<ObjectInfoBO> folderList;
 	//子文件 List
 	List<ObjectInfoBO> fileList;
-
+	
+	@Override
+	public String toString() {
+		final StringBuffer sb = new StringBuffer("{\"S3ObjectBO\":{");
+		if (bucketName != null) {
+			sb.append("bucketName='").append(bucketName).append('\'');
+		}
+		if (lastModified != null) {
+			sb.append(", lastModified=").append(lastModified);
+		}
+		if (deleteStore != null) {
+			sb.append(", deleteStore=").append(deleteStore);
+		}
+		if (userId != null) {
+			sb.append(", userId='").append(userId).append('\'');
+		}
+		if (uploadId != null) {
+			sb.append(", uploadId='").append(uploadId).append('\'');
+		}
+		if (partNumber != null) {
+			sb.append(", partNumber=").append(partNumber);
+		}
+		if (eTag != null) {
+			sb.append(", eTag='").append(eTag).append('\'');
+		}
+		if (eTagList != null) {
+			sb.append(", eTagList=").append(eTagList);
+		}
+		if (tagFilename != null) {
+			sb.append(", tagFilename='").append(tagFilename).append('\'');
+		}
+		if (tagList != null) {
+			sb.append(", tagList=").append(tagList);
+		}
+		if (folderList != null) {
+			sb.append(", folderList=").append(folderList);
+		}
+		if (fileList != null) {
+			sb.append(", fileList=").append(fileList);
+		}
+		sb.append("},\"super-S3ObjectBO\":")
+			.append(super.toString()).append("}");
+		return sb.toString();
+	}
 }

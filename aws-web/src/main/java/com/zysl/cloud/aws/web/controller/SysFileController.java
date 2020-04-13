@@ -177,7 +177,9 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		reqDefaultUtils.setFileSystemDefault(downRequest);
 		
 		try{
-			validator(baseResponse,downRequest, SysFileRequestV.class);
+			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
+				return baseResponse;
+			}
 			log.info("download {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			
 			//临时权限校验
@@ -199,23 +201,26 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			//对Range数值做校验
 			Long[] byteLength = HttpUtils.checkRange(range);
 			
-			if(StringUtils.isBlank(range)){
+			if(!StringUtils.isBlank(range)){
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
 				if(fileDTO.getSize() > byteLength[1]){
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
 					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m必须分片下载.");
 					return baseResponse;
 				}
+				range = StringUtils.join("bytes=",byteLength[0],"-",byteLength[1]);
 			}
 			
-			range = StringUtils.join("bytes=",byteLength[0],"-",byteLength[1]);
 			//返回数据
 			byte[] bodys = sysFileManager.getFileBodys(downRequest,range);
 			
-			//设置响应头：Content-Range: bytes 0-2000/4932
-			byteLength[1] = byteLength[1] > fileDTO.getSize()-1 ? fileDTO.getSize()-1 : byteLength[1];
-			String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",fileDTO.getSize());
-			response.setHeader("Content-Range",rspRange);
+			
+			if(!StringUtils.isBlank(range)){
+				//设置响应头：Content-Range: bytes 0-2000/4932
+				byteLength[1] = byteLength[1] > fileDTO.getSize()-1 ? fileDTO.getSize()-1 : byteLength[1];
+				String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",fileDTO.getSize());
+				response.setHeader("Content-Range",rspRange);
+			}
 			
 			
 			//下载数据
@@ -226,6 +231,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			log.error("download.AppLogicException:",e);
 			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
+			baseResponse.setCode(e.getExceptionCode());
 			return baseResponse;
 		}catch (Exception e){
 			log.error("download.Exception:",e);

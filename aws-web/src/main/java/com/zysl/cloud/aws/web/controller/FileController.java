@@ -67,7 +67,7 @@ public class FileController extends BaseController implements FileSrv {
 
 	@GetMapping("/curVer")
 	public String getCurVersion(String name){
-		return bizConfig.getCurVer()+"->"+name;
+		return "1.1.5"+"->"+name;
 	}
 
 	@Override

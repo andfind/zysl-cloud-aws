@@ -2,8 +2,8 @@ package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.utils.validator.IValidator;
 import java.util.List;
+import java.util.regex.Pattern;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -12,19 +12,20 @@ import lombok.Setter;
 public class SysFileRequestV implements IValidator {
 
   @NotBlank
-  @Pattern(
-      regexp = "^[0-9a-zA-Z]+:[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#]+$",
-      message = "路径不能输入以下字符$*{}[]^|?&@=;:+,%`\">~<#")
   private String path;
 
   @NotBlank
-  @Pattern(
-      regexp = "[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#/\\\\]+$",
-      message = "文件名不能输入以下字符$*{}[]^|?&@=;:+,%`\">~<#")
   private String fileName;
 
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-	
+		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#]+$";
+		String fileNameP = "[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#/\\\\]+$";
+		if(!Pattern.matches(pathP, this.path)){
+      		errors.add("路径不能输入以下字符$*{}[]^|?&@=;:+,%`\\\">~<#");
+		}
+		if(!Pattern.matches(fileNameP, this.fileName)){
+      		errors.add("文件名不能输入以下字符$*{}[]^|?&@=;:+,%`\\\">~<#");
+		}
 	}
 }
