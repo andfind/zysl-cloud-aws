@@ -17,16 +17,13 @@ import org.hibernate.validator.constraints.pl.REGON;
 public class SysDirRequestV implements IValidator {
 
   @NotBlank
-//  @Pattern(
-//      regexp = "^[0-9a-zA-Z]+:[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#]+$",
-//      message = "路径不能输入以下字符$*{}[]^|?&@=;:+,%`\">~<#")
   private String path;
 
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#]+$";
+		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\*\\|\\?\\\\<>:\"]+$";
 		if(!java.util.regex.Pattern.matches(pathP, path)){
-			errors.add("路径不能输入以下字符$*{}[]^|?&@=;:+,%`\\\">~<#");
+			errors.add("路径不能输入以下字符\\ : \" | * ? < >");
 		}
 	}
 }

@@ -19,13 +19,13 @@ public class SysFileRequestV implements IValidator {
 
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#]+$";
-		String fileNameP = "[^\\s\\$\\*\\{\\}\\[\\]\\^\\|\\?&@=;:+,%`\">~<#/\\\\]+$";
+		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\*\\|\\?\\\\<>:\"]+$";
+		String fileNameP = "[^\\*\\|\\?\\\\<>:\"/]+$";
 		if(!Pattern.matches(pathP, this.path)){
-      		errors.add("路径不能输入以下字符$*{}[]^|?&@=;:+,%`\\\">~<#");
+			errors.add("路径不能输入以下字符\\ : \" | * ? < >");
 		}
 		if(!Pattern.matches(fileNameP, this.fileName)){
-      		errors.add("文件名不能输入以下字符$*{}[]^|?&@=;:+,%`\\\">~<#");
+			errors.add("文件名不能输入以下字符\\ : \" | * ? < > /");
 		}
 	}
 }
