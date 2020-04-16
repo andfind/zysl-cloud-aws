@@ -5,17 +5,17 @@
   <parent>
     <artifactId>zysl-cloud-aws</artifactId>
     <groupId>com.zysl.cloud</groupId>
-    <version>1.1.2-SNAPSHOT</version>
+    <version>1.1.3</version>
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>aws-rule</artifactId>
+  <artifactId>zysl-cloud-aws-rule</artifactId>
   <version>${aws.version}</version>
 
   <dependencies>
     <dependency>
       <groupId>com.zysl.cloud</groupId>
-      <artifactId>aws-biz</artifactId>
+      <artifactId>zysl-cloud-aws-biz</artifactId>
       <version>${aws.version}</version>
     </dependency>
 
@@ -25,6 +25,7 @@
   </dependencies>
 
   <build>
+    <finalName>zysl-cloud-aws-rule</finalName>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>

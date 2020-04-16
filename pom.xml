@@ -9,12 +9,12 @@
 
   <modelVersion>4.0.0</modelVersion>
   <artifactId>zysl-cloud-aws</artifactId>
-  <version>1.1.2-SNAPSHOT</version>
+  <version>1.1.3</version>
   <packaging>pom</packaging>
 
   <properties>
-    <aws.version>1.1.2-SNAPSHOT</aws.version>
-    <zysl-cloud.version>1.1.0-SNAPSHOT</zysl-cloud.version>
+    <aws.version>1.1.3</aws.version>
+    <zysl-cloud.version>1.1.1</zysl-cloud.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <java.version>1.8</java.version>
   </properties>
