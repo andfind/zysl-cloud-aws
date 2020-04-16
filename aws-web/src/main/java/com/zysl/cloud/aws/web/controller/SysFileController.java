@@ -266,11 +266,12 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	}
 	
 	@Override
-	public BaseResponse<String> multiUploadComplete(SysFileMultiCompleteRequest request) {
-		return ServiceProvider.call(request, SysFileMultiCompleteRequestV.class, String.class, req -> {
+	public BaseResponse<SysFileDTO> multiUploadComplete(SysFileMultiCompleteRequest request) {
+		return ServiceProvider.call(request, SysFileMultiCompleteRequestV.class, SysFileDTO.class, req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			sysFileManager.multiUploadComplete(request);
-			return RespCodeEnum.SUCCESS.getName();
+			
+			return sysFileManager.info(BeanCopyUtil.copy(request,SysFileRequest.class));
 		},"multiUploadComplete");
 	}
 	

@@ -152,7 +152,7 @@ public interface SysFileSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@PostMapping("/mc")
-	BaseResponse<String> multiUploadComplete(@RequestBody SysFileMultiCompleteRequest request);
+	BaseResponse<SysFileDTO> multiUploadComplete(@RequestBody SysFileMultiCompleteRequest request);
 	
 	/**
 	 * 分片上传-取消
