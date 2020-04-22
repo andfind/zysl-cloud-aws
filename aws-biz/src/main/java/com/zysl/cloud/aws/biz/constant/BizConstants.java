@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.biz.constant;
 
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.utils.StringUtils;
+import java.util.Date;
 import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,10 @@ public class BizConstants {
     @Autowired
     private WebConfig webConfig;
     
+    //租后更新bucket列表时间
+    public static Date LAST_UPDATE_BUCKET_LIST_DATE = new Date();
+    //更新bucketList间隔，单位秒
+    public static Long MAX_INTERVAL_UPDATE_BUCKET_LIST= 600L;
     
     //转pdf的水印标签位置
     public static final Integer PDF_MARK_IMG_WIDTH = 300;

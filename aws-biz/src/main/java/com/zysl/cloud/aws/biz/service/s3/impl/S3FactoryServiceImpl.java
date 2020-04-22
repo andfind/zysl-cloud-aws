@@ -258,7 +258,8 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	 * @param
 	 * @return void
 	 **/
-	private void amazonS3BucketInit(){
+	@Override
+	public void amazonS3BucketInit(){
 		log.info("=amazonS3BucketInit.start=");
 
 		ListBucketsRequest listBucketsRequest = ListBucketsRequest.builder().build();

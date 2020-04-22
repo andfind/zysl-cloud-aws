@@ -70,7 +70,7 @@ public class S3FolderServiceTest {
 
         String encodedUrl = null;
         try {
-            encodedUrl = URLEncoder.encode("test-yy06" + "/" + "测试1/", StandardCharsets.UTF_8.toString());
+            encodedUrl = URLEncoder.encode("1+ ,{}[]#.txt", StandardCharsets.UTF_8.toString());
         } catch (UnsupportedEncodingException e) {
             System.out.println("URL could not be encoded: " + e.getMessage());
         }

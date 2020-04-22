@@ -5,7 +5,9 @@ import com.zysl.cloud.aws.api.req.CreateBucketRequest;
 import com.zysl.cloud.aws.api.req.GetBucketsRequest;
 import com.zysl.cloud.aws.api.req.SetFileVersionRequest;
 import com.zysl.cloud.aws.api.srv.S3BucketSrv;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
+import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.web.validator.CreateBucketRequestV;
 import com.zysl.cloud.aws.web.validator.GetBucketsRequestV;
 import com.zysl.cloud.aws.web.validator.SetFileVersionRequestV;
@@ -13,8 +15,11 @@ import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
+import java.util.Date;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -25,6 +30,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class S3BucketController extends BaseController implements S3BucketSrv {
 	@Autowired
 	private IS3BucketService s3BucketService;
+	@Autowired
+	private IS3FactoryService s3FactoryService;
 
 
 	@Override
@@ -55,6 +62,14 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 	@Override
 	public BasePaginationResponse<String> getBuckets(GetBucketsRequest request){
 		return ServiceProvider.callList(request, null, String.class,(req,myPage)->{
+			//最后一次更新bucket时间差
+			long dis = (System.currentTimeMillis() - BizConstants.LAST_UPDATE_BUCKET_LIST_DATE.getTime())/1000L;
+			//超过10分钟
+			if(dis > BizConstants.MAX_INTERVAL_UPDATE_BUCKET_LIST){
+				BizConstants.LAST_UPDATE_BUCKET_LIST_DATE = new Date();
+				s3FactoryService.amazonS3BucketInit();
+			}
+			
 			return s3BucketService.getS3Buckets(request.getServerNo());
 		});
 	}

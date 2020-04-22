@@ -30,9 +30,11 @@ public class HttpUtils {
 	 * @return java.lang.String
 	 **/
 	public static Long[] checkRange(String range){
+		long max = BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE -1;
+		log.info("range:{},max:{}",range,max);
 		Long[] byteLength = new Long[2];
 		byteLength[0] = 0L;
-		byteLength[1] = BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE -1;
+		byteLength[1] = max;
 		if(StringUtils.isBlank(range)){
 			return byteLength;
 		}
@@ -49,12 +51,13 @@ public class HttpUtils {
 			if(StringUtils.isNotBlank(ranges[0])){
 				end = Long.parseLong(ranges[1]);
 			}
-			if(end - start >= BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE - 1){
-				end = start + BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE - 1;
+			if(end - start >= max){
+				end = start + max;
 			}
 			
 			byteLength[0] = start;
 			byteLength[1] = end;
+			log.info("start:{},end:{}",start,end);
 			return byteLength;
 		}catch (Exception e){
 			log.error("multi.download.range.format.error:{},",range,e);
@@ -118,4 +121,5 @@ public class HttpUtils {
 			throw new AppLogicException("获取文件流异常");
 		}
 	}
+	
 }

@@ -98,6 +98,9 @@ public class SysDirManagerImpl implements ISysDirManager {
 		SysDirRequest targetDir = BeanCopyUtil.copy(target,SysDirRequest.class);
 		SysFileRequest sourceFile = BeanCopyUtil.copy(source,SysFileRequest.class);
 		SysFileRequest targetFile = BeanCopyUtil.copy(target,SysFileRequest.class);
+		
+		mkdir(targetDir);
+		
 		for(SysFileDTO dto:list){
 			if(FileDirEnum.DIR.getCode().intValue() == dto.getIsFile()){
 				sourceDir.setPath(dto.getPath());

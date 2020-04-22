@@ -88,7 +88,16 @@ public interface IS3FactoryService {
 	 * @return
 	 */
 	boolean judgeBucket(String bucket1, String bucket2);
-
+	
+	/**
+	 * bucket列表查询初始化到map
+	 * @description
+	 * @author miaomingming
+	 * @date 13:48 2020/4/22
+	 * @param
+	 * @return void
+	 **/
+	void amazonS3BucketInit();
 	/**
 	 * 统一调用s3方法
 	 * @description

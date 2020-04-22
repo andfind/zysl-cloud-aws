@@ -32,9 +32,12 @@ public class SysFileRenameRequestV implements IValidator {
 		if(!Pattern.matches(pathP, this.target.getPath())){
 			errors.add("路径不能输入以下字符\\ : \" | * ? < >");
 		}
-		if(!Pattern.matches(fileNameP, this.target.getFileName())){
-			errors.add("文件名不能输入以下字符\\ : \" | * ? < > /");
+		if(StringUtils.isNotBlank(this.target.getFileName())){
+			if(!Pattern.matches(fileNameP, this.target.getFileName())){
+				errors.add("文件名不能输入以下字符\\ : \" | * ? < > /");
+			}
 		}
+		
 	}
 	
 }

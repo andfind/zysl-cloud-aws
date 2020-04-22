@@ -201,7 +201,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			//对Range数值做校验
 			Long[] byteLength = HttpUtils.checkRange(range);
 			
-			if(!StringUtils.isBlank(range)){
+			if(StringUtils.isBlank(range)){
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
 				if(fileDTO.getSize() > byteLength[1]){
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
