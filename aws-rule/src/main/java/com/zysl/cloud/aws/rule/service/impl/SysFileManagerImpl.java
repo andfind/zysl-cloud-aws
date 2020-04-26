@@ -108,6 +108,8 @@ public class SysFileManagerImpl implements ISysFileManager {
 			if(obj != null){
 				S3ObjectBO rst = (S3ObjectBO)obj;
 				dto = new SysFileDTO();
+				dto.setType(request.getType());
+				dto.setServerNo(request.getServerNo());
 				dto.setFileName(s3ObjectBO.getFileName());
 				dto.setIsFile(FileDirEnum.FILE.getCode());
 				dto.setLastModified(rst.getLastModified());

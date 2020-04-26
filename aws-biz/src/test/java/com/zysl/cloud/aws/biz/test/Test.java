@@ -10,7 +10,6 @@ public class Test {
 		long start = System.currentTimeMillis();
 		System.out.println("---start---");
 		Test test = new Test();
-		test.testUrlEncode();
 		
 		System.out.println("---end---used:" + (System.currentTimeMillis() - start));
 	}

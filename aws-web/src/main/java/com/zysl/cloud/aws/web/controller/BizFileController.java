@@ -115,6 +115,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			if(!CollectionUtils.isEmpty(request.getPaths())){
 				for(SysDirRequest path:request.getPaths()){
 					SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
+					reqDefaultUtils.setFileSystemDefault(fileRequest);
 					fileRequest.setFileName(request.getFileName());
 					fileRequest.setVersionId(request.getVersionId());
 					if(sysFileManager.info(fileRequest) != null){
@@ -130,7 +131,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	@Override
 	public	BaseResponse<SysFileDTO> shareFile(@RequestBody BizFileShareRequest request){
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
-			
+			reqDefaultUtils.setFileSystemDefault(request);
 			//复制源文件信息
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(request);
 			
@@ -141,15 +142,15 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			target.setBucketName(bizConfig.shareFileBucket);
 			target.setBodys(s3ObjectBO.getBodys());
 			
-			//获取标签信息
+			//生成标签信息
 			List<TagBO> tagList = Lists.newArrayList();
-			if(!StringUtils.isEmpty(req.getMaxDownloadAmout()+"")){
+			if(req.getMaxDownloadAmout() != null){
 				TagBO tag = new TagBO();
 				tag.setKey(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode());
 				tag.setValue(String.valueOf(req.getMaxDownloadAmout()));
 				tagList.add(tag);
 			}
-			if(!StringUtils.isEmpty(req.getMaxHours()+"")){
+			if(req.getMaxHours() != null){
 				TagBO tag = new TagBO();
 				tag.setKey(S3TagKeyEnum.TAG_VALIDITY.getCode());
 				String date = DateUtils.getDateToString(DateUtils.addDateHour(new Date(), req.getMaxHours()));
@@ -159,7 +160,6 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			target.setTagList(tagList);
 			//重新上传文件
 			S3ObjectBO rst = (S3ObjectBO)s3FileService.create(target);
-			
 			
 			SysFileRequest fileRequest = new SysFileRequest();
 			fileRequest.setPath(rst.getBucketName() + ":/" + rst.getPath());
