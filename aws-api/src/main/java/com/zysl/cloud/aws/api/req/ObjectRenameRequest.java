@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import io.swagger.annotations.ApiModel;
 import lombok.Getter;
@@ -27,5 +28,9 @@ public class ObjectRenameRequest extends BaseReqeust {
                 ", sourcekey='" + sourcekey + '\'' +
                 ", destKey='" + destKey + '\'' +
                 '}';
+    }
+    @Override
+    public String getEsLogMsg() {
+        return StringUtils.join(bucketName,":",sourcekey);
     }
 }

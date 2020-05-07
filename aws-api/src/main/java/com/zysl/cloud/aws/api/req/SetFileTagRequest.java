@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.api.req;
 
 import com.zysl.cloud.aws.api.dto.KeyVersionDTO;
 import com.zysl.cloud.aws.api.dto.TagDTO;
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
@@ -10,6 +11,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import org.springframework.util.CollectionUtils;
 
 /**
  * 修改文件tag入参对象
@@ -36,5 +38,16 @@ public class SetFileTagRequest extends BaseReqeust {
                 ", keyList=" + keyList +
                 ", tageList=" + tageList +
                 '}';
+    }
+    
+    @Override
+    public String getEsLogMsg() {
+        StringBuffer stringBuffer = new StringBuffer();
+        if(!CollectionUtils.isEmpty(keyList)){
+            for(KeyVersionDTO dto:keyList){
+                stringBuffer.append(dto.getKey()).append(";");
+            }
+        }
+        return StringUtils.join(bucket,":",stringBuffer.toString());
     }
 }

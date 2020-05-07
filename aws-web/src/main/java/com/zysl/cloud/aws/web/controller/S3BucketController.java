@@ -39,7 +39,7 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 		return ServiceProvider.call(request, CreateBucketRequestV.class, String.class,req->{
 			s3BucketService.createBucket(req.getBucketName(),req.getServerNo());
 			return request.getBucketName();
-		});
+		},"createBucket");
 	}
 
 //	@Override
@@ -56,7 +56,7 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 		return ServiceProvider.call(request, SetFileVersionRequestV.class, String.class,req->{
 			s3BucketService.setBucketVersion(request);
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"enableBucketVersion");
 	}
 
 	@Override
@@ -71,6 +71,6 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 			}
 			
 			return s3BucketService.getS3Buckets(request.getServerNo());
-		});
+		},"getBuckets");
 	}
 }

@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BasePaginationRequest;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
@@ -38,5 +39,9 @@ public class QueryObjectsRequest extends BasePaginationRequest {
                 ", keyType=" + keyType +
                 ", userId='" + userId + '\'' +
                 '}';
+    }
+    @Override
+    public String getEsLogMsg() {
+        return StringUtils.join(bucketName,":",key);
     }
 }

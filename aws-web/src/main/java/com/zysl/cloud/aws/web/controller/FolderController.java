@@ -67,7 +67,7 @@ public class FolderController extends BaseController implements FolderSrv {
 
             folderService.create(t);
             return RespCodeEnum.SUCCESS.getName();
-        });
+        },"createFolder");
     }
 
     @Override
@@ -85,7 +85,7 @@ public class FolderController extends BaseController implements FolderSrv {
             folderService.delete(t);
 
             return RespCodeEnum.SUCCESS.getName();
-        });
+        },"deleteFolder");
     }
 
     @Override
@@ -125,7 +125,7 @@ public class FolderController extends BaseController implements FolderSrv {
             }else {
                 return BeanCopyUtil.copyList(objectList, ObjectInfoDTO.class);
             }
-        });
+        },"getS3Objects");
     }
 
     //判断是否有权限
@@ -167,7 +167,7 @@ public class FolderController extends BaseController implements FolderSrv {
 
             folderService.copy(src, dest);
             return RespCodeEnum.SUCCESS.getName();
-        });
+        },"copyFolder");
     }
 
     @Override
@@ -199,7 +199,7 @@ public class FolderController extends BaseController implements FolderSrv {
             }
 
             return RespCodeEnum.SUCCESS.getName();
-        });
+        },"moveFolder");
     }
 
     @Override
@@ -225,7 +225,7 @@ public class FolderController extends BaseController implements FolderSrv {
             folderDTO.setTagFileName(s3ObjectBO.getTagFilename());
 
             return folderDTO;
-        });
+        },"folderRename");
     }
 
 }

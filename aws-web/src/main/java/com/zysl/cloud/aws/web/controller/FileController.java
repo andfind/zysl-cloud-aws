@@ -64,7 +64,12 @@ public class FileController extends BaseController implements FileSrv {
 	private WebConfig webConfig;
 	@Autowired
 	private DataAuthUtils dataAuthUtils;
-
+	
+	private static final String ESLOG_START_FORMAT_STRING = "%s %s [ES_LOG_START]";
+	private static final String ESLOG_ERROR_FORMAT_STRING = "%s %s %s [ES_LOG_EXCEPTION]";
+	private static final String ESLOG_END_FORMAT_STRING = "%s %s [ES_LOG_SUCCESS]";
+	
+	
 	@GetMapping("/curVer")
 	public String getCurVersion(String name){
 		
@@ -113,20 +118,20 @@ public class FileController extends BaseController implements FileSrv {
 			uploadFieDTO.setFileName(StringUtils.join(s3ObjectBO.getPath(), s3ObjectBO.getFileName()));
 			uploadFieDTO.setVersionId(s3ObjectBO.getVersionId());
 			return uploadFieDTO;
-		});
+		},"upload");
 	}
 
 	@Override
 	public BaseResponse<UploadFieDTO> uploadFile(HttpServletRequest request) {
 		BaseResponse<UploadFieDTO> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
-		
 		try{
 			S3ObjectBO s3Object = new S3ObjectBO();
 			s3Object.setBucketName(request.getParameter("bucketName"));
 			setPathAndFileName(s3Object,request.getParameter("fileId"));
 			
 			
+			log.info(String.format(ESLOG_START_FORMAT_STRING, "upload",StringUtils.join(s3Object.getBucketName(),":",request.getParameter("fileId"))));
 			//数据权限校验
 			fileService.checkDataOpAuth(s3Object, OPAuthTypeEnum.READ.getCode());
 			
@@ -160,11 +165,15 @@ public class FileController extends BaseController implements FileSrv {
 			
 			baseResponse.setModel(uploadFieDTO);
 		}catch (AppLogicException e){
+			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
 			baseResponse.setCode(e.getExceptionCode());
 			baseResponse.setMsg(e.getMessage());
 		}catch (Exception e){
+			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
 			baseResponse.setMsg(e.getMessage());
 		}
+		
+		log.info(String.format(ESLOG_END_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
 		return baseResponse;
 	}
 
@@ -199,7 +208,7 @@ public class FileController extends BaseController implements FileSrv {
 				HttpUtils.downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
 				return null;
 			}
-		});
+		},"download");
 	}
 	
 	//临时数据校验，是否对象拥有者
@@ -274,7 +283,7 @@ public class FileController extends BaseController implements FileSrv {
 			t.setTagList(newTagList);
 			fileService.modify(t);
 			return null;
-		});
+		},"shareDownloadFile");
 	}
 
 	@Override
@@ -290,7 +299,7 @@ public class FileController extends BaseController implements FileSrv {
 
             fileService.delete(t);
             return RespCodeEnum.SUCCESS.getName();
-        });
+        },"deleteFile");
 	}
 
     @Override
@@ -314,7 +323,7 @@ public class FileController extends BaseController implements FileSrv {
 			//获取标签中的文件名称
 			fileInfoDTO.setFileName(fileService.getTagValue(object.getTagList(), S3TagKeyEnum.FILE_NAME.getCode()));
             return fileInfoDTO;
-        });
+        },"getFileInfo");
     }
 
     @Override
@@ -327,6 +336,7 @@ public class FileController extends BaseController implements FileSrv {
 			t.setBucketName(request.getBucketName());
 			setPathAndFileName(t, request.getFileId());
 			t.setVersionId(request.getVersionId());
+			log.info(String.format(ESLOG_START_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
 			
 			
 			//数据权限校验
@@ -352,11 +362,14 @@ public class FileController extends BaseController implements FileSrv {
 				}
 				out = null;
 			}
+			log.info(String.format(ESLOG_END_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
 			return ;
 		}catch (AppLogicException e){
+			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
 			baseResponse.setCode(e.getExceptionCode());
 			baseResponse.setMsg(e.getMessage());
 		}catch (Exception e){
+			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
 			baseResponse.setMsg(e.getMessage());
 		}
     }
@@ -386,7 +399,7 @@ public class FileController extends BaseController implements FileSrv {
 			}
 
             return versionList;
-        });
+        },"getFileVersion");
 	}
 
 	@Override
@@ -416,7 +429,7 @@ public class FileController extends BaseController implements FileSrv {
    
 
 			
-		});
+		},"getFileSize");
 	}
 
     @Override
@@ -437,38 +450,42 @@ public class FileController extends BaseController implements FileSrv {
                 fileService.modify(t);
             }
             return RespCodeEnum.SUCCESS.getName();
-        });
+        },"setObjectTag");
     }
 
     @Override
 	public BaseResponse<String> copyFile(CopyObjectsRequest request) {
-		return ServiceProvider.call(request, CopyObjectsRequestV.class, String.class, req -> {
-			//复制源文件信息
-			S3ObjectBO src = new S3ObjectBO();
-			src.setBucketName(req.getSourceBucket());
-			setPathAndFileName(src,req.getSourceKey());
+    return ServiceProvider.call(
+        request,
+        CopyObjectsRequestV.class,
+        String.class,
+        req -> {
+          // 复制源文件信息
+          S3ObjectBO src = new S3ObjectBO();
+          src.setBucketName(req.getSourceBucket());
+          setPathAndFileName(src, req.getSourceKey());
 
-			//复制后的目标文件信息
-			S3ObjectBO dest = new S3ObjectBO();
-			dest.setBucketName(req.getDestBucket());
-			setPathAndFileName(dest,req.getDestKey());
+          // 复制后的目标文件信息
+          S3ObjectBO dest = new S3ObjectBO();
+          dest.setBucketName(req.getDestBucket());
+          setPathAndFileName(dest, req.getDestKey());
 
-			//设置目标文件标签
-			List<TagBO> list = Lists.newArrayList();
-			TagBO tagBO = new TagBO();
-			tagBO.setKey(S3TagKeyEnum.FILE_NAME.getCode());
-			tagBO.setValue(dest.getFileName());
-			list.add(tagBO);
-			dest.setTagList(fileService.addTags(src,list));
+          // 设置目标文件标签
+          List<TagBO> list = Lists.newArrayList();
+          TagBO tagBO = new TagBO();
+          tagBO.setKey(S3TagKeyEnum.FILE_NAME.getCode());
+          tagBO.setValue(dest.getFileName());
+          list.add(tagBO);
+          dest.setTagList(fileService.addTags(src, list));
 
-			//数据权限校验
-			fileService.checkDataOpAuth(src, OPAuthTypeEnum.READ.getCode());
-			//数据权限校验
-			fileService.checkDataOpAuth(dest, OPAuthTypeEnum.WRITE.getCode());
+          // 数据权限校验
+          fileService.checkDataOpAuth(src, OPAuthTypeEnum.READ.getCode());
+          // 数据权限校验
+          fileService.checkDataOpAuth(dest, OPAuthTypeEnum.WRITE.getCode());
 
-			fileService.copy(src, dest);
-			return RespCodeEnum.SUCCESS.getName();
-		});
+          fileService.copy(src, dest);
+          return RespCodeEnum.SUCCESS.getName();
+        },"copyFile");
 	}
 
 	@Override
@@ -493,7 +510,7 @@ public class FileController extends BaseController implements FileSrv {
 
 			fileService.move(src, dest);
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"moveFile");
 	}
 
 	@Override
@@ -537,7 +554,7 @@ public class FileController extends BaseController implements FileSrv {
 			uploadFieDTO.setVersionId(shareBO.getVersionId());
 
 			return uploadFieDTO;
-		});
+		},"shareFile");
 	}
 
 
@@ -567,7 +584,7 @@ public class FileController extends BaseController implements FileSrv {
 				bucketService.putBucketTag(src);
 			}
 			return RespCodeEnum.SUCCESS.getName();
-		});
+		},"updateDataAuth");
 	}
 
 	@Override
@@ -596,7 +613,7 @@ public class FileController extends BaseController implements FileSrv {
 			uploadFieDTO.setVersionId(s3ObjectBO.getVersionId());
 			uploadFieDTO.setTagFileName(s3ObjectBO.getTagFilename());
 			return uploadFieDTO;
-		});
+		},"fileRename");
 	}
 
 
@@ -625,7 +642,7 @@ public class FileController extends BaseController implements FileSrv {
 			}
 
 			return Boolean.FALSE;
-		});
+		},"isExist");
 	}
 	
 	@ResponseBody

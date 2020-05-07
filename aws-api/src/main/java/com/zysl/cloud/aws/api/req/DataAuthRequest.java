@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.api.req;
 
 import com.zysl.cloud.aws.api.dto.OPAuthDTO;
 import com.zysl.cloud.aws.api.dto.TagDTO;
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -34,5 +35,9 @@ public class DataAuthRequest extends GetFileRequest {
 		sb.append("},\"super-DataAuthRequest\":")
 			.append(super.toString()).append("}");
 		return sb.toString();
+	}
+	@Override
+	public String getEsLogMsg() {
+		return StringUtils.join(this.getBucketName(),":",this.getFileName());
 	}
 }

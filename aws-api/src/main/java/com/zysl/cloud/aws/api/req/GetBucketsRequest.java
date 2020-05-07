@@ -22,4 +22,8 @@ public class GetBucketsRequest extends BasePaginationRequest {
 				   "serverNo='" + serverNo + '\'' +
 				   '}';
 	}
+	@Override
+	public String getEsLogMsg() {
+		return serverNo;
+	}
 }

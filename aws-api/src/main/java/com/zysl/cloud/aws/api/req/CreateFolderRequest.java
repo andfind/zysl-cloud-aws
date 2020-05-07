@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.req;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
@@ -33,5 +34,10 @@ public class CreateFolderRequest extends BaseReqeust {
 				", bucketName='" + bucketName + '\'' +
 				", tagFolderName='" + tagFolderName + '\'' +
 				'}';
+	}
+	
+	@Override
+	public String getEsLogMsg() {
+		return StringUtils.join(bucketName,":",folderName);
 	}
 }

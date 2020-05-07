@@ -38,4 +38,9 @@ public class SetFileVersionRequest extends BaseReqeust {
                    ", status='" + status + '\'' +
                    '}';
     }
+    
+    @Override
+    public String getEsLogMsg() {
+        return bucketName;
+    }
 }
