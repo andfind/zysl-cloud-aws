@@ -16,6 +16,7 @@
         </filter>-->
         <encoder>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [${app_name}] [%-20.20thread] [%-5level] [%-40.40logger{40}:%-4.4line] - %msg%n </pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
     <!--控台输出,提交给es-->
@@ -29,6 +30,7 @@
         </filter>
         <encoder>
             <pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} %-5level ${business_type} ${app_name} %msg%n</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
 
@@ -46,9 +48,10 @@
             <maxHistory>60</maxHistory>
             <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <encoder>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [${app_name}] [%-20.20thread] [%-5level] [%-40.40logger{40}:%-4.4line] - %msg%n </pattern>
-        </layout>
+            <charset>UTF-8</charset>
+        </encoder>
     </appender>
 
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -65,9 +68,10 @@
             <maxHistory>60</maxHistory>
             <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <encoder>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [${app_name}] [%-20.20thread] [%-5level] [%-40.40logger{40}:%-4.4line] - %msg%n </pattern>
-        </layout>
+            <charset>UTF-8</charset>
+        </encoder>
     </appender>
 
 
