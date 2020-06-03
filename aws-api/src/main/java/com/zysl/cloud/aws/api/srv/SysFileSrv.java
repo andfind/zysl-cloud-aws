@@ -4,6 +4,7 @@ import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileArrayRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
@@ -83,6 +84,17 @@ public interface SysFileSrv {
 	 **/
 	@PostMapping("/delete")
 	BaseResponse<String> delete(@RequestBody SysFileRequest request);
+	
+	/**
+	 * 批量删除
+	 * @description
+	 * @author miaomingming
+	 * @date 18:35 2020/6/2
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@PostMapping("/deleteList")
+	BaseResponse<String> deleteList(@RequestBody SysFileArrayRequest request);
 	
 	/**
 	 * 文件信息查询

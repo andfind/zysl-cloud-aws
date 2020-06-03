@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.web.validator;
 
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import com.zysl.cloud.utils.validator.IValidator;
@@ -22,7 +23,7 @@ public class SysDirRequestV implements IValidator {
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
 		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\*\\|\\?\\\\<>:\"]+$";
-		if(!java.util.regex.Pattern.matches(pathP, path)){
+		if(StringUtils.isNotEmpty(path) && !java.util.regex.Pattern.matches(pathP, path)){
 			errors.add("路径不能输入以下字符\\ : \" | * ? < >");
 		}
 	}

@@ -1,9 +1,11 @@
 package com.zysl.cloud.aws.web.controller;
 
+import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileArrayRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.SysFileListRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
@@ -27,6 +29,7 @@ import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
 import com.zysl.cloud.aws.web.validator.SysDirListRequestV;
 import com.zysl.cloud.aws.web.validator.SysDirRequestV;
+import com.zysl.cloud.aws.web.validator.SysFileArrayRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileMultiCompleteRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileMultiRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRenameRequestV;
@@ -144,6 +147,25 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		},"delete");
 	}
 	
+	
+	@Override
+	public BaseResponse<String> deleteList(@RequestBody SysFileArrayRequest request){
+		return ServiceProvider.call(request, SysFileArrayRequestV.class, String.class, req -> {
+			
+			for(SysFileRequest sysFileRequest:request.getSysFileList()){
+				reqDefaultUtils.setFileSystemDefault(sysFileRequest);
+				if(!StringUtils.isBlank(sysFileRequest.getFileName())){
+					sysFileManager.delete(sysFileRequest);
+				}else{
+					SysDirRequest source = BeanCopyUtil.copy(sysFileRequest,SysDirRequest.class);
+					sysDirManager.delete(source);
+				}
+			}
+			
+			return RespCodeEnum.SUCCESS.getName();
+		},"deleteList");
+	}
+	
 	@Override
 	public BaseResponse<SysFileDTO> info(SysFileRequest request) {
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
@@ -198,14 +220,17 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			
 			//从头信息取Range:bytes=0-1000
 			String range = request.getHeader("Range");
+			log.info("download {} Range={}",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),range);
 			//对Range数值做校验
 			Long[] byteLength = HttpUtils.checkRange(range);
 			
 			if(StringUtils.isBlank(range)){
+				log.info("{}--range is null",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
 				if(fileDTO.getSize() > byteLength[1]){
+					log.info("fileSize:{},range:{},file:{}",fileDTO.getSize(),range,StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
-					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m必须分片下载.");
+					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m只能分片下载.");
 					return baseResponse;
 				}
 				range = StringUtils.join("bytes=",byteLength[0],"-",byteLength[1]);
@@ -225,6 +250,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			
 			//下载数据
 			HttpUtils.downloadFileByte(request,response,fileDTO.getFileName(),bodys);
+			log.info("baseResponse:{}", JSON.toJSONString(baseResponse));
 			log.info("download {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 			return null;
 		}catch (AppLogicException e){

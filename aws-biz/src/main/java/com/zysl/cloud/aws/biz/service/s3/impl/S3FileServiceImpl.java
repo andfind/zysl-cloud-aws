@@ -18,6 +18,7 @@ import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
+import javax.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -533,7 +534,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
 			
 			byte[] bytes = objectAsBytes.asByteArray();
-			log.info("--asByteArray结束时间--:{}", System.currentTimeMillis());
+			log.info("--bytes.length:{}", bytes.length);
 			if(DateUtils.doCompareDate(date1, date2) < 0){
 				//进行解码
 				BASE64Decoder decoder = new BASE64Decoder();
@@ -708,4 +709,37 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 		return null;
 	}
+	
+	
+	/*public void testCleanAllBucket(){
+		log.info("--CleanAllBucket--start--");
+		testCleanBucket("user01");
+		testCleanBucket("genesys07");
+		log.info("--CleanAllBucket--end--");
+	}
+	
+	public void testCleanBucket(String bucket){
+		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucket);
+		
+		ListObjectVersionsRequest listObjectVersionsRequest = ListObjectVersionsRequest.builder().bucket(bucket).build();
+		ListObjectVersionsResponse response = s3.listObjectVersions(listObjectVersionsRequest);
+		
+		response.versions().forEach(objectVersion -> {
+			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder().bucket(bucket)
+				.key(objectVersion.key())
+				.versionId(objectVersion.versionId())
+				.build();
+			s3.deleteObject(deleteObjectRequest);
+		});
+		
+		
+		response.deleteMarkers().forEach(deleteMarkerEntry -> {
+			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
+				.bucket(bucket)
+				.key(deleteMarkerEntry.key())
+				.versionId(deleteMarkerEntry.versionId())
+				.build();
+			s3.deleteObject(deleteObjectRequest);
+		});
+	}*/
 }

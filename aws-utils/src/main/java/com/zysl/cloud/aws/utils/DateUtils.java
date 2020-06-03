@@ -81,7 +81,6 @@ public class DateUtils {
 	 */
 	public static int doCompareDate(Date date1, Date date2) {
 		int num = date1.compareTo(date2);
-		System.out.println(num);
 		return num;
 	}
 
