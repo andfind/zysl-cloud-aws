@@ -7,13 +7,13 @@ public class Test {
 
   public static void  main(String[] args){
     Test test = new Test();
-    S3ObjectBO bo = new S3ObjectBO();
-    bo.setPath("111");
-
-    S3ObjectBO bo1 = bo;
-    bo1.setPath("222");
-
-    System.out.println(bo1.getPath());
-    System.out.println(bo.getPath());
+    String copySourceUrl = "temp-001/mmm/a/1.txt";
+    try{
+  
+      copySourceUrl = java.net.URLEncoder.encode(copySourceUrl, "utf-8");
+    }catch (Exception e){
+    
+    }
+    System.out.println(copySourceUrl);
   }
 }

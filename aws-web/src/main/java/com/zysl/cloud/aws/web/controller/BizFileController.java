@@ -98,11 +98,11 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	public BaseResponse<Boolean> isExist(@RequestBody SysFileExistRequest request){
 		return ServiceProvider.call(request, SysFileExistRequestV.class, Boolean.class, req -> {
 			
+			List<SysDirRequest> paths = new ArrayList<>();
 			//增加默认path
 			if(CollectionUtils.isEmpty(request.getPaths())){
-				List<SysDirRequest> paths = new ArrayList<>();
 				List<String> buckets = webConfig.getAnnouncementBuckets();
-				if(CollectionUtils.isEmpty(buckets)){
+				if(!CollectionUtils.isEmpty(buckets)){
 					for(String key:buckets){
 						SysDirRequest dirRequest = new SysDirRequest();
 						reqDefaultUtils.setFileSystemDefault(dirRequest);
@@ -110,17 +110,18 @@ public class BizFileController extends BaseController implements BizFileSrv {
 						paths.add(dirRequest);
 					}
 				}
+			}else{
+				paths = request.getPaths();
 			}
 			
-			if(!CollectionUtils.isEmpty(request.getPaths())){
-				for(SysDirRequest path:request.getPaths()){
-					SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
-					reqDefaultUtils.setFileSystemDefault(fileRequest);
-					fileRequest.setFileName(request.getFileName());
-					fileRequest.setVersionId(request.getVersionId());
-					if(sysFileManager.info(fileRequest) != null){
-						return Boolean.TRUE;
-					}
+			
+			for(SysDirRequest path:paths){
+				SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
+				reqDefaultUtils.setFileSystemDefault(fileRequest);
+				fileRequest.setFileName(request.getFileName());
+				fileRequest.setVersionId(request.getVersionId());
+				if(sysFileManager.info(fileRequest) != null){
+					return Boolean.TRUE;
 				}
 			}
 			
