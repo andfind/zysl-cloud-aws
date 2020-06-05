@@ -1,6 +1,8 @@
 package com.zysl.cloud.aws.web.controller;
 
 
+import com.zysl.cloud.aws.api.dto.FileInfoDTO;
+import com.zysl.cloud.aws.api.req.BucketFileRequest;
 import com.zysl.cloud.aws.api.req.CreateBucketRequest;
 import com.zysl.cloud.aws.api.req.GetBucketsRequest;
 import com.zysl.cloud.aws.api.req.SetFileVersionRequest;
@@ -9,17 +11,14 @@ import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.web.validator.CreateBucketRequestV;
-import com.zysl.cloud.aws.web.validator.GetBucketsRequestV;
 import com.zysl.cloud.aws.web.validator.SetFileVersionRequestV;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
 import java.util.Date;
-import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,14 +41,6 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 		},"createBucket");
 	}
 
-//	@Override
-//	BasePaginationResponse<FileInfoDTO> getFilesByBucket(@RequestBody BucketFileRequest request){
-//		return ServiceProvider.callList(request, CreateBucketRequestV.class, FileInfoDTO.class,req->{
-//			s3BucketService.createBucket(req.getBucketName(),req.getServerNo());
-//			return request.getBucketName();
-//		});
-//
-//	}
 
 	@Override
 	public BaseResponse<String> updateFileVersion(@RequestBody SetFileVersionRequest request){

@@ -197,33 +197,34 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		reqDefaultUtils.setFileSystemDefault(downRequest);
-		
+
 		try{
 			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
 				return baseResponse;
 			}
 			log.info("download {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
-			
+
 			//临时权限校验
 			if(!checkOwner(downRequest)){
 				baseResponse.setCode(ErrCodeEnum.OBJECT_OP_AUTH_CHECK_FAILED.getCode());
 				return baseResponse;
 			}
-			
-			
+
+
 			//获取标签中的文件名称
 			SysFileDTO fileDTO = sysFileManager.info(downRequest);
 			if(fileDTO == null){
 				baseResponse.setCode(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+				response.setStatus(RespCodeEnum.NOT_EXISTED.getCode());
 				return baseResponse;
 			}
-			
+
 			//从头信息取Range:bytes=0-1000
 			String range = request.getHeader("Range");
 			log.info("download {} Range={}",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),range);
 			//对Range数值做校验
 			Long[] byteLength = HttpUtils.checkRange(range);
-			
+
 			if(StringUtils.isBlank(range)){
 				log.info("{}--range is null",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
@@ -235,19 +236,19 @@ public class SysFileController extends BaseController implements SysFileSrv {
 				}
 				range = StringUtils.join("bytes=",byteLength[0],"-",byteLength[1]);
 			}
-			
+
 			//返回数据
 			byte[] bodys = sysFileManager.getFileBodys(downRequest,range);
-			
-			
+
+
 			if(!StringUtils.isBlank(range)){
 				//设置响应头：Content-Range: bytes 0-2000/4932
 				byteLength[1] = byteLength[1] > fileDTO.getSize()-1 ? fileDTO.getSize()-1 : byteLength[1];
 				String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",fileDTO.getSize());
 				response.setHeader("Content-Range",rspRange);
 			}
-			
-			
+
+
 			//下载数据
 			HttpUtils.downloadFileByte(request,response,fileDTO.getFileName(),bodys);
 			log.info("baseResponse:{}", JSON.toJSONString(baseResponse));
@@ -258,11 +259,17 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
+			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
+				response.setStatus(RespCodeEnum.NOT_EXISTED.getCode());
+			}else{
+				response.setStatus(RespCodeEnum.FAILED.getCode());
+			}
 			return baseResponse;
 		}catch (Exception e){
 			log.error("download.Exception:",e);
 			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
 			baseResponse.setMsg(e.getMessage());
+			response.setStatus(RespCodeEnum.FAILED.getCode());
 			return baseResponse;
 		}
 	}

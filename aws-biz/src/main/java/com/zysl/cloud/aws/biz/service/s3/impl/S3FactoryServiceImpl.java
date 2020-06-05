@@ -123,7 +123,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	@Override
 	public <T extends S3Response,R extends S3Request>T callS3MethodWithBody(R r, RequestBody requestBody,S3Client s3Client,String methodName) throws AppLogicException{
 		log.info("=callS3Method:service_name:{},methodName:{},param:{}=",S3Client.SERVICE_NAME,methodName, r);
-		
+		long start = System.currentTimeMillis();
 		T response = null;
 		try{
 			Object obj = null;
@@ -146,7 +146,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 				
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_RESPONSE_STATUS_ERROR.getCode());
 			}else{
-				log.info("callS3Method.invoke({}).success:{}",methodName, response);
+				log.debug("callS3Method.invoke({}).success:{}",methodName, response);
 			}
 		}catch (NoSuchKeyException e){
 			log.error("callS3Method.invoke({}).NoSuchKeyException",methodName);
@@ -168,6 +168,8 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		}catch (Exception e){
 			log.error("callS3Method.error({}),param:{},err:",methodName,r,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
+		}finally{
+			log.info("=callS3Method.end:service_name:{},methodName:{},param:{}=use:{}",S3Client.SERVICE_NAME,methodName, r,(System.currentTimeMillis()-start));
 		}
 		return response;
 	}

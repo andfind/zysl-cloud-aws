@@ -262,7 +262,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	}
 	
 	private void copyFile(SysFileRequest source, SysFileRequest target){
-		byte[] bodys = null;
+		/*byte[] bodys = null;
 		//源数据读取
 		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(source);
@@ -277,6 +277,15 @@ public class SysFileManagerImpl implements ISysFileManager {
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(target);
 			s3ObjectBO.setBodys(bodys);
 			s3FileService.create(s3ObjectBO);
+		}*/
+		
+		
+		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
+			if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
+				S3ObjectBO sourceBO = ObjectFormatUtils.createS3ObjectBO(source);
+				S3ObjectBO targetBO = ObjectFormatUtils.createS3ObjectBO(target);
+				s3FileService.copy(sourceBO,targetBO);
+			}
 		}
 	}
 	

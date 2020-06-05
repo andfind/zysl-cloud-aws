@@ -63,7 +63,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		RequestBody requestBody = RequestBody.empty();
 		PutObjectResponse response = s3FactoryService.callS3MethodWithBody
 				(request, requestBody, s3, S3Method.PUT_OBJECT);
-		log.info("s3folder.create.response:{}", response);
+		log.debug("s3folder.create.response:{}", response);
 
 		t.setVersionId(this.getLastVersion(t));
 
@@ -84,7 +84,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 				.build();
 
 		DeleteObjectsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.DELETE_OBJECTS);
-		log.info("s3folder.delete.response:{}", response);
+		log.debug("s3folder.delete.response:{}", response);
 	}
 
 	@Override
@@ -184,7 +184,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		 * 不在一台服务器则下载上传，在，则复制
 		 */
 		if(s3FactoryService.judgeBucket(src.getBucketName(), dest.getBucketName())){
-			log.info("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
+			log.debug("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
 
 			//获取s3初始化对象
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(src.getBucketName(),Boolean.TRUE);
@@ -201,7 +201,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 			return copyObject(detailInfo, src, dest);
 		}else{
-			log.info("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
+			log.debug("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
 
 			//上传根目录
 			String destKey = replaceString(src.getPath(), dest.getPath());
@@ -399,7 +399,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 				build();
 
 		ListObjectVersionsResponse response = s3FactoryService.callS3Method(request,s3, S3Method.LIST_OBJECT_VERSIONS);
-		log.info("s3folder.getVersions.response:{}", response);
+		log.debug("s3folder.getVersions.response:{}", response);
 
 		List<ObjectVersion> list = response.versions();
 		List<S3ObjectBO> versionList = Lists.newArrayList();
@@ -478,8 +478,10 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		ListObjectsResponse response = null;
 		ListObjectsRequest.Builder request = ListObjectsRequest.builder()
 											.bucket(t.getBucketName())
-											.prefix(t.getPath())
 											.delimiter("/");
+		if(StringUtils.isNotEmpty(t.getPath())){
+			request.prefix(t.getPath());
+		}
 		//查询目录下的对象信息
 		while (response == null || response.isTruncated()){
 			preTotalRecords = totalRecords;

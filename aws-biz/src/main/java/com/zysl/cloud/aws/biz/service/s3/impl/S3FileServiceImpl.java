@@ -89,7 +89,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 
 		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request,RequestBody.fromBytes(t.getBodys()),s3Client, S3Method.PUT_OBJECT);
-		log.info("s3file.create.response:{}", response);
+		log.debug("s3file.create.response:{}", response);
 
 		t.setVersionId(this.getLastVersion(t));
 		return t;
@@ -344,7 +344,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 		//文件删除
 		DeleteObjectsResponse response = s3FactoryService.callS3Method(deleteObjectsRequest, s3, S3Method.DELETE_OBJECTS);
-		log.info("--delete文件删除返回；{}--", response);
+		log.debug("--delete文件删除返回；{}--", response);
 	}
 
 	@Override
@@ -377,7 +377,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 
 		PutObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(),s3,S3Method.PUT_OBJECT_TAGGING);
-		log.info("s3file.modify.param:{}", response);
+		log.debug("s3file.modify.param:{}", response);
 
 	}
 
@@ -403,7 +403,10 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		//设置源文件路径，转码
 		String copySourceUrl = null;
 		try{
-			copySourceUrl = java.net.URLEncoder.encode(src.getBucketName() + "/" + src.getPath() + src.getFileName(), "utf-8");
+			copySourceUrl = src.getBucketName() + "/" + src.getPath() + src.getFileName();
+			copySourceUrl = java.net.URLEncoder.encode(copySourceUrl, "utf-8");
+			log.info("copySourceUrl:{}",copySourceUrl);
+		
 		}catch (Exception e){
 			throw new AppLogicException(ErrCodeEnum.S3_COPY_SOURCE_ENCODE_ERROR.getCode());
 		}
@@ -413,7 +416,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		 * 不在一台服务器则下载上传，在则复制
 		 */
 		if(s3FactoryService.judgeBucket(src.getBucketName(), dest.getBucketName())){
-			log.info("s3file.copy.judgeBucket.返回true,两个bucket在同一台服务器");
+			log.debug("s3file.copy.judgeBucket.返回true,两个bucket在同一台服务器");
 			//获取s3初始化对象
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(src.getBucketName(),Boolean.TRUE);
 
@@ -436,7 +439,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 						.build();
 			}
 			CopyObjectResponse response = s3FactoryService.callS3Method(request,s3,S3Method.COPY_OBJECT);
-			log.info("s3file.copy.response:{}", response);
+			log.debug("s3file.copy.response:{}", response);
 			dest.setVersionId(response.versionId());
 		}else{
 			log.info("s3file.copy.judgeBucket.返回false,两个bucket不在同一台服务器");
@@ -564,7 +567,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public List<S3ObjectBO> getVersions(S3ObjectBO t){
-		log.info("s3file.getVersions.param:{}", JSON.toJSONString(t));
+		log.info("s3file.getVersions.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -574,8 +577,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				build();
 
 		ListObjectVersionsResponse response = s3FactoryService.callS3Method(request,s3Client, S3Method.LIST_OBJECT_VERSIONS);
-		log.info("s3file.getVersions.response:{}", response);
-
+		
 		List<ObjectVersion> list = response.versions();
 		List<S3ObjectBO> versionList = Lists.newArrayList();
 		if(!CollectionUtils.isEmpty(list)){
@@ -680,7 +682,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 					.build();
 		}
 		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request, s3, S3Method.GET_OBJECT_TAGGING, false);
-		log.info("s3file.getDetailInfo.response:{}", response);
+		log.debug("s3file.getDetailInfo.response:{}", response);
 
 		if(null != response){
 			List<Tag> list = response.tagSet();

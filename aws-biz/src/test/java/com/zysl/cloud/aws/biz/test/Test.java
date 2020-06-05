@@ -10,8 +10,9 @@ public class Test {
 		long start = System.currentTimeMillis();
 		System.out.println("---start---");
 		Test test = new Test();
-		
-		System.out.println("---end---used:" + (System.currentTimeMillis() - start));
+		String filePath = "temp:/";
+		filePath = filePath.substring(filePath.indexOf(":")+2);
+		System.out.println("---end---used:" + filePath);
 	}
 	
 	public void testUrlEncode(){
