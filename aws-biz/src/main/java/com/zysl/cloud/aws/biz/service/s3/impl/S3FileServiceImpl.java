@@ -55,7 +55,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO create(S3ObjectBO t){
-		log.info("s3file.create.param:{}", JSON.toJSONString(t));
+		log.info("s3file.create.param:{}", t);
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
 
@@ -133,7 +133,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public String createMultipartUpload(S3ObjectBO t) {
-		log.info("s3file.createMultipartUpload.param:{}", JSON.toJSONString(t));
+		log.info("s3file.createMultipartUpload.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -167,7 +167,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO uploadPart(S3ObjectBO t) {
-		log.info("s3file.uploadPart.param:{}", JSON.toJSONString(t));
+		log.info("s3file.uploadPart.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -186,7 +186,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO completeMultipartUpload(S3ObjectBO t) {
-		log.info("s3file.completeMultipartUpload.param:{}", JSON.toJSONString(t));
+		log.info("s3file.completeMultipartUpload.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -218,7 +218,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void abortMultipartUpload(S3ObjectBO t) {
-		log.info("s3file.abortMultipartUpload.param:{}", JSON.toJSONString(t));
+		log.info("s3file.abortMultipartUpload.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		
@@ -233,7 +233,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
-		log.info("s3file.getLastVersion.param:{}", JSON.toJSONString(t));
+		log.info("s3file.getLastVersion.param:{}", t);
 
 		//获取s3初始化对象
 		List<S3ObjectBO> versionList = this.getVersions(t);
@@ -246,7 +246,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public List<FilePartInfoBO> listParts(S3ObjectBO t) {
-		log.info("s3file.listParts.param:{}", JSON.toJSONString(t));
+		log.info("s3file.listParts.param:{}", t);
 
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
@@ -276,7 +276,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public String getMultiUploadId(S3ObjectBO t) {
-		log.info("s3file.getMultiUploadId.param:{}", JSON.toJSONString(t));
+		log.info("s3file.getMultiUploadId.param:{}", t);
 
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
@@ -299,7 +299,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void delete(S3ObjectBO t){
-		log.info("s3file.delete.param:{}", JSON.toJSONString(t));
+		log.info("s3file.delete.param:{}", t);
 
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
@@ -349,7 +349,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void modify(S3ObjectBO t){
-		log.info("s3file.modify.param:{}", JSON.toJSONString(t));
+		log.info("s3file.modify.param:{}", t);
 
 		//目前修改文件标签信息
 		//获取s3初始化对象
@@ -464,7 +464,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getBaseInfo(S3ObjectBO t){
-		log.info("s3file.getBaseInfo.param:{}", JSON.toJSONString(t));
+		log.info("s3file.getBaseInfo.param:{}", t);
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
 		HeadObjectRequest request = null;
@@ -498,7 +498,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getDetailInfo(S3ObjectBO t){
-		log.info("s3file.getDetailInfo.param:{}", JSON.toJSONString(t));
+		log.info("s3file.getDetailInfo.param:{}", t);
 
 		//查询文件基础信息
 		getBaseInfo(t);
@@ -511,7 +511,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getInfoAndBody(S3ObjectBO t){
-		log.info("s3file.getInfoAndBody.param:{}", JSON.toJSONString(t));
+		log.info("s3file.getInfoAndBody.param:{}", t);
 		//查询文件基础信息
 		getDetailInfo(t);
 
@@ -554,13 +554,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				return t;
 			}
 		}catch (NoSuchKeyException e){
-			log.info("s3file.getInfoAndBody.NoSuchKeyException:{},msg:", JSON.toJSONString(t),e);
+			log.info("s3file.getInfoAndBody.NoSuchKeyException:{},msg:", t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (AwsServiceException | SdkClientException  e){
-			log.info("s3file.getInfoAndBody.AwsServiceException:{},msg:", JSON.toJSONString(t),e);
+			log.info("s3file.getInfoAndBody.AwsServiceException:{},msg:", t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
 		}catch (Exception e){
-			log.info("s3file.getInfoAndBody.Exception:{},msg:", JSON.toJSONString(t),e);
+			log.info("s3file.getInfoAndBody.Exception:{},msg:", t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}
 	}
@@ -599,7 +599,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO rename(S3ObjectBO t) {
-		log.info("s3file.rename.param:{}", JSON.toJSONString(t));
+		log.info("s3file.rename.param:{}", t);
 
 		//先查询文件内容
 		S3ObjectBO s3ObjectBO = this.getInfoAndBody(t);

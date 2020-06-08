@@ -38,7 +38,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO create(S3ObjectBO t){
-		log.info("s3folder.create.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.create.param:{}", t);
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
 		//先查询标签信息
@@ -89,7 +89,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public void delete(S3ObjectBO t){
-		log.info("s3folder.delete.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.delete.param:{}", t);
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
 		/**
@@ -356,7 +356,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getDetailInfo(S3ObjectBO t){
-		log.info("s3folder.getDetailInfo.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.getDetailInfo.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -388,7 +388,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public List<S3ObjectBO> getVersions(S3ObjectBO t){
-		log.info("s3folder.getVersions.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.getVersions.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -422,7 +422,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO rename(S3ObjectBO t) {
-		log.info("s3folder.rename.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.rename.param:{}", t);
 
 		//重新上传目录，同时修改标签
 		S3ObjectBO s3ObjectBO = this.create(t);
@@ -452,7 +452,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
-		log.info("s3folder.getLastVersion.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.getLastVersion.param:{}", t);
 
 		//获取s3初始化对象
 		List<S3ObjectBO> versionList = this.getVersions(t);
@@ -465,7 +465,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	
 	@Override
 	public S3ObjectBO list(S3ObjectBO t, MyPage myPage){
-		log.info("s3folder.list.param:{}", JSON.toJSONString(t));
+		log.info("s3folder.list.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		
@@ -473,18 +473,15 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		List<CommonPrefix> commonPrefixes = new ArrayList<>();
 		List<S3Object> contents = new ArrayList<>();
 		//获取查询对象列表入参
-		int totalRecords = 0,preTotalRecords = 0;
+		int totalRecords = 0,rspCount = 1;
 		String nextMarker = null;
 		ListObjectsResponse response = null;
 		ListObjectsRequest.Builder request = ListObjectsRequest.builder()
 											.bucket(t.getBucketName())
+											.prefix(t.getPath())
 											.delimiter("/");
-		if(StringUtils.isNotEmpty(t.getPath())){
-			request.prefix(t.getPath());
-		}
 		//查询目录下的对象信息
 		while (response == null || response.isTruncated()){
-			preTotalRecords = totalRecords;
 			request.marker(nextMarker);
 			response = s3FactoryService.callS3Method(request.build(),s3, S3Method.LIST_OBJECTS);
 			nextMarker = response.nextMarker();
@@ -495,7 +492,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 				totalRecords += response.commonPrefixes().size();
 			}
 			//根据当前记录数及传入的页码+每页数据读取读取
-			setFilesAndFolders(commonPrefixes,contents,response,myPage,preTotalRecords+1,totalRecords);
+			setFilesAndFolders(commonPrefixes,contents,response,myPage,rspCount++);
 		}
 		//目录及文件列表
 		if(setFileListAndFolderList(t,commonPrefixes,contents)){
@@ -549,10 +546,32 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	 * @param contents
 	 * @param response
 	 * @param myPage
-	 * @param curStart 记录数，从1开始
-	 * @param curEnd 记录数，从1开始
 	 * @return void
 	 **/
+	private void setFilesAndFolders(List<CommonPrefix> commonPrefixes,List<S3Object> contents,ListObjectsResponse response,MyPage myPage,Integer responseCount){
+		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize();
+		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize()-1;
+		int needRecords = myPage.getPageSize() - commonPrefixes.size() - contents.size();
+		
+		int rspStartIndex = (responseCount - 1) * 1000;
+		
+		for(int i=0;i<response.commonPrefixes().size() && needRecords > 0;i++,rspStartIndex++){
+			if(rspStartIndex >= myPageStart && rspStartIndex <= myPageEnd){
+				commonPrefixes.add(response.commonPrefixes().get(i));
+				needRecords--;
+			}
+			
+		}
+		
+		for(int i=0;i<response.contents().size() && needRecords > 0 ;i++,rspStartIndex++){
+			if(rspStartIndex >= myPageStart && rspStartIndex <= myPageEnd){
+				contents.add(response.contents().get(i));
+				needRecords--;
+			}
+		}
+	}
+	
+	
 	private void setFilesAndFolders(List<CommonPrefix> commonPrefixes,List<S3Object> contents,ListObjectsResponse response,MyPage myPage,Integer curStart,Integer curEnd){
 		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize()+1;
 		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize();

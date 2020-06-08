@@ -81,8 +81,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			reqDefaultUtils.setFileSystemDefault(request);
 			if(request.getPageSize() == null){
 				myPage.setPageSize(1000);
-			}
-			if(request.getPageSize() == -1){
+			}else if(request.getPageSize().intValue() == -1){
 				myPage.setPageSize(999999999);
 				myPage.setPageNo(1);
 			}

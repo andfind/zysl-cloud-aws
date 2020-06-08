@@ -126,7 +126,7 @@ public class S3BucketServiceImpl implements IS3BucketService {
 
 	@Override
 	public Boolean putBucketTag(S3ObjectBO t) {
- 		log.info("s3bucket.putBucketTag.param:{}", JSON.toJSONString(t));
+ 		log.info("s3bucket.putBucketTag.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
