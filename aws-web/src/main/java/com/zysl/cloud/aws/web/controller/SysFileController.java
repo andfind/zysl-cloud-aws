@@ -34,6 +34,7 @@ import com.zysl.cloud.aws.web.validator.SysFileMultiCompleteRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileMultiRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRenameRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
+import com.zysl.cloud.aws.web.validator.SysFileUploadRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
@@ -175,13 +176,14 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	
 	@Override
 	public BaseResponse<SysFileDTO> upload(HttpServletRequest httpServletRequest, SysFileUploadRequest request) {
-		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class,req -> {
+		return ServiceProvider.call(request, SysFileUploadRequestV.class, SysFileDTO.class,req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			
-			byte[] bytes = HttpUtils.getBytesFromHttpRequest(httpServletRequest);
+			byte[] bytes = HttpUtils.getBytesFromHttpRequest(httpServletRequest,request);
 			
 			boolean isOverWrite = request.getIsOverWrite() == null || request.getIsOverWrite() == 1 ? Boolean.TRUE : Boolean.FALSE;
+			
 			sysFileManager.upload(fileRequest,bytes,isOverWrite);
 			
 			//设置返回参数

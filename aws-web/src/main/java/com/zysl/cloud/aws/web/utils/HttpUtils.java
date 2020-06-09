@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.web.utils;
 
+import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.utils.StringUtils;
@@ -11,6 +12,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
 @Slf4j
@@ -115,11 +117,24 @@ public class HttpUtils {
 	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest)throws AppLogicException{
 		try {
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
-			return multipartHttpServletRequest.getFile("file").getBytes();
+			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
+			return multipartFile.getBytes();
 		} catch (IOException e) {
 			log.error("--uploadFile获取文件流异常--：{}", e);
 			throw new AppLogicException("获取文件流异常");
 		}
 	}
-	
+	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysFileUploadRequest request)throws AppLogicException{
+		try {
+			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
+			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
+			if(StringUtils.isEmpty(request.getFileName())){
+				request.setFileName(multipartFile.getOriginalFilename());
+			}
+			return multipartFile.getBytes();
+		} catch (IOException e) {
+			log.error("--uploadFile获取文件流异常--：{}", e);
+			throw new AppLogicException("获取文件流异常");
+		}
+	}
 }

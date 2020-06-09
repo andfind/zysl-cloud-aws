@@ -200,7 +200,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 
 
 
-	@PostConstruct
+//	@PostConstruct
 	private void awsS3Init(){
 		amazonS3ClientInit();
 		//遍历服务器，将bucket-serverNo查询保存到map
