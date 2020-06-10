@@ -7,14 +7,25 @@ public class Test {
 
   public static void  main(String[] args){
     Test test = new Test();
-    String filePath = "temp-001:/1";
+    String srcPath = "a";
+    String destPath = "b/";
     try{
-      if(filePath.indexOf(":") > -1 && filePath.length() >= filePath.indexOf(":")+2){
-        System.out.println(filePath.substring(0,filePath.indexOf(":")));
-        System.out.println(filePath.substring(filePath.indexOf(":")+2));
-      }
+  
+      System.out.println(test.getDestKey(srcPath,destPath));
     }catch (Exception e){
       e.printStackTrace();
     }
+  }
+  
+  public String getDestKey(String srcPath, String destPath){
+    //只能子目录复制，不能根目录复制
+    if(StringUtils.isEmpty(srcPath) || StringUtils.isEmpty(destPath)
+        || srcPath.indexOf("/") <= 0 ){
+      return  null;
+    }
+    
+    String str = srcPath.split("/")[0];
+    String destStr = destPath + srcPath.substring(str.length() + 1);
+    return destStr;
   }
 }

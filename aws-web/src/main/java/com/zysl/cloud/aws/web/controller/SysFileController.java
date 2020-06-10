@@ -24,7 +24,7 @@ import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysDirManager;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
-import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
+import com.zysl.cloud.aws.rule.service.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
 import com.zysl.cloud.aws.web.validator.SysDirListRequestV;

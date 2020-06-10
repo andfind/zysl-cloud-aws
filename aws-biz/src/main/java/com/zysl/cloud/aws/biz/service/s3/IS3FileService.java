@@ -6,6 +6,7 @@ import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 
 import java.util.List;
+import software.amazon.awssdk.services.s3.model.Tagging;
 
 public interface IS3FileService<T> extends IFileService<T> {
 
@@ -111,8 +112,22 @@ public interface IS3FileService<T> extends IFileService<T> {
 	List<FilePartInfoBO> listParts(T t);
 
 	/**
-	 *
+	 * 查询分片上传uploadId
+	 * @description
+	 * @author miaomingming
+	 * @date 14:23 2020/6/10
 	 * @param t
-	 */
+	 * @return java.lang.String
+	 **/
 	String getMultiUploadId(T t);
+	
+	/**
+	 * 生成tagging
+	 * @description 
+	 * @author miaomingming
+	 * @date 14:22 2020/6/10 
+	 * @param tagList
+	 * @return software.amazon.awssdk.services.s3.model.Tagging
+	 **/
+	Tagging getTagging(List<TagBO> tagList);
 }

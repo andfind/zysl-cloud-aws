@@ -46,9 +46,10 @@ public class S3BucketServiceImpl implements IS3BucketService {
 
 	@Override
 	public List<String> getS3Buckets(String serviceNo){
+		log.info("=getS3Buckets={}",serviceNo);
 		List<String> list = new ArrayList<>();
 		Map<String, String> map = s3FactoryService.getBucketServerNoMap();
-		if(map != null && map.size() > 0){
+		if(map != null && !map.isEmpty()){
 			for(String key:map.keySet()){
 				if (StringUtils.isBlank(serviceNo) || map.get(key).equals(serviceNo)) {
 				  list.add(key);
@@ -86,36 +87,17 @@ public class S3BucketServiceImpl implements IS3BucketService {
 		return Boolean.TRUE;
 	}
 
-	@Override
-	public List<S3ObjectBO> getFilesByBucket(BucketFileRequest request, MyPage myPage) {
-//TODO
-//		PageHelper.startPage(request.getPageIndex(), request.getPageSize());
-//		//数据库返回信息
-//		List<S3File> fileList = fileService.queryFileBybucket(request);
-//		List<FileInfo> fileInfoList = new ArrayList<>();
-//		fileList.forEach(obj -> {
-//			FileInfo fileInfo = BeanCopyUtil.copy(obj, FileInfo.class);
-//			fileInfoList.add(fileInfo);
-//		});
-//
-//		PageInfo<FileInfo> pageInfo = new PageInfo<>(fileInfoList);
-//		log.info("-----objectList.contents().fileInfoList：{}", fileInfoList.size());
-//
-//		return fileInfoList;
-
-		return null;
-	}
 
 	@Override
 	public Boolean setBucketVersion(SetFileVersionRequest request) {
 		log.info("setBucketVersion-param:",JSON.toJSONString(request));
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(request.getBucketName());
-		//启动文件夹的版本控制
+		//启动文件夹的版本控制,,//BucketVersioningStatus.ENABLED
 		PutBucketVersioningRequest s3r = PutBucketVersioningRequest.builder()
 												.bucket(request.getBucketName())
 												.versioningConfiguration(VersioningConfiguration.builder()
-														.status(request.getStatus())//BucketVersioningStatus.ENABLED
-														.build())
+												.status(request.getStatus())
+												.build())
 												.build();
 		s3FactoryService.callS3Method(s3r,s3,S3Method.PUT_BUCKET_VERSIONING);
 		log.info("修改版本控制成功:{}", request.getBucketName());

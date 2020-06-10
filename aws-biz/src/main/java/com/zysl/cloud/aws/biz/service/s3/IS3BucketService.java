@@ -41,15 +41,6 @@ public interface IS3BucketService {
 	 **/
 	Boolean createBucket(String bucketName, String serviceNo);
 
-	/**
-	 * 查询bucket下所有对象
-	 * @description
-	 * @author miaomingming
-	 * @date 9:38 2020/3/25
-	 * @param request
-	 * @return java.util.List<com.zysl.aws.web.model.FileInfo>
-	 **/
-	List<S3ObjectBO> getFilesByBucket(BucketFileRequest request, MyPage myPage);
 
 	/**
 	 * 设置bucket版本控制

@@ -41,28 +41,18 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		log.info("s3folder.create.param:{}", t);
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
-		//先查询标签信息
-		List<Tag> tagSet = Lists.newArrayList();
-		if(!CollectionUtils.isEmpty(t.getTagList())){
-			t.getTagList().forEach(obj -> {
-				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
-			});
-		}
+		PutObjectRequest.Builder request = PutObjectRequest.builder()
+												.bucket(t.getBucketName())
+												.key(t.getPath());
+		
 		//设置标签信息
-		Tagging tagging = CollectionUtils.isEmpty(tagSet) ? null : Tagging.builder().tagSet(tagSet).build();
-
-		PutObjectRequest request = null;
-		if(null == tagging){
-			request = PutObjectRequest.builder().bucket(t.getBucketName()).
-					key(t.getPath()).build();
-		}else{
-			request = PutObjectRequest.builder().bucket(t.getBucketName()).
-					key(t.getPath()).tagging(tagging).build();
+		Tagging tagging = fileService.getTagging(t.getTagList());
+		if(null != tagging){
+			request.tagging(tagging);
 		}
 
 		RequestBody requestBody = RequestBody.empty();
-		PutObjectResponse response = s3FactoryService.callS3MethodWithBody
-				(request, requestBody, s3, S3Method.PUT_OBJECT);
+		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request.build(), requestBody, s3, S3Method.PUT_OBJECT);
 		log.debug("s3folder.create.response:{}", response);
 
 		t.setVersionId(this.getLastVersion(t));
@@ -70,85 +60,55 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		return t;
 	}
 
-	//调用s3接口删除目录
-	public void getS3DelFile(S3ObjectBO t, S3Client s3){
-		//获取删除对象
-		List<ObjectIdentifier> objects = new ArrayList<>();
-		ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-				.key(t.getPath()).build();
-		objects.add(objectIdentifier);
-		Delete delete = Delete.builder().objects(objects).build();
-		DeleteObjectsRequest request = DeleteObjectsRequest.builder()
-				.bucket(t.getBucketName())
-				.delete(delete)
-				.build();
-
-		DeleteObjectsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.DELETE_OBJECTS);
-		log.debug("s3folder.delete.response:{}", response);
-	}
 
 	@Override
 	public void delete(S3ObjectBO t){
 		log.info("s3folder.delete.param:{}", t);
-		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
-		/**
-		 * 先查询目录下的文件信息
-		 */
+		//查询目录下的文件信息
 		S3ObjectBO s3ObjectBO = getDetailInfo(t);
-		List<ObjectInfoBO> folderList = s3ObjectBO.getFolderList();
-		//删除文件
-		List<ObjectInfoBO> fileList = s3ObjectBO.getFileList();
-		if(delfile(t.getBucketName(), fileList) && operFolder(t.getBucketName(), folderList, s3)){
-			getS3DelFile(t, s3);
+		//删除子目录及文件
+		if(delFileList(t.getBucketName(), s3ObjectBO.getFolderList())
+			&& delSubFolderList(t.getBucketName(), s3ObjectBO.getFileList())){
+			//删除当前目录
+			t.setDeleteStore(DeleteStoreEnum.COVER.getCode());
+			fileService.delete(t);
 		}
 	}
 
 	//删除文件
-	public boolean delfile(String bucket, List<ObjectInfoBO> fileList){
+	private boolean delFileList(String bucket, List<ObjectInfoBO> fileList){
 		//删除文件信息
 		if(!CollectionUtils.isEmpty(fileList)){
 			fileList.forEach(obj -> {
-				S3ObjectBO file = new S3ObjectBO();
-				file.setBucketName(bucket);
-				setPathAndFileName(file, obj.getKey());
-				file.setDeleteStore(DeleteStoreEnum.COVER.getCode());
-				fileService.delete(file);
+				deleteFile(bucket,obj.getKey());
 			});
 		}
 		return true;
 	}
-	//删除目录
-	public boolean operFolder(String bucket, List<ObjectInfoBO> folderList, S3Client s3){
-		for (ObjectInfoBO object : folderList) {
+	//删除子目录及其文件
+	private boolean delSubFolderList(String bucket, List<ObjectInfoBO> folderList){
+		if(!CollectionUtils.isEmpty(folderList)){
 			S3ObjectBO t = new S3ObjectBO();
-			t.setBucketName(bucket);
-			setPathAndFileName(t, object.getKey());
-			S3ObjectBO s3ObjectBO = getDetailInfo(t);
-			List<ObjectInfoBO> files = s3ObjectBO.getFileList();
-			//删除文件信息
-			if(!CollectionUtils.isEmpty(files)){
-				files.forEach(obj -> {
-					S3ObjectBO file = new S3ObjectBO();
-					file.setBucketName(bucket);
-					setPathAndFileName(file, obj.getKey());
-					file.setDeleteStore(DeleteStoreEnum.COVER.getCode());
-					fileService.delete(file);
-				});
-			}
-
-			//文件夹
-			List<ObjectInfoBO> folders = s3ObjectBO.getFolderList();
-			if(!CollectionUtils.isEmpty(folders)){
-				operFolder(bucket, folders, s3);
-			}else{
-				//删除文件夹
-				S3ObjectBO del = new S3ObjectBO();
-				del.setBucketName(bucket);
-				setPathAndFileName(del,  object.getKey());
-				getS3DelFile(del, s3);
+			for (ObjectInfoBO object : folderList) {
+				t.setBucketName(bucket);
+				setPathAndFileName(t, object.getKey());
+				S3ObjectBO s3ObjectBO = getDetailInfo(t);
+				//删除文件信息
+				delFileList(bucket,s3ObjectBO.getFileList());
+				
+				//子文件夹
+				List<ObjectInfoBO> folders = s3ObjectBO.getFolderList();
+				if(!CollectionUtils.isEmpty(folders)){
+					delSubFolderList(bucket, folders);
+				}else{
+					//删除当前目录
+					s3ObjectBO.setDeleteStore(DeleteStoreEnum.COVER.getCode());
+					fileService.delete(s3ObjectBO);
+				}
 			}
 		}
+		
 		return true;
 	}
 
@@ -162,83 +122,59 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	}
 
-	/*
-	//查询复制接口入参
-		CopyObjectRequest request = CopyObjectRequest.builder()
-				.copySource(src.getBucketName() + "/" + src.getPath() + src.getFileName())
-				.bucket(dest.getBucketName()).key(dest.getPath() + dest.getFileName())
-				.build();
-
-		CopyObjectResponse response = s3FactoryService.callS3Method(request,s3,S3Method.COPY_OBJECT);
-		log.info("s3folder.copy.response:{}", response);
-	 */
 	@Override
 	public boolean copy(S3ObjectBO src,S3ObjectBO dest){
 		log.info("s3folder.move.param.src:{}，dest:{}", JSON.toJSONString(src), JSON.toJSONString(dest));
-
+		
+		
+		//在查询顶层目录下的对象信息
+		S3ObjectBO detailInfo = getDetailInfo(src);
+		
 		/**
 		 * 同时复制目录下的所有对象
-		 */
-		/**
 		 * 判断两个bucket是否在同一台服务器，
-		 * 不在一台服务器则下载上传，在，则复制
+		 * 不在一台服务器则下载上传，在则用原生复制接口
 		 */
 		if(s3FactoryService.judgeBucket(src.getBucketName(), dest.getBucketName())){
 			log.debug("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
 
-			//获取s3初始化对象
-			S3Client s3 = s3FactoryService.getS3ClientByBucket(src.getBucketName(),Boolean.TRUE);
-
-			//先复制根目录
+			//先复制顶层目录
 			fileService.copy(src, dest);
-
-			//在查询根目录下的对象信息
-			S3ObjectBO t = new S3ObjectBO();
-			t.setBucketName(src.getBucketName());
-			t.setPath(src.getPath());
-			t.setFileName(src.getFileName());
-			S3ObjectBO detailInfo = getDetailInfo(t);
 
 			return copyObject(detailInfo, src, dest);
 		}else{
 			log.debug("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
 
-			//上传根目录
-			String destKey = replaceString(src.getPath(), dest.getPath());
-			S3ObjectBO dest1 = new S3ObjectBO();
-			dest1.setBucketName(dest.getBucketName());
-			setPathAndFileName(dest1, destKey);
+			//上传顶层目录
+			String destKey = getDestKey(src.getPath(), dest.getPath());
+			S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),destKey);
 			//设置标签
-			dest1.setTagList(fileService.addTags(src, Lists.newArrayList()));
-			this.create(dest1);
-
-			//在查询根目录下的对象信息
-			S3ObjectBO t = new S3ObjectBO();
-			t.setBucketName(src.getBucketName());
-			t.setPath(src.getPath());
-			t.setFileName(src.getFileName());
-			S3ObjectBO detailInfo = getDetailInfo(t);
+			destBO.setTagList(fileService.addTags(src, Lists.newArrayList()));
+			this.create(destBO);
+			
 			return uploadObject(detailInfo, src, dest);
 		}
 	}
 
-	public boolean copyObject(S3ObjectBO detailInfo, S3ObjectBO src,S3ObjectBO dest){
+	/**
+	 * 复制子文件及子目录
+	 * @description
+	 * @author miaomingming
+	 * @date 15:18 2020/6/10
+	 * @param detailInfo
+	 * @param src
+	 * @param dest
+	 * @return boolean
+	 **/
+	private boolean copyObject(S3ObjectBO detailInfo, S3ObjectBO src,S3ObjectBO dest){
 		//子文件
 		List<ObjectInfoBO> fileList = detailInfo.getFileList();
 		//文件直接复制
 		if(!CollectionUtils.isEmpty(fileList)){
 			fileList.forEach(file ->{
-				String key = file.getKey();
-				String destKey = replaceString(key, dest.getPath());
-				//key.replace(src.getPath(), dest.getPath());
-
-				S3ObjectBO src1 = new S3ObjectBO();
-				src1.setBucketName(src.getBucketName());
-				setPathAndFileName(src1, file.getKey());
-				S3ObjectBO dest1 = new S3ObjectBO();
-				dest1.setBucketName(dest.getBucketName());
-				setPathAndFileName(dest1, destKey);
-				fileService.copy(src1, dest1);
+				S3ObjectBO srcBO = createS3ObjectBO(src.getBucketName(),file.getKey());
+				S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),getDestKey(file.getKey(), dest.getPath()));
+				fileService.copy(srcBO, destBO);
 			});
 		}
 
@@ -246,54 +182,48 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		List<ObjectInfoBO> folderList = detailInfo.getFolderList();
 		if(!CollectionUtils.isEmpty(folderList)){
 			folderList.forEach(folder -> {
-				String key = folder.getKey();
-				String destKey = replaceString(key, dest.getPath());
-				//key.replace(src.getPath(), dest.getPath());
 				//先复制
-				S3ObjectBO src1 = new S3ObjectBO();
-				src1.setBucketName(src.getBucketName());
-				setPathAndFileName(src1, folder.getKey());
-				S3ObjectBO dest1 = new S3ObjectBO();
-				dest1.setBucketName(dest.getBucketName());
-				setPathAndFileName(dest1, destKey);
-				fileService.copy(src1, dest1);
+				S3ObjectBO srcBO = createS3ObjectBO(src.getBucketName(),folder.getKey());
+				S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),getDestKey(folder.getKey(), dest.getPath()));
+				
+				fileService.copy(srcBO, destBO);
 
-				//在查询
-				S3ObjectBO t = new S3ObjectBO();
-				t.setBucketName(src.getBucketName());
-				setPathAndFileName(t, folder.getKey());
-				S3ObjectBO objects = getDetailInfo(t);
+				//查询
+				S3ObjectBO objectDetail = getDetailInfo(srcBO);
 
-				copyObject(objects, src, dest);
+				copyObject(objectDetail, src, dest);
 			});
 		}
 
 		return true;
 	}
 
+	/**
+	 * 上传子目录及文件
+	 * @description
+	 * @author miaomingming
+	 * @date 15:38 2020/6/10
+	 * @param detailInfo
+	 * @param src
+	 * @param dest
+	 * @return boolean
+	 **/
 	public boolean uploadObject(S3ObjectBO detailInfo, S3ObjectBO src,S3ObjectBO dest){
 		//子文件
 		List<ObjectInfoBO> fileList = detailInfo.getFileList();
 		//文件直接上传
 		if(!CollectionUtils.isEmpty(fileList)){
 			fileList.forEach(file ->{
-				String key = file.getKey();
-				String destKey = replaceString(key, dest.getPath());
-				//key.replace(src.getPath(), dest.getPath());
-
-				S3ObjectBO src1 = new S3ObjectBO();
-				src1.setBucketName(src.getBucketName());
-				setPathAndFileName(src1, file.getKey());
-				S3ObjectBO s3ObjectBO = (S3ObjectBO)fileService.getInfoAndBody(src1);
-
-				S3ObjectBO dest1 = new S3ObjectBO();
-				dest1.setBucketName(dest.getBucketName());
-				setPathAndFileName(dest1, destKey);
-				dest1.setBodys(s3ObjectBO.getBodys());
+				S3ObjectBO srcBO = createS3ObjectBO(src.getBucketName(),file.getKey());
+				S3ObjectBO s3ObjectBO = (S3ObjectBO)fileService.getInfoAndBody(srcBO);
+				
+				S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),getDestKey(file.getKey(), dest.getPath()));
+				destBO.setBodys(s3ObjectBO.getBodys());
+				
 				//设置标签信息
-				dest1.setTagList(fileService.mergeTags(s3ObjectBO.getTagList(), Lists.newArrayList()));
+				destBO.setTagList(fileService.mergeTags(s3ObjectBO.getTagList(), Lists.newArrayList()));
 
-				fileService.create(dest1);
+				fileService.create(destBO);
 			});
 		}
 
@@ -302,28 +232,15 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		List<ObjectInfoBO> folderList = detailInfo.getFolderList();
 		if(!CollectionUtils.isEmpty(folderList)){
 			folderList.forEach(folder -> {
-				String key = folder.getKey();
-				String destKey = replaceString(key, dest.getPath());
-				//key.replace(src.getPath(), dest.getPath());
-				//先复制
-				S3ObjectBO src1 = new S3ObjectBO();
-				src1.setBucketName(src.getBucketName());
-				setPathAndFileName(src1, folder.getKey());
-
-
-				S3ObjectBO dest1 = new S3ObjectBO();
-				dest1.setBucketName(dest.getBucketName());
-				setPathAndFileName(dest1, destKey);
+				S3ObjectBO srcBO = createS3ObjectBO(src.getBucketName(),folder.getKey());
+				S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),getDestKey(folder.getKey(), dest.getPath()));
+				
 				//设置标签
-				dest1.setTagList(fileService.addTags(src1, Lists.newArrayList()));
-				this.create(dest1);
-//			fileService.create(dest1);
+				destBO.setTagList(fileService.addTags(srcBO, Lists.newArrayList()));
+				this.create(destBO);
 
-				//在查询
-				S3ObjectBO t = new S3ObjectBO();
-				t.setBucketName(src.getBucketName());
-				setPathAndFileName(t, folder.getKey());
-				S3ObjectBO objects = getDetailInfo(t);
+				//查询
+				S3ObjectBO objects = getDetailInfo(srcBO);
 
 				uploadObject(objects, src, dest);
 			});
@@ -332,22 +249,14 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		return true;
 	}
 
-	public String replaceString(String source, String target){
-        String str = source.split("/")[0];
-        String str1 = target + source.substring(str.length() + 1);
-        return str1;
-	}
+	
 
 	@Override
 	public void move(S3ObjectBO src,S3ObjectBO dest){
 		//先复制
 		copy(src, dest);
-		//在删除
-		S3ObjectBO t = new S3ObjectBO();
-		t.setBucketName(src.getBucketName());
-		t.setPath(src.getPath());
-		t.setFileName(src.getFileName());
-		delete(t);
+		//删除
+		delete(src);
 	}
 	@Override
 	public S3ObjectBO getBaseInfo(S3ObjectBO t){
@@ -389,35 +298,8 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	@Override
 	public List<S3ObjectBO> getVersions(S3ObjectBO t){
 		log.info("s3folder.getVersions.param:{}", t);
-		//获取s3初始化对象
-		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
-		//查询文件夹的版本信息，需要在key后面加/
-		ListObjectVersionsRequest request = ListObjectVersionsRequest.builder().
-				bucket(t.getBucketName()).
-				prefix(StringUtils.join(t.getPath() ,t.getFileName())).
-				build();
-
-		ListObjectVersionsResponse response = s3FactoryService.callS3Method(request,s3, S3Method.LIST_OBJECT_VERSIONS);
-		log.debug("s3folder.getVersions.response:{}", response);
-
-		List<ObjectVersion> list = response.versions();
-		List<S3ObjectBO> versionList = Lists.newArrayList();
-		if(!CollectionUtils.isEmpty(list)){
-			list.forEach(obj -> {
-				S3ObjectBO s3Object = new S3ObjectBO();
-				//版本信息
-				s3Object.setVersionId(obj.versionId());
-				s3Object.setContentLength(Long.valueOf(obj.size()));
-				s3Object.setLastModified(Date.from(obj.lastModified()));
-				//文件信息
-				s3Object.setBucketName(response.name());
-				s3Object.setFileName(response.prefix());
-				versionList.add(s3Object);
-			});
-		}
-
-		return versionList;
+		return fileService.getVersions(t);
 	}
 
 	@Override
@@ -431,24 +313,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	}
 
 
-	public void setPathAndFileName(S3ObjectBO s3ObjectBO,String s3Key){
-		if(StringUtils.isBlank(s3Key)){
-			return;
-		}
-		if(s3ObjectBO == null){
-			s3ObjectBO = new S3ObjectBO();
-		}
-		if(s3Key.startsWith("/")){
-			s3Key = s3Key.substring(1);
-		}
-		if(s3Key.endsWith("/")){
-			s3ObjectBO.setPath(s3Key);
-			s3ObjectBO.setFileName("");
-		}else{
-			s3ObjectBO.setPath(s3Key.substring(0,s3Key.lastIndexOf("/")+1));
-			s3ObjectBO.setFileName(s3Key.substring(s3Key.lastIndexOf("/")+1));
-		}
-	}
+	
 
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
@@ -458,7 +323,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		List<S3ObjectBO> versionList = this.getVersions(t);
 		if(!CollectionUtils.isEmpty(versionList)){
 			S3ObjectBO version = versionList.get(0);
-			return version.getVersionId();
+			return version != null ? version.getVersionId() : null;
 		}
 		return null;
 	}
@@ -504,7 +369,8 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	}
 	
 	public boolean setFileListAndFolderList(S3ObjectBO t,List<CommonPrefix> prefixes,List<S3Object> objectList){
-		boolean isExistLocalPath = Boolean.FALSE;//objectList是否存在本身路径对象
+		//objectList是否存在本身路径对象
+		boolean isExistLocalPath = Boolean.FALSE;
 		List<ObjectInfoBO> folderList = Lists.newArrayList();
 		if(!CollectionUtils.isEmpty(prefixes)){
 			prefixes.forEach(obj -> {
@@ -538,7 +404,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		return isExistLocalPath;
 	}
 	/**
-	 *
+	 * 设置文件和目录的内容及数量，实现翻页效果
 	 * @description
 	 * @author miaomingming
 	 * @date 10:44 2020/4/7
@@ -571,45 +437,81 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		}
 	}
 	
-	
-	private void setFilesAndFolders(List<CommonPrefix> commonPrefixes,List<S3Object> contents,ListObjectsResponse response,MyPage myPage,Integer curStart,Integer curEnd){
-		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize()+1;
-		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize();
-		int start = 0,end=curEnd;
-		//当前页数据差额
-		int needRecords = myPageEnd - myPageStart - commonPrefixes.size() - contents.size();
-		if(needRecords <= 0){
+	/**
+	 * 删除文件
+	 * @description
+	 * @author miaomingming
+	 * @date 15:14 2020/6/10
+	 * @param bucket
+	 * @param key
+	 * @return void
+	 **/
+	private void deleteFile(String bucket,String key){
+		S3ObjectBO s3ObjectBO = createS3ObjectBO(bucket,key);
+		s3ObjectBO.setDeleteStore(DeleteStoreEnum.COVER.getCode());
+		
+		fileService.delete(s3ObjectBO);
+	}
+	/**
+	 * 创建S3ObjectBO
+	 * @description
+	 * @author miaomingming
+	 * @date 15:15 2020/6/10
+	 * @param bucket
+	 * @param key
+	 * @return com.zysl.cloud.aws.domain.bo.S3ObjectBO
+	 **/
+	private S3ObjectBO createS3ObjectBO(String bucket,String key){
+		S3ObjectBO s3ObjectBO = new S3ObjectBO();
+		s3ObjectBO.setBucketName(bucket);
+		setPathAndFileName(s3ObjectBO, key);
+		return s3ObjectBO;
+	}
+	/**
+	 * 设置路径和文件名
+	 * @description
+	 * @author miaomingming
+	 * @date 15:15 2020/6/10
+	 * @param s3ObjectBO
+	 * @param s3Key
+	 * @return void
+	 **/
+	private void setPathAndFileName(S3ObjectBO s3ObjectBO,String s3Key){
+		if(StringUtils.isBlank(s3Key)){
 			return;
 		}
-		//查询结果在要求范围外
-		if(myPageStart > curEnd || myPageEnd < curStart){
-			return;
+		if(s3ObjectBO == null){
+			s3ObjectBO = new S3ObjectBO();
 		}
-		//范围内
-		if(myPageStart <= curStart && curEnd <= myPageEnd){
-			commonPrefixes.addAll(response.commonPrefixes());
-			contents.addAll(response.contents());
-			return;
+		if(s3Key.startsWith("/")){
+			s3Key = s3Key.substring(1);
 		}
-		//左边界交叉
-		if(myPageStart>curStart){
-			start = myPageStart - curStart;
+		if(s3Key.endsWith("/")){
+			s3ObjectBO.setPath(s3Key);
+			s3ObjectBO.setFileName("");
+		}else{
+			s3ObjectBO.setPath(s3Key.substring(0,s3Key.lastIndexOf("/")+1));
+			s3ObjectBO.setFileName(s3Key.substring(s3Key.lastIndexOf("/")+1));
 		}
-		//右边界交叉
-		if(curEnd > myPageEnd){
-			end = myPageEnd;
+	}
+	/**
+	 * 字符串替换TODO
+	 * @description
+	 * @author miaomingming
+	 * @date 15:15 2020/6/10
+	 * @param srcPath  格式: aa/bb/cc/
+	 * @param destPath 格式: aa/bb/cc/
+	 * @return java.lang.String
+	 **/
+	private String getDestKey(String srcPath, String destPath){
+		//只能子目录复制，不能根目录复制
+		if(StringUtils.isEmpty(srcPath) || StringUtils.isEmpty(destPath)
+			|| srcPath.indexOf("/") <= 0 ){
+			return  null;
 		}
 		
-		int addCount = 0;
-		for(int i=start;i<response.commonPrefixes().size() && i<end;i++){
-			commonPrefixes.add(response.commonPrefixes().get(i));
-			addCount = i+1;
-		}
-		start = start - addCount;
-		end = end - addCount;
-		for(int i=start;i<response.contents().size() && i<end;i++){
-			contents.add(response.contents().get(i));
-		}
-		
+		String str = srcPath.split("/")[0];
+		String destStr = destPath + srcPath.substring(str.length() + 1);
+		return destStr;
 	}
 }

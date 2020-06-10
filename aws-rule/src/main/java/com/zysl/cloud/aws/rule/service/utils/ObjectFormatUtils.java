@@ -1,4 +1,4 @@
-package com.zysl.cloud.aws.rule.utils;
+package com.zysl.cloud.aws.rule.service.utils;
 
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;

@@ -1,6 +1,5 @@
 package com.zysl.cloud.aws.rule.service.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
@@ -20,7 +19,7 @@ import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
-import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
+import com.zysl.cloud.aws.rule.service.utils.ObjectFormatUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
@@ -29,7 +28,6 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service

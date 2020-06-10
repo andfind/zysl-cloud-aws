@@ -58,37 +58,18 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		log.info("s3file.create.param:{}", t);
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
-
+		PutObjectRequest.Builder request = PutObjectRequest.builder()
+												.bucket(t.getBucketName())
+												.key(StringUtils.join(t.getPath() ,t.getFileName()))
+												.contentEncoding(t.getContentEncoding())
+												.expires(t.getExpires() == null ? null : t.getExpires().toInstant());
 		//获取目标文件标签内容
-		List<Tag> tagSet = Lists.newArrayList();
-		if(!CollectionUtils.isEmpty(t.getTagList())){
-			t.getTagList().forEach(obj -> {
-				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
-			});
-		}
-		//设置标签信息
-		Tagging tagging = CollectionUtils.isEmpty(tagSet) ? null : Tagging.builder().tagSet(tagSet).build();
-
-
-		PutObjectRequest request = null;
-		if(null == tagging){
-			request = PutObjectRequest.builder()
-					.bucket(t.getBucketName())
-					.key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.contentEncoding(t.getContentEncoding())
-					.expires(t.getExpires() == null ? null : t.getExpires().toInstant())
-					.build();
-		}else{
-			request = PutObjectRequest.builder()
-					.bucket(t.getBucketName())
-					.key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.contentEncoding(t.getContentEncoding())
-					.tagging(tagging)
-					.expires(t.getExpires() == null ? null : t.getExpires().toInstant())
-					.build();
+		Tagging tagging = getTagging(t.getTagList());
+		if(null != tagging){
+			request.tagging(tagging);
 		}
 
-		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request,RequestBody.fromBytes(t.getBodys()),s3Client, S3Method.PUT_OBJECT);
+		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request.build(),RequestBody.fromBytes(t.getBodys()),s3Client, S3Method.PUT_OBJECT);
 		log.debug("s3file.create.response:{}", response);
 
 		t.setVersionId(this.getLastVersion(t));
@@ -137,28 +118,11 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
-//		s3.listo
 		//获取入参
-        CreateMultipartUploadRequest request = null;
-		if(!CollectionUtils.isEmpty(t.getTagList())){
-			List<Tag> tagSet = Lists.newArrayList();
-			t.getTagList().forEach(obj -> {
-				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
-			});
-			//设置标签信息
-			Tagging tagging = CollectionUtils.isEmpty(tagSet) ? null : Tagging.builder().tagSet(tagSet).build();
-
-            request = CreateMultipartUploadRequest.builder()
-                    .bucket(t.getBucketName())
-                    .key(StringUtils.join(t.getPath(), t.getFileName()))
-//                    .tagging(String.valueOf(tagging))
-                    .build();
-		}else{
-            request = CreateMultipartUploadRequest.builder()
-                    .bucket(t.getBucketName())
-                    .key(StringUtils.join(t.getPath(), t.getFileName()))
-                    .build();
-        }
+        CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+												.bucket(t.getBucketName())
+												.key(StringUtils.join(t.getPath(), t.getFileName()))
+												.build();
 
 		CreateMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.CREATE_MULTIPART_UPLOAD);
 
@@ -305,21 +269,19 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
 		DeleteObjectsRequest deleteObjectsRequest = null;
-		
+		Delete delete = null;
 		//逻辑删除或者指定版本号
 		if(StringUtils.isNotBlank(t.getVersionId()) || DeleteStoreEnum.NOCOVER.getCode().equals(t.getDeleteStore())){
-			ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-				.key(StringUtils.join(t.getPath() ,t.getFileName()))
-				.versionId(t.getVersionId()).build();
+			ObjectIdentifier.Builder objectIdentifier = ObjectIdentifier.builder()
+															.key(StringUtils.join(t.getPath() ,t.getFileName()));
+			if(StringUtils.isNotBlank(t.getVersionId())){
+				objectIdentifier.versionId(t.getVersionId());
+			}
+													;
 			List<ObjectIdentifier> objects = new ArrayList<>();
-			objects.add(objectIdentifier);
-			Delete delete = Delete.builder().objects(objects).build();
+			objects.add(objectIdentifier.build());
+			delete = Delete.builder().objects(objects).build();
 			
-			//逻辑删除
-			deleteObjectsRequest = DeleteObjectsRequest.builder()
-				.bucket(t.getBucketName())
-				.delete(delete)
-				.build();
 		}else if(DeleteStoreEnum.COVER.getCode().equals(t.getDeleteStore())){
 			//删除整个文件信息, 先查询文件的版本信息
 			List<S3ObjectBO> objectList = getVersions(t);
@@ -329,22 +291,27 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			if(!CollectionUtils.isEmpty(objectList)){
 				objectList.forEach(obj -> {
 					ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-							.key(obj.getFileName())
-							.versionId(obj.getVersionId()).build();
+															.key(obj.getFileName())
+															.versionId(obj.getVersionId()).build();
 					objects.add(objectIdentifier);
 				});
+				
+				//删除列表
+				delete = Delete.builder().objects(objects).build();
 			}
-			//删除列表
-			Delete delete = Delete.builder().objects(objects).build();
-			//逻辑删除
-			deleteObjectsRequest = DeleteObjectsRequest.builder()
-					.bucket(t.getBucketName())
-					.delete(delete)
-					.build();
+			
 		}
-		//文件删除
-		DeleteObjectsResponse response = s3FactoryService.callS3Method(deleteObjectsRequest, s3, S3Method.DELETE_OBJECTS);
-		log.debug("--delete文件删除返回；{}--", response);
+		//逻辑删除
+		if(delete != null){
+			deleteObjectsRequest = DeleteObjectsRequest.builder()
+										.bucket(t.getBucketName())
+										.delete(delete)
+										.build();
+			//文件删除
+			DeleteObjectsResponse response = s3FactoryService.callS3Method(deleteObjectsRequest, s3, S3Method.DELETE_OBJECTS);
+			log.debug("--delete文件删除返回；{}--", response);
+		}
+		
 	}
 
 	@Override
@@ -359,16 +326,11 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		List<TagBO> tageList = t.getTagList();
 		//文件tage设置参数
 		PutObjectTaggingRequest.Builder request = PutObjectTaggingRequest.builder()
-				.bucket(t.getBucketName())
-				.key(StringUtils.join(t.getPath() ,t.getFileName()));
-
-		List<Tag> tagSet = new ArrayList<>();
-		if(!CollectionUtils.isEmpty(tageList)){
-			tageList.forEach(obj -> {
-				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
-			});
-			Tagging tagging = Tagging.builder().tagSet(tagSet).build();
-			//设置标签信息
+														.bucket(t.getBucketName())
+														.key(StringUtils.join(t.getPath() ,t.getFileName()));
+		
+		Tagging tagging = getTagging(tageList);
+		if(tagging != null){
 			request.tagging(tagging);
 		}
 		//设置版本
@@ -383,23 +345,14 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void rename(S3ObjectBO src,S3ObjectBO dest){
-
+		log.warn("--rename---TODO-----");
 	}
 
 	@Override
 	public S3ObjectBO copy(S3ObjectBO src,S3ObjectBO dest){
 		log.info("s3file.copy.param.src:{}, dest:{}", JSON.toJSONString(src), JSON.toJSONString(dest));
 
-		//获取目标文件标签内容
-		List<Tag> tagSet = Lists.newArrayList();
-		if(!CollectionUtils.isEmpty(dest.getTagList())){
-			dest.getTagList().forEach(obj -> {
-				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
-			});
-		}
-		//设置标签信息
-		Tagging tagging = CollectionUtils.isEmpty(tagSet) ? null : Tagging.builder().tagSet(tagSet).build();
-
+		
 		//设置源文件路径，转码
 		String copySourceUrl = null;
 		try{
@@ -421,29 +374,21 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(src.getBucketName(),Boolean.TRUE);
 
 			//复制文件
-			//查询复制接口入参
-			CopyObjectRequest request = null;
-			if(null == tagging){
-				request = CopyObjectRequest.builder()
-						.copySource(copySourceUrl)
-						.bucket(dest.getBucketName())
-						.key(StringUtils.join(dest.getPath() ,dest.getFileName()))
-						.build();
-			}else{
-				request = CopyObjectRequest.builder()
-						.copySource(copySourceUrl)
-						.bucket(dest.getBucketName())
-						.key(StringUtils.join(dest.getPath() ,dest.getFileName()))
-						.tagging(tagging)
-						.taggingDirective(TaggingDirective.REPLACE)
-						.build();
+			CopyObjectRequest.Builder request = CopyObjectRequest.builder()
+													.copySource(copySourceUrl)
+													.bucket(dest.getBucketName())
+													.key(StringUtils.join(dest.getPath() ,dest.getFileName()));
+			
+			Tagging tagging = getTagging(dest.getTagList());
+			if(tagging != null){
+				request.tagging(tagging).taggingDirective(TaggingDirective.REPLACE);
 			}
-			CopyObjectResponse response = s3FactoryService.callS3Method(request,s3,S3Method.COPY_OBJECT);
+			
+			CopyObjectResponse response = s3FactoryService.callS3Method(request.build(),s3,S3Method.COPY_OBJECT);
 			log.debug("s3file.copy.response:{}", response);
 			dest.setVersionId(response.versionId());
 		}else{
-			log.info("s3file.copy.judgeBucket.返回false,两个bucket不在同一台服务器");
-
+			log.debug("s3file.copy.judgeBucket.返回false,两个bucket不在同一台服务器");
 			//查询源文件内容
 			S3ObjectBO s3ObjectBO = this.getInfoAndBody(src);
 			dest.setBodys(s3ObjectBO.getBodys());
@@ -458,7 +403,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		log.info("s3file.move.param.src:{},dest:{}",  JSON.toJSONString(src),  JSON.toJSONString(dest));
 		//先复制文件
 		this.copy(src, dest);
-		//在删除文件
+		//再删除文件
 		this.delete(src);
 	}
 
@@ -467,19 +412,14 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		log.info("s3file.getBaseInfo.param:{}", t);
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
-		HeadObjectRequest request = null;
-		if(StringUtils.isEmpty(t.getVersionId())){
-			request = HeadObjectRequest.builder()
-					.bucket(t.getBucketName())
-					.key(StringUtils.join(t.getPath() ,t.getFileName())).build();
-		}else{
-			request = HeadObjectRequest.builder()
-					.bucket(t.getBucketName())
-					.key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.versionId(t.getVersionId()).build();
+		HeadObjectRequest.Builder request = HeadObjectRequest.builder()
+												.bucket(t.getBucketName())
+												.key(StringUtils.join(t.getPath() ,t.getFileName()));
+		if(StringUtils.isNotEmpty(t.getVersionId())){
+			request.versionId(t.getVersionId());
 		}
 
-		HeadObjectResponse response = s3FactoryService.callS3Method(request, s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
+		HeadObjectResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
 		log.info("s3file.getBaseInfo:{}", response);
 
 		if(response != null){
@@ -518,26 +458,23 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		//查询文件内容
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		//获取下载对象
-		GetObjectRequest request = null;
-		if(StringUtils.isEmpty(t.getVersionId())){
-			request = GetObjectRequest.builder().
-					bucket(t.getBucketName()).key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.range(t.getRange()).build();
-		}else {
-			request = GetObjectRequest.builder().
-					bucket(t.getBucketName()).key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.range(t.getRange()).versionId(t.getVersionId()).build();
+		GetObjectRequest.Builder request = GetObjectRequest.builder()
+												.bucket(t.getBucketName())
+												.key(StringUtils.join(t.getPath() ,t.getFileName()))
+												.range(t.getRange());
+		if(StringUtils.isNotEmpty(t.getVersionId())){
+			request.versionId(t.getVersionId());
 		}
 
 		try{
-			ResponseBytes<GetObjectResponse> objectAsBytes = s3.getObject(request,ResponseTransformer.toBytes());
+			ResponseBytes<GetObjectResponse> objectAsBytes = s3.getObject(request.build(),ResponseTransformer.toBytes());
 			GetObjectResponse objectResponse = objectAsBytes.response();
 			
 			Date date1 = Date.from(objectResponse.lastModified());
 			Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
 			
 			byte[] bytes = objectAsBytes.asByteArray();
-			log.info("--bytes.length:{}", bytes.length);
+			log.debug("--bytes.length:{}", bytes.length);
 			if(DateUtils.doCompareDate(date1, date2) < 0){
 				//进行解码
 				BASE64Decoder decoder = new BASE64Decoder();
@@ -545,7 +482,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				try {
 					fileContent = decoder.decodeBuffer(new String(bytes));
 				} catch (IOException e) {
-					log.error("--download文件流转换异常：{}--", e);
+					log.error("--download文件流转换异常{}：msg:",t, e);
 				}
 				t.setBodys(fileContent);
 				return t;
@@ -554,13 +491,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				return t;
 			}
 		}catch (NoSuchKeyException e){
-			log.info("s3file.getInfoAndBody.NoSuchKeyException:{},msg:", t,e);
+			log.warn("s3file.getInfoAndBody.NoSuchKeyException:{},msg:", t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (AwsServiceException | SdkClientException  e){
-			log.info("s3file.getInfoAndBody.AwsServiceException:{},msg:", t,e);
+			log.warn("s3file.getInfoAndBody.AwsServiceException:{},msg:", t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
 		}catch (Exception e){
-			log.info("s3file.getInfoAndBody.Exception:{},msg:", t,e);
+			log.error("s3file.getInfoAndBody.Exception:{},msg:", t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}
 	}
@@ -572,9 +509,9 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
 		ListObjectVersionsRequest request = ListObjectVersionsRequest.builder().
-				bucket(t.getBucketName()).
-				prefix(StringUtils.join(t.getPath() ,t.getFileName())).
-				build();
+													bucket(t.getBucketName()).
+													prefix(StringUtils.join(t.getPath() ,t.getFileName())).
+													build();
 
 		ListObjectVersionsResponse response = s3FactoryService.callS3Method(request,s3Client, S3Method.LIST_OBJECT_VERSIONS);
 		
@@ -668,20 +605,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 	public List<TagBO> getTags(S3ObjectBO t) {
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		//查询文件的标签信息
-		GetObjectTaggingRequest request = null;
-		if(StringUtils.isEmpty(t.getVersionId())){
-			request = GetObjectTaggingRequest.builder()
-					.bucket(t.getBucketName())
-					.key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.build();
-		}else{
-			request = GetObjectTaggingRequest.builder()
-					.bucket(t.getBucketName())
-					.key(StringUtils.join(t.getPath() ,t.getFileName()))
-					.versionId(t.getVersionId())
-					.build();
+		GetObjectTaggingRequest.Builder request = GetObjectTaggingRequest.builder()
+													.bucket(t.getBucketName())
+													.key(StringUtils.join(t.getPath() ,t.getFileName()));
+		if(StringUtils.isNotEmpty(t.getVersionId())){
+			request.versionId(t.getVersionId());
 		}
-		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request, s3, S3Method.GET_OBJECT_TAGGING, false);
+		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3, S3Method.GET_OBJECT_TAGGING, false);
 		log.debug("s3file.getDetailInfo.response:{}", response);
 
 		if(null != response){
@@ -712,36 +642,17 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		return null;
 	}
 	
-	
-	/*public void testCleanAllBucket(){
-		log.info("--CleanAllBucket--start--");
-		testCleanBucket("user01");
-		testCleanBucket("genesys07");
-		log.info("--CleanAllBucket--end--");
+	@Override
+	public Tagging getTagging(List<TagBO> tagList){
+		if(!CollectionUtils.isEmpty(tagList)){
+			List<Tag> tagSet = Lists.newArrayList();
+			tagList.forEach(obj -> {
+				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
+			});
+			//设置标签信息
+			return CollectionUtils.isEmpty(tagSet) ? null : Tagging.builder().tagSet(tagSet).build();
+		}
+		return null;
 	}
 	
-	public void testCleanBucket(String bucket){
-		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucket);
-		
-		ListObjectVersionsRequest listObjectVersionsRequest = ListObjectVersionsRequest.builder().bucket(bucket).build();
-		ListObjectVersionsResponse response = s3.listObjectVersions(listObjectVersionsRequest);
-		
-		response.versions().forEach(objectVersion -> {
-			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder().bucket(bucket)
-				.key(objectVersion.key())
-				.versionId(objectVersion.versionId())
-				.build();
-			s3.deleteObject(deleteObjectRequest);
-		});
-		
-		
-		response.deleteMarkers().forEach(deleteMarkerEntry -> {
-			DeleteObjectRequest deleteObjectRequest = DeleteObjectRequest.builder()
-				.bucket(bucket)
-				.key(deleteMarkerEntry.key())
-				.versionId(deleteMarkerEntry.versionId())
-				.build();
-			s3.deleteObject(deleteObjectRequest);
-		});
-	}*/
 }
