@@ -105,7 +105,6 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				if(!CollectionUtils.isEmpty(buckets)){
 					for(String key:buckets){
 						SysDirRequest dirRequest = new SysDirRequest();
-						reqDefaultUtils.setFileSystemDefault(dirRequest);
 						dirRequest.setPath(key + ":/");
 						paths.add(dirRequest);
 					}
@@ -144,7 +143,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			target.setBodys(s3ObjectBO.getBodys());
 			
 			//生成标签信息
-			List<TagBO> tagList = Lists.newArrayList();
+			/*List<TagBO> tagList = Lists.newArrayList();
 			if(req.getMaxDownloadAmout() != null){
 				TagBO tag = new TagBO();
 				tag.setKey(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode());
@@ -158,7 +157,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				tag.setValue(date);
 				tagList.add(tag);
 			}
-			target.setTagList(tagList);
+			target.setTagList(tagList);*/
 			//重新上传文件
 			S3ObjectBO rst = (S3ObjectBO)s3FileService.create(target);
 			
@@ -166,12 +165,8 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			fileRequest.setPath(rst.getBucketName() + ":/" + rst.getPath());
 			fileRequest.setFileName(rst.getFileName());
 			fileRequest.setVersionId(rst.getVersionId());
-			if(StringUtils.isBlank(fileRequest.getType())){
-				fileRequest.setType(webConfig.getFileSystemTypeDefault());
-			}
-			if(StringUtils.isBlank(fileRequest.getServerNo())){
-				fileRequest.setServerNo(webConfig.getFileSystemServerNoDefault());
-			}
+			reqDefaultUtils.setFileSystemDefault(fileRequest);
+			
 			return sysFileManager.info(fileRequest);
 		},"shareFile");
 	}

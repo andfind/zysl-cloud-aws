@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.aws.api.req.SysFileRequest;
+import com.zysl.cloud.aws.web.constants.WebConstants;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.validator.IValidator;
 import java.util.List;
@@ -18,16 +19,18 @@ public class SysFileArrayRequestV implements IValidator {
 	
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\*\\|\\?\\\\<>:\"]+$";
-		String fileNameP = "[^\\*\\|\\?\\\\<>:\"/]+$";
 		
 		for(SysFileRequest request:sysFileList){
-			if(StringUtils.isNotEmpty(request.getPath()) && !java.util.regex.Pattern.matches(pathP, request.getPath())){
-				errors.add("路径不能输入以下字符\\ : \" | * ? < >");
+			//path不能为空
+			if(StringUtils.isEmpty(request.getPath())){
+				errors.add("path不能为空.");
+			}else if(!Pattern.matches(WebConstants.VALID_PATH_PATTERN, request.getPath())){
+				errors.add(WebConstants.VALID_PATH_DESC);
 			}
-			if(StringUtils.isNotEmpty(request.getFileName()) && !Pattern.matches(fileNameP, request.getFileName())){
-				errors.add("文件名不能输入以下字符\\ : \" | * ? < > /");
+			if(StringUtils.isNotEmpty(request.getFileName()) && !Pattern.matches(WebConstants.VALID_FILE_NAME_PATTERN, request.getFileName())){
+				errors.add(WebConstants.VALID_FILE_NAME_DESC);
 			}
+			
 			if(!errors.isEmpty()){
 				break;
 			}

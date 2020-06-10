@@ -7,13 +7,14 @@ public class Test {
 
   public static void  main(String[] args){
     Test test = new Test();
-    String copySourceUrl = "temp-001/mmm/a/1.txt";
+    String filePath = "temp-001:/1";
     try{
-  
-      copySourceUrl = java.net.URLEncoder.encode(copySourceUrl, "utf-8");
+      if(filePath.indexOf(":") > -1 && filePath.length() >= filePath.indexOf(":")+2){
+        System.out.println(filePath.substring(0,filePath.indexOf(":")));
+        System.out.println(filePath.substring(filePath.indexOf(":")+2));
+      }
     }catch (Exception e){
-    
+      e.printStackTrace();
     }
-    System.out.println(copySourceUrl);
   }
 }

@@ -80,7 +80,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	public BasePaginationResponse<SysFileDTO> list(SysDirListRequest request) {
 		return ServiceProvider.callList(request, SysDirListRequestV.class, SysFileDTO.class, (req,myPage) -> {
 			reqDefaultUtils.setFileSystemDefault(request);
-			if(request.getPageSize() == null){
+			if(request.getPageSize() == null || request.getPageSize() < -1 || request.getPageSize() == 0){
 				myPage.setPageSize(1000);
 			}else if(request.getPageSize().intValue() == -1){
 				myPage.setPageSize(999999999);

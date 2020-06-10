@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.web.validator;
 
+import com.zysl.cloud.aws.web.constants.WebConstants;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.validator.IValidator;
 import java.util.List;
@@ -19,13 +20,11 @@ public class SysFileUploadRequestV implements IValidator {
 
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-		String pathP = "^[0-9a-zA-Z\\-_]+:[^\\*\\|\\?\\\\<>:\"]+$";
-		String fileNameP = "[^\\*\\|\\?\\\\<>:\"/]+$";
-		if(StringUtils.isNotEmpty(this.path) && !Pattern.matches(pathP, this.path)){
-			errors.add("路径不能输入以下字符\\ : \" | * ? < >");
+		if(StringUtils.isNotEmpty(this.path) && !Pattern.matches(WebConstants.VALID_PATH_PATTERN, this.path)){
+			errors.add(WebConstants.VALID_PATH_DESC);
 		}
-		if(StringUtils.isNotEmpty(this.fileName) && !Pattern.matches(fileNameP, this.fileName)){
-			errors.add("文件名不能输入以下字符\\ : \" | * ? < > /");
+		if(StringUtils.isNotEmpty(this.fileName) && !Pattern.matches(WebConstants.VALID_FILE_NAME_PATTERN, this.fileName)){
+			errors.add(WebConstants.VALID_FILE_NAME_DESC);
 		}
 	}
 }

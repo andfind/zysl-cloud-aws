@@ -1,8 +1,6 @@
 package com.zysl.cloud.aws.web.controller;
 
 
-import com.zysl.cloud.aws.api.dto.FileInfoDTO;
-import com.zysl.cloud.aws.api.req.BucketFileRequest;
 import com.zysl.cloud.aws.api.req.CreateBucketRequest;
 import com.zysl.cloud.aws.api.req.GetBucketsRequest;
 import com.zysl.cloud.aws.api.req.SetFileVersionRequest;

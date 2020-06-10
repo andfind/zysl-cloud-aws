@@ -37,7 +37,7 @@ public class HttpUtils {
 		Long[] byteLength = new Long[2];
 		byteLength[0] = 0L;
 		byteLength[1] = max;
-		if(StringUtils.isBlank(range)){
+		if(StringUtils.isBlank(range) || range.length() <= 6){
 			return byteLength;
 		}
 		long start = 0,end = 0;
@@ -85,10 +85,12 @@ public class HttpUtils {
 			response.setContentType("application/octet-stream");//告诉浏览器输出内容为流
 			response.setCharacterEncoding("UTF-8");
 			
-			String userAgent = request.getHeader("User-Agent").toUpperCase();//获取浏览器名（IE/Chome/firefox）
+			String userAgent = request.getHeader("User-Agent");//获取浏览器名（IE/Chome/firefox）
+			if(StringUtils.isNotEmpty(userAgent)){
+				userAgent = userAgent.toUpperCase();
+			}
 			
-			
-			if (userAgent.contains("MSIE") ||
+			if (userAgent != null && userAgent.contains("MSIE") ||
 				(userAgent.indexOf("GECKO")>0 && userAgent.indexOf("RV:11")>0)) {
 				fileName = URLEncoder.encode(fileName, "UTF-8");// IE浏览器
 			}else{

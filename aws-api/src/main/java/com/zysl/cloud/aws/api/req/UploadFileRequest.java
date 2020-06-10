@@ -35,18 +35,33 @@ public class UploadFileRequest extends BaseReqeust {
     private Integer validity;
     @ApiModelProperty(value = "标签中保存文件名称", name = "fileName",dataType = SwaggerConstants.DATA_TYPE_STRING)
     private String fileName;
-
+    
     @Override
     public String toString() {
-        return "UploadFileRequest{" +
-                "bucketName='" + bucketName + '\'' +
-                ", fileId='" + fileId + '\'' +
-                ", data='" + data + '\'' +
-                ", maxAmount=" + maxAmount +
-                ", validity=" + validity +
-                ", fileName='" + fileName + '\'' +
-                '}';
+        final StringBuffer sb = new StringBuffer("{\"UploadFileRequest\":{");
+        if (bucketName != null) {
+            sb.append("bucketName='").append(bucketName).append('\'');
+        }
+        if (fileId != null) {
+            sb.append(", fileId='").append(fileId).append('\'');
+        }
+        if (data != null) {
+            sb.append(", data.length='").append(data.length()).append('\'');
+        }
+        if (maxAmount != null) {
+            sb.append(", maxAmount=").append(maxAmount);
+        }
+        if (validity != null) {
+            sb.append(", validity=").append(validity);
+        }
+        if (fileName != null) {
+            sb.append(", fileName='").append(fileName).append('\'');
+        }
+        sb.append("},\"super-UploadFileRequest\":")
+            .append(super.toString()).append("}");
+        return sb.toString();
     }
+    
     @Override
     public String getEsLogMsg() {
         return StringUtils.join(bucketName,":",fileId);
