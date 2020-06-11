@@ -320,13 +320,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	public String getLastVersion(S3ObjectBO t) {
 		log.info("s3folder.getLastVersion.param:{}", t);
 
-		//获取s3初始化对象
-		List<S3ObjectBO> versionList = this.getVersions(t);
-		if(!CollectionUtils.isEmpty(versionList)){
-			S3ObjectBO version = versionList.get(0);
-			return version != null ? version.getVersionId() : null;
-		}
-		return null;
+		return fileService.getLastVersion(t);
 	}
 	
 	@Override

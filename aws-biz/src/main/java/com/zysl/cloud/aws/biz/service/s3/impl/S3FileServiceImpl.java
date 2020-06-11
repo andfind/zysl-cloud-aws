@@ -199,12 +199,10 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
 		log.info("s3file.getLastVersion.param:{}", t);
-
 		//获取s3初始化对象
-		List<S3ObjectBO> versionList = this.getVersions(t);
-		if(!CollectionUtils.isEmpty(versionList)){
-			S3ObjectBO version = versionList.get(0);
-			return version.getVersionId();
+		S3ObjectBO s3ObjectBO = this.getBaseInfo(t);
+		if(s3ObjectBO != null && s3ObjectBO.getVersionId() != null){
+			return  s3ObjectBO.getVersionId();
 		}
 		return null;
 	}
