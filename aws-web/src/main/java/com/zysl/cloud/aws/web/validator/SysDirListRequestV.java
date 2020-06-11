@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.web.validator;
 
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.validator.IValidator;
 import java.util.List;
@@ -22,13 +23,8 @@ public class SysDirListRequestV implements IValidator {
 	
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-		if(path.indexOf(":") < 1 || path.length() < path.indexOf(":")+2 ){
+		if(path.indexOf(BizConstants.DISK_SEPARATOR) < 1 || path.length() < path.indexOf(BizConstants.DISK_SEPARATOR)+2 ){
 			errors.add("列表查询路径格式异常.");
-//		}else{
-//			String str = path.substring(path.indexOf(":")+2);
-//			if(StringUtils.isBlank(str)){
-//				errors.add("列表查询不能针对根目录.");
-//			}
 		}
 	}
 }

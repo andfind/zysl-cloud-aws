@@ -14,7 +14,7 @@ public interface IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 17:10 2020/3/23
-	 * @param [bucketName]
+	 * @param bucketName
 	 * @return java.lang.String
 	 **/
 	String getServerNo(String bucketName);
@@ -24,7 +24,7 @@ public interface IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 17:10 2020/3/23
-	 * @param [serverNo]
+	 * @param serverNo
 	 * @return software.amazon.awssdk.services.s3.S3Client
 	 **/
 	S3Client getS3ClientByServerNo(String serverNo);
@@ -34,7 +34,7 @@ public interface IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 17:11 2020/3/23
-	 * @param [bucketName]
+	 * @param bucketName
 	 * @return software.amazon.awssdk.services.s3.S3Client
 	 **/
 	S3Client getS3ClientByBucket(String bucketName);
@@ -44,10 +44,11 @@ public interface IS3FactoryService {
 	 * 获取s3连接
 	 * @description
 	 * @author miaomingming
-	 * @date 14:46 2020/4/1
+	 * @date 17:48 2020/6/11
 	 * @param bucketName
 	 * @param isWrite
 	 * @return software.amazon.awssdk.services.s3.S3Client
+	 * @throws  AppLogicException
 	 **/
 	S3Client getS3ClientByBucket(String bucketName,Boolean isWrite) throws AppLogicException;
 	/**
@@ -55,7 +56,7 @@ public interface IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 10:17 2020/3/25
-	 * @param [bucketName]
+	 * @param bucketName
 	 * @return java.lang.Boolean
 	 **/
 	Boolean isExistBucket(String bucketName);
@@ -65,7 +66,8 @@ public interface IS3FactoryService {
 	 * @description
 	 * @author miaomingming
 	 * @date 10:18 2020/3/25
-	 * @param [bucketName, serverNo]
+	 * @param bucketName
+	 * @param serverNo
 	 * @return java.lang.Boolean
 	 **/
 	void addBucket(String bucketName,String serverNo);
@@ -102,9 +104,11 @@ public interface IS3FactoryService {
 	 * 统一调用s3方法
 	 * @description
 	 * @author miaomingming
-	 * @date 22:10 2020/3/23
-	 * @param [r,  s3Client, methodName]
+	 * @param r
+	 * @param s3Client
+	 * @param methodName
 	 * @return T
+	 * @throws AppLogicException
 	 **/
 	<T extends S3Response,R extends S3Request>T callS3Method(R r,S3Client s3Client,String methodName) throws AppLogicException;
 
@@ -112,9 +116,13 @@ public interface IS3FactoryService {
 	 * 统一调用s3方法，带数据流
 	 * @description
 	 * @author miaomingming
-	 * @date 22:10 2020/3/23
-	 * @param [r,  s3Client, methodName]
+	 * @date 18:01 2020/6/11
+	 * @param r
+	 * @param requestBody
+	 * @param s3Client
+	 * @param methodName
 	 * @return T
+	 * @throws AppLogicException
 	 **/
 	<T extends S3Response,R extends S3Request>T callS3MethodWithBody(R r, RequestBody requestBody,S3Client s3Client,String methodName) throws AppLogicException;
 

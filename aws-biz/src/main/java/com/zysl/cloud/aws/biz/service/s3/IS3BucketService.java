@@ -33,10 +33,8 @@ public interface IS3BucketService {
 
 	/**
 	 * 创建存储桶bucket
-	 * @description
-	 * @author miaomingming
-	 * @date 9:38 2020/3/25
-	 * @param bucketName, serviceNo
+	 * @param bucketName
+	 * @param serviceNo
 	 * @return java.lang.Boolean
 	 **/
 	Boolean createBucket(String bucketName, String serviceNo);
@@ -61,9 +59,9 @@ public interface IS3BucketService {
 
 	/**
 	 * 获取bucket的标签
-	 * @param t
-	 * @return
-	 */
+	 * @param bucketName
+	 * @return java.util.List<com.zysl.cloud.aws.domain.bo.TagBO>
+	 **/
 	List<TagBO> getBucketTag(String bucketName);
 
 }

@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.biz.service.s3.impl;
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.constant.S3Method;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
@@ -274,13 +275,13 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		if(StringUtils.isEmpty(t.getPath())){
 			request = ListObjectsRequest.builder()
 					.bucket(t.getBucketName())
-					.delimiter("/")
+					.delimiter(BizConstants.PATH_SEPARATOR)
 					.build();
 		}else{
 			request = ListObjectsRequest.builder()
 					.bucket(t.getBucketName())
 					.prefix(t.getPath())
-					.delimiter("/")
+					.delimiter(BizConstants.PATH_SEPARATOR)
 					.build();
 		}
 		//查询目录下的对象信息
@@ -344,7 +345,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		ListObjectsRequest.Builder request = ListObjectsRequest.builder()
 											.bucket(t.getBucketName())
 											.prefix(t.getPath())
-											.delimiter("/");
+											.delimiter(BizConstants.PATH_SEPARATOR);
 		//查询目录下的对象信息
 		while (response == null || response.isTruncated()){
 			request.marker(nextMarker);
@@ -483,15 +484,15 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		if(s3ObjectBO == null){
 			s3ObjectBO = new S3ObjectBO();
 		}
-		if(s3Key.startsWith("/")){
+		if(s3Key.startsWith(BizConstants.PATH_SEPARATOR)){
 			s3Key = s3Key.substring(1);
 		}
-		if(s3Key.endsWith("/")){
+		if(s3Key.endsWith(BizConstants.PATH_SEPARATOR)){
 			s3ObjectBO.setPath(s3Key);
 			s3ObjectBO.setFileName("");
 		}else{
-			s3ObjectBO.setPath(s3Key.substring(0,s3Key.lastIndexOf("/")+1));
-			s3ObjectBO.setFileName(s3Key.substring(s3Key.lastIndexOf("/")+1));
+			s3ObjectBO.setPath(s3Key.substring(0,s3Key.lastIndexOf(BizConstants.PATH_SEPARATOR)+1));
+			s3ObjectBO.setFileName(s3Key.substring(s3Key.lastIndexOf(BizConstants.PATH_SEPARATOR)+1));
 		}
 	}
 	/**
@@ -506,11 +507,11 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	private String getDestKey(String srcPath, String destPath){
 		//只能子目录复制，不能根目录复制
 		if(StringUtils.isEmpty(srcPath) || StringUtils.isEmpty(destPath)
-			|| srcPath.indexOf("/") <= 0 ){
+			|| srcPath.indexOf(BizConstants.PATH_SEPARATOR) <= 0 ){
 			return  null;
 		}
 		
-		String str = srcPath.split("/")[0];
+		String str = srcPath.split(BizConstants.PATH_SEPARATOR)[0];
 		String destStr = destPath + srcPath.substring(str.length() + 1);
 		return destStr;
 	}

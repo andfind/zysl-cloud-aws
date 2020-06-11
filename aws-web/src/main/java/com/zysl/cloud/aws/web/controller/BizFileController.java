@@ -10,6 +10,7 @@ import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.srv.BizFileSrv;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.IPDFService;
@@ -280,13 +281,13 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			//step 5.上传新文件
 			//修改bucket及文件名
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
-			if(fileRequest.getPath().indexOf(":") > -1){
+			if(fileRequest.getPath().indexOf(BizConstants.DISK_SEPARATOR) > -1){
 				String path = request.getPath();
 				path = bizConfig.getPdfDefaultRootPath() + path.substring(path.indexOf(":")+1);
 				fileRequest.setPath(path);
 			}
 			
-			if(fileName.indexOf(".") > -1){
+			if(fileName.indexOf(BizConstants.DISK_SEPARATOR) > -1){
 				fileName = fileName.substring(0,fileName.lastIndexOf("."));
 				fileName += StringUtils.join("_",System.currentTimeMillis(),".pdf");
 				fileRequest.setFileName(fileName);

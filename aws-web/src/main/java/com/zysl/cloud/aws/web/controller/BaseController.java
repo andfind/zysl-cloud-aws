@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.web.controller;
 
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
@@ -33,15 +34,15 @@ public class BaseController extends com.zysl.cloud.utils.common.BaseController {
 		if(s3ObjectBO == null){
 			s3ObjectBO = new S3ObjectBO();
 		}
-		if(s3Key.startsWith("/")){
+		if(s3Key.startsWith(BizConstants.PATH_SEPARATOR)){
 			s3Key = s3Key.substring(1);
 		}
-		if(s3Key.endsWith("/")){
+		if(s3Key.endsWith(BizConstants.PATH_SEPARATOR)){
 			s3ObjectBO.setPath(s3Key);
 			s3ObjectBO.setFileName("");
 		}else{
-			s3ObjectBO.setPath(s3Key.substring(0,s3Key.lastIndexOf("/")+1));
-			s3ObjectBO.setFileName(s3Key.substring(s3Key.lastIndexOf("/")+1));
+			s3ObjectBO.setPath(s3Key.substring(0,s3Key.lastIndexOf(BizConstants.PATH_SEPARATOR)+1));
+			s3ObjectBO.setFileName(s3Key.substring(s3Key.lastIndexOf(BizConstants.PATH_SEPARATOR)+1));
 		}
 	}
 	

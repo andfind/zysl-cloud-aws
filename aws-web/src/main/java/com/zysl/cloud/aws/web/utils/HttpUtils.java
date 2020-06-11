@@ -82,19 +82,18 @@ public class HttpUtils {
 		try {
 			//1下载文件流
 			OutputStream outputStream = response.getOutputStream();
-			response.setContentType("application/octet-stream");//告诉浏览器输出内容为流
+			//告诉浏览器输出内容为流
+			response.setContentType("application/octet-stream");
 			response.setCharacterEncoding("UTF-8");
+			//获取浏览器名（IE/Chome/firefox）
+			String userAgent = request.getHeader("User-Agent");
 			
-			String userAgent = request.getHeader("User-Agent");//获取浏览器名（IE/Chome/firefox）
-			if(StringUtils.isNotEmpty(userAgent)){
-				userAgent = userAgent.toUpperCase();
-			}
-			
-			if (userAgent != null && userAgent.contains("MSIE") ||
-				(userAgent.indexOf("GECKO")>0 && userAgent.indexOf("RV:11")>0)) {
-				fileName = URLEncoder.encode(fileName, "UTF-8");// IE浏览器
+			// IE浏览器
+			if (isIE(userAgent)) {
+				fileName = URLEncoder.encode(fileName, "UTF-8");
 			}else{
-				fileName = new String(fileName.getBytes("UTF-8"), "ISO8859-1");// 谷歌
+				// 谷歌
+				fileName = new String(fileName.getBytes("UTF-8"), "ISO8859-1");
 			}
 			response.setHeader("Content-Disposition", "attachment;fileName="+fileName);
 			
@@ -106,6 +105,25 @@ public class HttpUtils {
 			log.error("--文件下载异常：--", e);
 			throw new AppLogicException(ErrCodeEnum.DOWNLOAD_FILE_ERROR.getCode());
 		}
+	}
+	
+	/**
+	 * 判断是否IE浏览器
+	 * @description
+	 * @author miaomingming
+	 * @param userAgent
+	 * @return boolean
+	 **/
+	public static boolean isIE(String userAgent){
+		if(StringUtils.isEmpty(userAgent)){
+			return Boolean.FALSE;
+		}
+		userAgent = userAgent.toUpperCase();
+		if(userAgent.contains("MSIE") ||
+			(userAgent.indexOf("GECKO")>0 && userAgent.indexOf("RV:11")>0)){
+			return Boolean.TRUE;
+		}
+		return Boolean.FALSE;
 	}
 	
 	/**

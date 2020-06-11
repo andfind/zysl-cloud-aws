@@ -258,26 +258,45 @@ public class SysFileManagerImpl implements ISysFileManager {
 		
 		return dto;
 	}
+
+	/**
+	 * 复制文件--旧方法
+	 * @description
+	 * @author miaomingming
+	 * @date 17:33 2020/6/11
+	 * @param source
+	 * @param target
+	 * @return void
+	 **/
+  private void copyFile_old(SysFileRequest source, SysFileRequest target) {
+    byte[] bodys = null;
+    //源数据读取
+    if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
+    	S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(source);
+    	S3ObjectBO rst = (S3ObjectBO)s3FileService.getInfoAndBody(s3ObjectBO);
+    	bodys = rst.getBodys();
+    }
+    //复制到目标地址
+    if(bodys == null){
+    	return;
+    }
+    if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
+    	S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(target);
+    	s3ObjectBO.setBodys(bodys);
+    	s3FileService.create(s3ObjectBO);
+    }
+  }
 	
+  	/**
+  	 * 复制文件
+  	 * @description
+  	 * @author miaomingming
+  	 * @date 17:34 2020/6/11
+  	 * @param source
+  	 * @param target
+  	 * @return void
+  	 **/
 	private void copyFile(SysFileRequest source, SysFileRequest target){
-		/*byte[] bodys = null;
-		//源数据读取
-		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
-			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(source);
-			S3ObjectBO rst = (S3ObjectBO)s3FileService.getInfoAndBody(s3ObjectBO);
-			bodys = rst.getBodys();
-		}
-		//复制到目标地址
-		if(bodys == null){
-			return;
-		}
-		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
-			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(target);
-			s3ObjectBO.setBodys(bodys);
-			s3FileService.create(s3ObjectBO);
-		}*/
-		
-		
 		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
 			if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 				S3ObjectBO sourceBO = ObjectFormatUtils.createS3ObjectBO(source);

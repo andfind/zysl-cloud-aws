@@ -33,6 +33,11 @@ public class BizConstants {
     // 分片下载单次最大字节数，bizconfig启动时会初始化
     public static long MULTI_DOWNLOAD_FILE_MAX_SIZE = 0L;
     
+    //路径分隔符
+    public static final String PATH_SEPARATOR = "/";
+    //盘符分隔符
+    public static final String DISK_SEPARATOR = ":";
+    
     @PostConstruct
     public void init() {
         log.info("init.multipartDownloadMaxFileSize:{}", webConfig.getMultipartDownloadMaxFileSize());

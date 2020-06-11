@@ -13,7 +13,7 @@ public class BatchListUtil<E> {
      * @return Map<Integer,List<E>>
      */
     public Map<Integer,List<E>> batchList(List<E> list, int batchSize){
-        Map<Integer,List<E>> itemMap = new HashMap<>();
+        Map<Integer,List<E>> itemMap = new HashMap<>(64);
         List<E> listnew=new ArrayList<E>();
         int j = 1;
         int size = list.size() / batchSize;

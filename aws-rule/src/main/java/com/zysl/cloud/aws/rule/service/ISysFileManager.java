@@ -62,9 +62,9 @@ public interface ISysFileManager {
 	 * 数据上传
 	 * @description
 	 * @author miaomingming
-	 * @date 15:14 2020/4/7
 	 * @param request
 	 * @param bodys
+	 * @param isOverWrite
 	 * @return void
 	 **/
 	void upload(SysFileRequest request,byte[] bodys,Boolean isOverWrite);

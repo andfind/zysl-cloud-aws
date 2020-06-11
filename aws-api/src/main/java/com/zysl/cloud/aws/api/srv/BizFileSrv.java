@@ -47,9 +47,10 @@ public interface BizFileSrv {
 	 * 分享文件下载
 	 * @description
 	 * @author miaomingming
-	 * @date 9:46 2020/4/9
-	 * @param response
+	 * @date 17:31 2020/6/11
 	 * @param request
+	 * @param response
+	 * @param downloadRequest
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@GetMapping("/shareDownload")

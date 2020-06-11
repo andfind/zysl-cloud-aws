@@ -6,6 +6,7 @@ import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.enums.OPAuthTypeEnum;
 import com.zysl.cloud.aws.api.req.*;
 import com.zysl.cloud.aws.api.srv.FileSrv;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
@@ -683,7 +684,7 @@ public class FileController extends BaseController implements FileSrv {
 			
 			//设置响应头：Content-Range: bytes 0-2000/4932
 			byteLength[1] = byteLength[1] > s3ObjectBO.getContentLength()-1 ? s3ObjectBO.getContentLength()-1 : byteLength[1];
-			String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",s3ObjectBO.getContentLength());
+			String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1], BizConstants.PATH_SEPARATOR,s3ObjectBO.getContentLength());
 			response.setHeader("Content-Range",rspRange);
 			
 			//获取标签中的文件名称

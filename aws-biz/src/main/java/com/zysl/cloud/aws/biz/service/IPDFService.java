@@ -3,7 +3,10 @@ package com.zysl.cloud.aws.biz.service;
 public interface IPDFService {
     /**
      * pdf加图片水印
-     */
+     * @param inBuff
+     * @param outPdfFile
+     * @return byte[]
+     **/
     public byte[] addPdfImgMark(byte[] inBuff, String outPdfFile);
 
     /**
@@ -19,9 +22,12 @@ public interface IPDFService {
 
     /**
      * pdf文件加密码
+     * @description
+     * @author miaomingming
      * @param inBuff
      * @param userPwd
      * @param ownerPwd
-     */
+     * @return byte[]
+     **/
     public byte[] addPwd(byte[] inBuff, String userPwd, String ownerPwd);
 }

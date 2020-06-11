@@ -12,6 +12,7 @@ import com.zysl.cloud.aws.api.req.DelObjectRequest;
 import com.zysl.cloud.aws.api.req.QueryObjectsRequest;
 import com.zysl.cloud.aws.api.req.*;
 import com.zysl.cloud.aws.api.srv.FolderSrv;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
@@ -49,7 +50,7 @@ public class FolderController extends BaseController implements FolderSrv {
         return ServiceProvider.call(request, CreateFolderRequestV.class, String.class, req ->{
             S3ObjectBO t = new S3ObjectBO();
             t.setBucketName(req.getBucketName());
-            setPathAndFileName(t, req.getFolderName() + "/");
+            setPathAndFileName(t, req.getFolderName() + BizConstants.PATH_SEPARATOR);
 
             //数据权限校验
             fileService.checkDataOpAuth(t, OPAuthTypeEnum.WRITE.getCode());
@@ -76,7 +77,7 @@ public class FolderController extends BaseController implements FolderSrv {
             //先查询文件夹下的对象信息
             S3ObjectBO t = new S3ObjectBO();
             t.setBucketName(req.getBucketName());
-            setPathAndFileName(t, req.getKey() + "/");
+            setPathAndFileName(t, req.getKey() + BizConstants.PATH_SEPARATOR);
 
 
             //数据权限校验
@@ -94,7 +95,7 @@ public class FolderController extends BaseController implements FolderSrv {
 
             S3ObjectBO t = new S3ObjectBO();
             t.setBucketName(req.getBucketName());
-            setPathAndFileName(t, req.getKey() + "/");
+            setPathAndFileName(t, req.getKey() + BizConstants.PATH_SEPARATOR);
 
 
             //数据权限校验
@@ -152,10 +153,10 @@ public class FolderController extends BaseController implements FolderSrv {
         return ServiceProvider.call(request, CopyObjectsRequestV.class, String.class, req -> {
             S3ObjectBO src = new S3ObjectBO();
             src.setBucketName(req.getSourceBucket());
-            setPathAndFileName(src, req.getSourceKey() + "/");
+            setPathAndFileName(src, req.getSourceKey() + BizConstants.PATH_SEPARATOR);
             S3ObjectBO dest = new S3ObjectBO();
             dest.setBucketName(req.getDestBucket());
-            setPathAndFileName(dest, req.getDestKey() + "/");
+            setPathAndFileName(dest, req.getDestKey() + BizConstants.PATH_SEPARATOR);
 
             //设置目标文件标签
             dest.setTagList(fileService.addTags(src, Lists.newArrayList()));
@@ -175,10 +176,10 @@ public class FolderController extends BaseController implements FolderSrv {
         return ServiceProvider.call(request, CopyObjectsRequestV.class, String.class, req ->{
             S3ObjectBO src = new S3ObjectBO();
             src.setBucketName(req.getSourceBucket());
-            setPathAndFileName(src, req.getSourceKey() + "/");
+            setPathAndFileName(src, req.getSourceKey() + BizConstants.PATH_SEPARATOR);
             S3ObjectBO dest = new S3ObjectBO();
             dest.setBucketName(req.getDestBucket());
-            setPathAndFileName(dest, req.getDestKey() + "/");
+            setPathAndFileName(dest, req.getDestKey() + BizConstants.PATH_SEPARATOR);
             //设置目标文件标签
             dest.setTagList(fileService.addTags(src, Lists.newArrayList()));
 
@@ -193,7 +194,7 @@ public class FolderController extends BaseController implements FolderSrv {
             if(copyFlag){
                 S3ObjectBO t = new S3ObjectBO();
                 t.setBucketName(req.getSourceBucket());
-                setPathAndFileName(t, req.getSourceKey() + "/");
+                setPathAndFileName(t, req.getSourceKey() + BizConstants.PATH_SEPARATOR);
                 t.setDeleteStore(DeleteStoreEnum.COVER.getCode());
                 folderService.delete(t);
             }
@@ -207,7 +208,7 @@ public class FolderController extends BaseController implements FolderSrv {
         return ServiceProvider.call(request, ObjectRenameRequestV.class, FolderDTO.class, req -> {
             S3ObjectBO t = new S3ObjectBO();
             t.setBucketName(req.getBucketName());
-            setPathAndFileName(t, req.getSourcekey() + "/");
+            setPathAndFileName(t, req.getSourcekey() + BizConstants.PATH_SEPARATOR);
             t.setTagFilename(BizUtil.subLastString(req.getDestKey()));
 
             //设置标签

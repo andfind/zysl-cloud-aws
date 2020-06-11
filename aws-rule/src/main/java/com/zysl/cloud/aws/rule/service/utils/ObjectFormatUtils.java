@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.rule.service.utils;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.utils.StringUtils;
 
@@ -21,12 +22,12 @@ public class ObjectFormatUtils {
 		if(StringUtils.isBlank(filePath) || s3ObjectBO == null){
 			return;
 		}
-		if(filePath.indexOf(":") > -1 && filePath.length() >= filePath.indexOf(":")+2){
+		if(filePath.indexOf(BizConstants.DISK_SEPARATOR) > -1 && filePath.length() >= filePath.indexOf(BizConstants.DISK_SEPARATOR)+2){
 			s3ObjectBO.setBucketName(filePath.substring(0,filePath.indexOf(":")));
 			s3ObjectBO.setPath(filePath.substring(filePath.indexOf(":")+2));
 			//s3的路径不需要/开头，但是需要/结尾
-			if(!s3ObjectBO.getPath().endsWith("/") && s3ObjectBO.getPath().length() > 0){
-				s3ObjectBO.setPath(s3ObjectBO.getPath()+"/");
+			if(!s3ObjectBO.getPath().endsWith(BizConstants.PATH_SEPARATOR) && s3ObjectBO.getPath().length() > 0){
+				s3ObjectBO.setPath(s3ObjectBO.getPath()+BizConstants.PATH_SEPARATOR);
 			}
 		}
 		
@@ -46,14 +47,14 @@ public class ObjectFormatUtils {
 		if(StringUtils.isBlank(s3Key) || dto == null){
 			return;
 		}
-		if(s3Key.startsWith("/")){
+		if(s3Key.startsWith(BizConstants.PATH_SEPARATOR)){
 			s3Key = s3Key.substring(1);
 		}
-		if(s3Key.endsWith("/")){
+		if(s3Key.endsWith(BizConstants.PATH_SEPARATOR)){
 			dto.setPath(bucket + ":/" + s3Key);
 		}else{
-			dto.setPath(bucket + ":/" + s3Key.substring(0,s3Key.lastIndexOf("/")+1));
-			dto.setFileName(s3Key.substring(s3Key.lastIndexOf("/")+1));
+			dto.setPath(bucket + ":/" + s3Key.substring(0,s3Key.lastIndexOf(BizConstants.PATH_SEPARATOR)+1));
+			dto.setFileName(s3Key.substring(s3Key.lastIndexOf(BizConstants.PATH_SEPARATOR)+1));
 		}
 	}
 	

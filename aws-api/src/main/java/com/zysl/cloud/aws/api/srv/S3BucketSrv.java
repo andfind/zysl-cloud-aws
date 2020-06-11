@@ -12,26 +12,32 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 @RequestMapping("/aws/bucket")
 public interface S3BucketSrv {
-
+	/**
+	 * 创建bucket
+	 * @description
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
 	@GetMapping("/createBucket")
 	BaseResponse<String> createBucket(CreateBucketRequest request);
 
 
 	/**
 	 * 设置文件夹的版本控制权限
-	 * @param bucketName
-	 * @param status
-	 * @return
-	 */
+	 * @description
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
 	@PostMapping("/setVersion")
 	BaseResponse<String> updateFileVersion(@RequestBody SetFileVersionRequest request);
 
 	/**
 	 * 查询所有bucket列表
-	 * @param bucketName
-	 * @param serviceNo
-	 * @return
-	 */
+	 * @description
+	 * @author miaomingming
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<java.lang.String>
+	 **/
 	@GetMapping("/getBuckets")
 	BasePaginationResponse<String> getBuckets(GetBucketsRequest request);
 }

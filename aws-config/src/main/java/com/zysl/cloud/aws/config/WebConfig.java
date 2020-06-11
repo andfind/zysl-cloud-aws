@@ -34,7 +34,7 @@ public class WebConfig {
 	
 	
 	/**
-	 * 单次移动/复制文件最大byte，单位M
+	 * 单次移动/复制文件最大byte
 	 **/
 	@Value("${copy.max-file-size}")
 	private Integer copyMaxFileSize;

@@ -16,6 +16,7 @@ import com.zysl.cloud.aws.api.req.SysFileRenameRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
 import com.zysl.cloud.aws.api.srv.SysFileSrv;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
@@ -245,7 +246,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			if(!StringUtils.isBlank(range)){
 				//设置响应头：Content-Range: bytes 0-2000/4932
 				byteLength[1] = byteLength[1] > fileDTO.getSize()-1 ? fileDTO.getSize()-1 : byteLength[1];
-				String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1],"/",fileDTO.getSize());
+				String rspRange = StringUtils.join("bytes ",byteLength[0],"-",byteLength[1], BizConstants.PATH_SEPARATOR,fileDTO.getSize());
 				response.setHeader("Content-Range",rspRange);
 			}
 

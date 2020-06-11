@@ -11,22 +11,16 @@ import software.amazon.awssdk.services.s3.model.Tagging;
 public interface IS3FileService<T> extends IFileService<T> {
 
   /**
-   * 数据操作权限校验
+   * * 数据操作权限校验
    * * 有的操作，比如复制，需要调2次判断
    * * 旧目录/文件的读取权限；新目录的写入权限
    * @description
    * @author miaomingming
-   * @date 16:32 2020/3/30
-   * @param bucket
-   * @param path
-   * @param fileName
-   * @param fileVersionId
+   * @param s3ObjectBO
    * @param opAuthTypes
    * @return void
    */
-//  void checkDataOpAuth(
-//	  String bucket, String path, String fileName, String fileVersionId, String opAuthTypes);
-	void checkDataOpAuth(S3ObjectBO s3ObjectBO, String opAuthTypes);
+  void checkDataOpAuth(S3ObjectBO s3ObjectBO, String opAuthTypes);
 
 	/**
 	 * 查询对象标签信息

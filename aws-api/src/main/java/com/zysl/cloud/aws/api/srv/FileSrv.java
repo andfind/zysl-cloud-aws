@@ -27,90 +27,92 @@ public interface FileSrv {
 	/**
 	 * base64进制String上传文件
 	 * @param request
-	 * @returnuploadFile
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.UploadFieDTO>
+	 **/
 	@PostMapping("/uploadFile")
 	BaseResponse<UploadFieDTO> uploadFile(@RequestBody UploadFileRequest request);
 
 	/**
 	 * 文件流上传
 	 * @param request
-	 * @returnuploadFile
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.UploadFieDTO>
+	 **/
 	@PostMapping("/uploadFileInfo")
 	BaseResponse<UploadFieDTO> uploadFile(HttpServletRequest request);
 
 	/**
 	 * 下载文件
-	 * @param bucketName
-	 * @param fileId
-	 * @return
-	 */
+	 * @param request
+	 * @param response
+	 * @param downRequest
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.DownloadFileDTO>
+	 **/
 	@GetMapping("/downloadFile")
 	BaseResponse<DownloadFileDTO> downloadFile(HttpServletRequest request, HttpServletResponse response, DownloadFileRequest downRequest);
 
 	/**
 	 * 分享文件下载
 	 * @param response
-	 * @param downRequest
-	 */
+	 * @param request
+	 * @return void
+	 **/
 	@GetMapping("/shareDownloadFile")
 	void shareDownloadFile(HttpServletResponse response, DownloadFileRequest request);
 
 	/**
 	 * 删除文件
 	 * @param request
-	 * @return
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
 	@PostMapping("/delete")
 	BaseResponse<String> deleteFile(@RequestBody DelObjectRequest request);
 
 	/**
 	 * 获取文件信息
-	 * @param bucketName
-	 * @param fileName
-	 */
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.FileInfoDTO>
+	 **/
 	@GetMapping("/getFileInfo")
 	BaseResponse<FileInfoDTO> getFileInfo(GetFileRequest request);
 
 	/**
 	 * 获取视频文件信息
 	 * @param response
-	 * @param bucketName
-	 * @param fileId
-	 */
+	 * @param request
+	 * @return void
+	 **/
 	@GetMapping("/getVideo")
 	void getVideo(HttpServletResponse response, GetVideoRequest request);
 
 	/**
 	 * 获取文件版本信息
-	 * @param bucketName
-	 * @param fileName
-	 * @return
-	 */
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<com.zysl.cloud.aws.api.dto.ObjectVersionDTO>
+	 **/
 	@GetMapping("/getFileVersion")
 	BasePaginationResponse<ObjectVersionDTO> getFileVersion(GetFileVerRequest request);
 
 	/**
 	 * 获取文件大小
-	 * @param bucketName
-	 * @param fileName
-	 */
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.Long>
+	 **/
 	@GetMapping("/getFileSize")
 	BaseResponse<Long> getFileSize(GetFileRequest request);
 
     /**
      * 设置文件标签信息
-     * @return
-     */
+     * @param request
+     * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+     **/
     @PostMapping("/setTag")
     BaseResponse<String> setObjectTag(@RequestBody SetFileTagRequest request);
 
 	/**
 	 * 文件复制
 	 * @param request
-	 * @return
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
 	@PostMapping("/copy")
 	BaseResponse<String> copyFile(@RequestBody CopyObjectsRequest request);
 
@@ -184,24 +186,24 @@ public interface FileSrv {
 	/**
 	 * 创建断点续传
 	 * @param request
-	 * @return
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
 	@PostMapping("/createMultipart")
 	BaseResponse<String> createMultipart(@RequestBody CreateMultipartRequest request);
 
 	/**
-	 *断点续传
+	 * 断点续传
 	 * @param request
-	 * @return
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.req.MultipartUploadRequest>
+	 **/
 	@PostMapping("/uploadPart")
 	BaseResponse<MultipartUploadRequest> uploadPart(HttpServletRequest request);
 
 	/**
 	 * 断点续传完成确认
 	 * @param request
-	 * @return
-	 */
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.UploadFieDTO>
+	 **/
 	@PostMapping("/complete")
 	BaseResponse<UploadFieDTO> completeMultipart(@RequestBody CompleteMultipartRequest request);
 	
@@ -218,8 +220,9 @@ public interface FileSrv {
 
 	/**
 	 * 查询分区上传记录
-	 * @return
-	 */
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<com.zysl.cloud.aws.api.dto.FilePartInfoDTO>
+	 **/
 	@PostMapping("/listParts")
 	BaseResponse<FilePartInfoDTO> listParts(@RequestBody GetListPartRequest request);
 }

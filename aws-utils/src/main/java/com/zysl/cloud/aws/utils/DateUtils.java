@@ -1,7 +1,6 @@
 package com.zysl.cloud.aws.utils;
 
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
@@ -11,9 +10,10 @@ import org.springframework.util.StringUtils;
 @Slf4j
 public class DateUtils {
 
-	private static SimpleDateFormat format_1 = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-	private static SimpleDateFormat format_2 = new SimpleDateFormat("yyyy-MM-dd");
 
+	private static final String FORMAT_YYYYMMDDHHMMSS = "yyyy-MM-dd HH:mm:ss";
+	
+	
 	public static Date from(Instant instant) {
 		if(instant == null){
 			return null;
@@ -31,14 +31,16 @@ public class DateUtils {
 	 * @return
 	 */
 	public static Date addDateHour(Date date, Integer hour){
-		if (null == date)
+		if (null == date){
 			return null;
+		}
 		if(StringUtils.isEmpty(hour)){
 			return date;
 		}
 		Calendar cal = Calendar.getInstance();
 		cal.setTime(date);
-		cal.add(Calendar.HOUR, hour);// 24小时制
+		// 24小时制
+		cal.add(Calendar.HOUR, hour);
 
 		return cal.getTime();
 	}
@@ -49,10 +51,10 @@ public class DateUtils {
 	 * @return
 	 */
 	public static String getDateToString(Date date) {
-		if (date == null)
+		if (date == null){
 			return "";
-		String dateString = format_1.format(date);
-		return dateString;
+		}
+		return org.apache.http.client.utils.DateUtils.formatDate(date,FORMAT_YYYYMMDDHHMMSS);
 	}
 
 	/**
@@ -66,8 +68,8 @@ public class DateUtils {
 		}
 		Date strtodate = null;
 		try {
-			strtodate = format_1.parse(strDate);
-		} catch (ParseException e) {
+			strtodate = org.apache.http.client.utils.DateUtils.parseDate(strDate);
+		} catch (Exception e) {
 			log.info("--getStringToDate--", e);
 		}
 		return strtodate;
@@ -94,8 +96,8 @@ public class DateUtils {
 			return null;
 		}
 		try {
-			return format_1.parse(str);
-		} catch (ParseException e) {
+			return org.apache.http.client.utils.DateUtils.parseDate(str);
+		} catch (Exception e) {
 			log.info("--getStringToDate--", e);
 			return null;
 		}

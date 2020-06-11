@@ -4,6 +4,7 @@ import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.sun.org.apache.xpath.internal.operations.Bool;
 import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.constant.S3Method;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
@@ -356,7 +357,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		//设置源文件路径，转码
 		String copySourceUrl = null;
 		try{
-			copySourceUrl = src.getBucketName() + "/" + src.getPath() + src.getFileName();
+			copySourceUrl = src.getBucketName() + BizConstants.PATH_SEPARATOR + src.getPath() + src.getFileName();
 			copySourceUrl = java.net.URLEncoder.encode(copySourceUrl, "utf-8");
 			log.info("copySourceUrl:{}",copySourceUrl);
 		
@@ -569,8 +570,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 		//逐级往上检查目录
 		String curPath = s3ObjectBO.getPath();
-		if(StringUtils.isNotBlank(curPath) && !curPath.endsWith("/")){
-			curPath += "/";
+		if(StringUtils.isNotBlank(curPath) && !curPath.endsWith(BizConstants.PATH_SEPARATOR)){
+			curPath += BizConstants.PATH_SEPARATOR;
 		}
 		S3ObjectBO bo = s3ObjectBO;
 		bo.setBucketName(s3ObjectBO.getBucketName());
@@ -582,8 +583,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			}
 			//截取上层目录
 			curPath = curPath.substring(0,curPath.length() - 1);
-			if(curPath.lastIndexOf("/") > -1){
-				curPath = curPath.substring(0,curPath.lastIndexOf("/") + 1);
+			if(curPath.lastIndexOf(BizConstants.PATH_SEPARATOR) > -1){
+				curPath = curPath.substring(0,curPath.lastIndexOf(BizConstants.PATH_SEPARATOR) + 1);
 			}
 		}
 		

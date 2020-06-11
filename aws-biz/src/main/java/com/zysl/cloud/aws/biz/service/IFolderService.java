@@ -101,7 +101,8 @@ public interface IFolderService<T> {
 	/**
 	 * 目录重命名
 	 * @param t
-	 */
+	 * @return T
+	 **/
 	T rename(T t);
 
 }
