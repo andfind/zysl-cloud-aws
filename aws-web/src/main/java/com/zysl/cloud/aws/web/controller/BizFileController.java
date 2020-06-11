@@ -117,7 +117,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			target.setBodys(s3ObjectBO.getBodys());
 			
 			//生成标签信息
-			/*List<TagBO> tagList = Lists.newArrayList();
+			List<TagBO> tagList = Lists.newArrayList();
 			if(req.getMaxDownloadAmout() != null){
 				TagBO tag = new TagBO();
 				tag.setKey(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode());
@@ -131,7 +131,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				tag.setValue(date);
 				tagList.add(tag);
 			}
-			target.setTagList(tagList);*/
+			target.setTagList(tagList);
 			//重新上传文件
 			S3ObjectBO rst = (S3ObjectBO)s3FileService.create(target);
 			

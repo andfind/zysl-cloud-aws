@@ -31,8 +31,12 @@ public class SysFileRenameRequestV implements IValidator {
 		if(!Pattern.matches(WebConstants.VALID_PATH_PATTERN, this.target.getPath())){
 			errors.add(WebConstants.VALID_PATH_DESC);
 		}
-		if(!Pattern.matches(WebConstants.VALID_FILE_NAME_PATTERN, this.target.getFileName())){
-			errors.add(WebConstants.VALID_FILE_NAME_DESC);
+		
+		if(StringUtils.isNotEmpty(this.source.getFileName()) && !Pattern.matches(WebConstants.VALID_FILE_NAME_PATTERN, this.source.getFileName())){
+			errors.add("源"+WebConstants.VALID_FILE_NAME_DESC);
+		}
+		if(StringUtils.isNotEmpty(this.target.getFileName()) && !Pattern.matches(WebConstants.VALID_FILE_NAME_PATTERN, this.target.getFileName())){
+			errors.add("目标"+WebConstants.VALID_FILE_NAME_DESC);
 		}
 	}
 	
