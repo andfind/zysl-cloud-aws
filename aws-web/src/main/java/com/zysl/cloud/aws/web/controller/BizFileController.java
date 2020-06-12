@@ -88,16 +88,21 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				paths = request.getPaths();
 			}
 			
-			
-			for(SysDirRequest path:paths){
-				SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
-				reqDefaultUtils.setFileSystemDefault(fileRequest);
-				fileRequest.setFileName(request.getFileName());
-				fileRequest.setVersionId(request.getVersionId());
-				if(sysFileManager.info(fileRequest) != null){
-					return Boolean.TRUE;
+			if(!CollectionUtils.isEmpty(paths)){
+				for(SysDirRequest path:paths){
+					if(StringUtils.isEmpty(path.getPath())){
+						continue;
+					}
+					SysFileRequest fileRequest = BeanCopyUtil.copy(path,SysFileRequest.class);
+					reqDefaultUtils.setFileSystemDefault(fileRequest);
+					fileRequest.setFileName(request.getFileName());
+					fileRequest.setVersionId(request.getVersionId());
+					if(sysFileManager.info(fileRequest) != null){
+						return Boolean.TRUE;
+					}
 				}
 			}
+			
 			
 			return Boolean.FALSE;
 		},"isExist");
@@ -118,21 +123,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			target.setBodys(s3ObjectBO.getBodys());
 			
 			//生成标签信息
-			List<TagBO> tagList = Lists.newArrayList();
-			if(req.getMaxDownloadAmout() != null){
-				TagBO tag = new TagBO();
-				tag.setKey(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode());
-				tag.setValue(String.valueOf(req.getMaxDownloadAmout()));
-				tagList.add(tag);
-			}
-			if(req.getMaxHours() != null){
-				TagBO tag = new TagBO();
-				tag.setKey(S3TagKeyEnum.TAG_VALIDITY.getCode());
-				String date = DateUtils.getDateToString(DateUtils.addDateHour(new Date(), req.getMaxHours()));
-				tag.setValue(date);
-				tagList.add(tag);
-			}
-			target.setTagList(tagList);
+			target.setTagList(createTagList(req));
 			//重新上传文件
 			S3ObjectBO rst = (S3ObjectBO)s3FileService.create(target);
 			
@@ -144,6 +135,31 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			
 			return sysFileManager.info(fileRequest);
 		},"shareFile");
+	}
+	
+	/**
+	 * 生成标签信息
+	 * @description
+	 * @author miaomingming
+	 * @param req
+	 * @return java.util.List<com.zysl.cloud.aws.domain.bo.TagBO>
+	 **/
+	private List<TagBO> createTagList(BizFileShareRequest req){
+		List<TagBO> tagList = Lists.newArrayList();
+		if(req.getMaxDownloadAmout() != null){
+			TagBO tag = new TagBO();
+			tag.setKey(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode());
+			tag.setValue(String.valueOf(req.getMaxDownloadAmout()));
+			tagList.add(tag);
+		}
+		if(req.getMaxHours() != null){
+			TagBO tag = new TagBO();
+			tag.setKey(S3TagKeyEnum.TAG_VALIDITY.getCode());
+			String date = DateUtils.getDateToString(DateUtils.addDateHour(new Date(), req.getMaxHours()));
+			tag.setValue(date);
+			tagList.add(tag);
+		}
+		return tagList;
 	}
 	
 	@Override
@@ -326,7 +342,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			}
 			//判断是否在有效期内
 			if(S3TagKeyEnum.TAG_VALIDITY.getCode().equals(tag.getKey()) &&
-				DateUtils.doCompareDate(new Date(), DateUtils.getStringToDate(tag.getValue())) > 0){
+				DateUtils.doCompareDate(new Date(), DateUtils.createDate(tag.getValue())) > 0){
 				//已过有效期
 				log.info("--shareDownloadFile.times.is.timeout:{}--",s3ObjectBO);
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_TIMEOUT.getCode());

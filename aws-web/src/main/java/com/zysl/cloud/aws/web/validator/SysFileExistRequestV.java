@@ -15,18 +15,11 @@ import lombok.Setter;
 @Getter
 public class SysFileExistRequestV implements IValidator {
 	
-	@NotNull
-	private List<SysDirRequest> paths;
 	
 	@NotBlank
 	private String fileName;
 	
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
-		for(SysDirRequest dir:paths){
-			if(StringUtils.isEmpty(dir.getPath())){
-				errors.add("查询路径不能为空");
-			}
-		}
 	}
 }

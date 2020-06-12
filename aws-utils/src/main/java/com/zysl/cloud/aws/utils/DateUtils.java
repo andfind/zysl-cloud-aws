@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.utils;
 
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
@@ -58,24 +59,6 @@ public class DateUtils {
 	}
 
 	/**
-	 * String转Date， 返回时间格式yyyy-MM-dd HH:mm:ss
-	 * @param strDate
-	 * @return
-	 */
-	public static Date getStringToDate(String strDate) {
-		if(StringUtils.isEmpty(strDate)){
-			return null;
-		}
-		Date strtodate = null;
-		try {
-			strtodate = org.apache.http.client.utils.DateUtils.parseDate(strDate);
-		} catch (Exception e) {
-			log.info("--getStringToDate--", e);
-		}
-		return strtodate;
-	}
-
-	/**
 	 * 日期比较,小于0，date1小于date2；大于0，date1大于date2；等于0，这两个时间相等
 	 * @param date1
 	 * @param date2
@@ -95,10 +78,11 @@ public class DateUtils {
 		if(StringUtils.isEmpty(str)){
 			return null;
 		}
+		SimpleDateFormat dateFormat = new SimpleDateFormat(FORMAT_YYYYMMDDHHMMSS);
 		try {
-			return org.apache.http.client.utils.DateUtils.parseDate(str);
-		} catch (Exception e) {
-			log.info("--getStringToDate--", e);
+			return dateFormat.parse(str);
+		} catch (ParseException e) {
+			log.info("--createDate--", e);
 			return null;
 		}
 	}

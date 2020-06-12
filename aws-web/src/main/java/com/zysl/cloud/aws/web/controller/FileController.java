@@ -250,7 +250,7 @@ public class FileController extends BaseController implements FileSrv {
 				}
 				//判断是否在有效期内
 				if(S3TagKeyEnum.TAG_VALIDITY.getCode().equals(tag.getKey()) &&
-						DateUtils.doCompareDate(new Date(), DateUtils.getStringToDate(tag.getValue())) > 0){
+						DateUtils.doCompareDate(new Date(), DateUtils.createDate(tag.getValue())) > 0){
 					//已过有效期
 					log.info("--shareDownloadFile文件已过有效期：--");
 					return null;
