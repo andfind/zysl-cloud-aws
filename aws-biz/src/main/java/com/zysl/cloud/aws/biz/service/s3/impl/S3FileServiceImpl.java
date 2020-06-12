@@ -484,7 +484,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getInfoAndBody(S3ObjectBO t){
-		log.info("s3file.getInfoAndBody.param:{}", t);
+		log.info("ES_LOG getInfoAndBody.param {}", t);
 		//查询文件基础信息
 		getDetailInfo(t);
 
@@ -507,7 +507,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
 			
 			byte[] bytes = objectAsBytes.asByteArray();
-			log.debug("--bytes.length:{}", bytes.length);
+			log.info("ES_LOG {} bytes.length:{},date1:{},date2:{}", t.key(),bytes.length,date1,date2);
 			if(DateUtils.doCompareDate(date1, date2) < 0){
 				//进行解码
 				BASE64Decoder decoder = new BASE64Decoder();
@@ -515,7 +515,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				try {
 					fileContent = decoder.decodeBuffer(new String(bytes));
 				} catch (IOException e) {
-					log.error("--download文件流转换异常{}：msg:",t, e);
+					log.error("ES_LOG IOException msg:{}",t, e);
 				}
 				t.setBodys(fileContent);
 				return t;
@@ -524,13 +524,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				return t;
 			}
 		}catch (NoSuchKeyException e){
-			log.warn("s3file.getInfoAndBody.NoSuchKeyException:{},msg:", t,e);
+			log.warn("ES_LOG {} getInfoAndBody.NoSuchKeyException:{}",t.key(),t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (AwsServiceException | SdkClientException  e){
-			log.warn("s3file.getInfoAndBody.AwsServiceException:{},msg:", t,e);
+			log.warn("ES_LOG {} getInfoAndBody.AwsServiceException:{}", t.key(),t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
 		}catch (Exception e){
-			log.error("s3file.getInfoAndBody.Exception:{},msg:", t,e);
+			log.error("ES_LOG {} getInfoAndBody.Exception:{}", t.key(),t,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}
 	}

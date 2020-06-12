@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.domain.bo;
 
+import com.zysl.cloud.utils.StringUtils;
 import java.io.Serializable;
 import java.util.Date;
 import java.util.List;
@@ -81,5 +82,16 @@ public class S3ObjectBO extends BaseFileBO implements Serializable {
 		sb.append("},\"super-S3ObjectBO\":")
 			.append(super.toString()).append("}");
 		return sb.toString();
+	}
+	
+	/**
+	 * 返回
+	 * @description
+	 * @author miaomingming
+	 * @param
+	 * @return java.lang.String
+	 **/
+	public String key(){
+		return StringUtils.join(this.getBucketName(),":",this.getPath());
 	}
 }
