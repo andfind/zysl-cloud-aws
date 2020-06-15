@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -169,12 +170,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		log.info("s3file.uploadPart.param:{}", t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
-
+		
 		UploadPartRequest request = UploadPartRequest.builder()
 				.bucket(t.getBucketName())
 				.key(StringUtils.join(t.getPath(), t.getFileName()))
 				.uploadId(t.getUploadId())
 				.partNumber(t.getPartNumber())
+				.contentLength(100L)
 				.build();
 		RequestBody requestBody = RequestBody.fromBytes(t.getBodys());
 

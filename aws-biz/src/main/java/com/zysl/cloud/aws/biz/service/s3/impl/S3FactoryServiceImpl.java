@@ -5,6 +5,7 @@ import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.config.S3ServerConfig;
 import com.zysl.cloud.aws.prop.S3ServerProp;
+import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
@@ -29,6 +30,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.http.SdkHttpConfigurationOption;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.BucketAlreadyExistsException;
 import software.amazon.awssdk.services.s3.model.ListBucketsRequest;
 import software.amazon.awssdk.services.s3.model.ListBucketsResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
@@ -151,17 +153,19 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		}catch (NoSuchKeyException e){
 			log.error("callS3Method.invoke({}).NoSuchKeyException",methodName);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+		}catch (BucketAlreadyExistsException e){
+			log.error("callS3Method.invoke({}).BucketAlreadyExistsException",methodName);
+			throw new AppLogicException(ErrCodeEnum.S3_CREATE_BUCKET_EXIST.getCode());
 		}catch (IllegalAccessException | IllegalArgumentException  e){
 			log.error("callS3Method.invoke({}).error:{}",methodName,e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_INVOKE_ERROR.getCode());
 		}catch (InvocationTargetException e){
-			String uuID = UUID.randomUUID().toString().replace("-","");
-			log.error("callS3Method.invoke({}).error=>uuID:{}:{}",methodName,uuID,e.getTargetException().getMessage());
+			log.error("callS3Method.invoke({}).error=>{}",methodName,e.getTargetException().getMessage(),e);
 			if(e.getTargetException() instanceof NoSuchKeyException){
-				log.error("noSuchKey {} {} [ES_LOG_EXCEPTION]", r,e.getTargetException().getMessage());
+				log.error("noSuchKey {} {} [ES_LOG_EXCEPTION]", r, ExceptionUtil.getMessage(e));
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}else{
-				throw new AppLogicException(uuID,ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
 			}
 			
 			

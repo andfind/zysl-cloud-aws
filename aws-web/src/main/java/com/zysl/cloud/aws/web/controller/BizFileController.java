@@ -112,6 +112,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	public	BaseResponse<SysFileDTO> shareFile(@RequestBody BizFileShareRequest request){
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
+			//TODO--调用复制接口，分享后key可以指定名称，不指定则返回UUID作为名称
 			//复制源文件信息
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(request);
 			

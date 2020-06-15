@@ -51,6 +51,7 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 	@Override
 	public BasePaginationResponse<String> getBuckets(GetBucketsRequest request){
 		return ServiceProvider.callList(request, null, String.class,(req,myPage)->{
+			//TODO-->map放到redis
 			//最后一次更新bucket时间差
 			long dis = (System.currentTimeMillis() - BizConstants.LAST_UPDATE_BUCKET_LIST_DATE.getTime())/1000L;
 			//超过10分钟
