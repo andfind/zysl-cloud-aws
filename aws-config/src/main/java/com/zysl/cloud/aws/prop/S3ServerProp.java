@@ -1,6 +1,8 @@
 package com.zysl.cloud.aws.prop;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,6 +24,8 @@ public class S3ServerProp implements Serializable {
 
 	//空间是否已满，满了只能做查询操作
 	private Boolean noSpace;
+	
+	private Map<String,String> bucketMap = new HashMap();
 
 	@Override
 	public String toString() {
@@ -30,7 +34,8 @@ public class S3ServerProp implements Serializable {
 		sb.append(", endpoint='").append(endpoint).append('\'');
 		sb.append(", accessKey='").append(accessKey).append('\'');
 		sb.append(", secretKey='").append(secretKey).append('\'');
-		sb.append(", noSpace=").append(noSpace);
+		sb.append(", noSpace=").append(noSpace).append('\'');
+		sb.append(", bucketMap.size=").append(bucketMap.isEmpty() ? 0 : bucketMap.values().size());
 		sb.append("}}");
 		return sb.toString();
 	}

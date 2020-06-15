@@ -13,13 +13,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
+import javax.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
@@ -43,36 +46,34 @@ import software.amazon.awssdk.utils.AttributeMap;
 @Service
 public class S3FactoryServiceImpl implements IS3FactoryService {
 
-	//s3服务器连接信息 key为SERVER_NO
-	private Map<String, S3Client> S3_SERVER_CLIENT_MAP = new ConcurrentHashMap<>();
-
 	//s3服务器 key为SERVER_NO
-	private Map<String, S3ServerProp> S3_SERVER_MAP = new ConcurrentHashMap<>();
-
-	//s3服务器的bucket--serverNo
-	private Map<String, String> S3_BUCKET_SERVER_MAP = new ConcurrentHashMap<>();
+	private final String S3_SERVER_PROP_MAP_NAME = "s3_server_prop_map";
 
 	@Autowired
-	S3ServerConfig s3ServerConfig;
-
+	private S3ServerConfig s3ServerConfig;
+	
+	@Resource
+	private RedisTemplate<Object,Object> redisTemplate;
 
 	@Override
 	public String getServerNo(String bucketName){
-		if(!this.S3_BUCKET_SERVER_MAP.containsKey(bucketName)){
-			log.error("not.exist.bucketName:{}",bucketName);
-			throw new AppLogicException(ErrCodeEnum.S3_BUCKET_NOT_EXIST.getCode());
-		}
-		return this.S3_BUCKET_SERVER_MAP.get(bucketName);
+		return getBucketServerNoMap().get(bucketName);
 	}
 
 
 	@Override
 	public S3Client getS3ClientByServerNo(String serverNo){
-		if(!this.S3_SERVER_CLIENT_MAP.containsKey(serverNo)){
-			log.error("not.exist.serverNo:{}",serverNo);
-			throw new AppLogicException(ErrCodeEnum.S3_SERVER_NO_NOT_EXIST.getCode());
+		Map<String, S3ServerProp> s3ServerPropMap = (Map<String, S3ServerProp>)redisTemplate.opsForValue().get(S3_SERVER_PROP_MAP_NAME);
+		if(s3ServerPropMap != null && !s3ServerPropMap.isEmpty()){
+			for(S3ServerProp s3ServerProp:s3ServerPropMap.values()){
+				if(s3ServerProp.getServerNo().equals(serverNo)){
+					return createS3Client(s3ServerProp);
+				}
+			}
 		}
-		return this.S3_SERVER_CLIENT_MAP.get(serverNo);
+		
+		log.warn("not.exist.serverNo:{}",serverNo);
+		throw new AppLogicException(ErrCodeEnum.S3_SERVER_NO_NOT_EXIST.getCode());
 	}
 
 
@@ -83,36 +84,69 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 
 	@Override
 	public S3Client getS3ClientByBucket(String bucketName,Boolean isWrite) throws AppLogicException{
-		String serverNo = getServerNo(bucketName);
-		if(isWrite != null && isWrite){
-			S3ServerProp prop = this.S3_SERVER_MAP.get(serverNo);
-			if(prop != null && prop.getNoSpace() != null && prop.getNoSpace()){
-				log.error("s3.no.space.serverNo:{}",serverNo);
-				throw new AppLogicException(ErrCodeEnum.S3_NO_SPACE_WARN.getCode());
+		Map<String, S3ServerProp> s3ServerPropMap = (Map<String, S3ServerProp>)redisTemplate.opsForValue().get(S3_SERVER_PROP_MAP_NAME);
+		if(s3ServerPropMap != null && !s3ServerPropMap.isEmpty()){
+			for(S3ServerProp s3ServerProp:s3ServerPropMap.values()){
+				if(s3ServerProp.getBucketMap() != null && !s3ServerProp.getBucketMap().isEmpty()){
+					if(s3ServerProp.getBucketMap().containsKey(bucketName)){
+						//写操作但是服务器没有空间
+						if(s3ServerProp.getNoSpace() != null && s3ServerProp.getNoSpace()
+							&& isWrite != null && isWrite){
+							log.error("s3.no.space.serverNo:{}",s3ServerProp.getServerNo());
+							throw new AppLogicException(ErrCodeEnum.S3_NO_SPACE_WARN.getCode());
+						}
+						return getS3ClientByServerNo(s3ServerProp.getServerNo());
+					}
+				}
 			}
 		}
-
-		return getS3ClientByServerNo(serverNo);
+		
+		log.error("s3.not.exist.bucket:{}",bucketName);
+		throw new AppLogicException(ErrCodeEnum.S3_BUCKET_NOT_EXIST.getCode());
 	}
 
 	@Override
 	public Boolean isExistBucket(String bucketName){
-		return this.S3_BUCKET_SERVER_MAP.containsKey(bucketName);
+		return getBucketServerNoMap().containsKey(bucketName);
 	}
 
 	@Override
 	public void addBucket(String bucketName,String serverNo){
-		this.S3_BUCKET_SERVER_MAP.put(bucketName,serverNo);
+		Map<String, S3ServerProp> s3ServerPropMap = (Map<String, S3ServerProp>)redisTemplate.opsForValue().get(S3_SERVER_PROP_MAP_NAME);
+		if(s3ServerPropMap != null && !s3ServerPropMap.isEmpty()){
+			for(S3ServerProp s3ServerProp:s3ServerPropMap.values()){
+				if(s3ServerProp.getServerNo().equals(serverNo)){
+					Map<String, String> bucketMap = s3ServerProp.getBucketMap();
+					if(bucketMap == null){
+						bucketMap = new HashMap<>();
+					}
+					bucketMap.put(bucketName,serverNo);
+					s3ServerProp.setBucketMap(bucketMap);
+				}
+			}
+			redisTemplate.opsForValue().set(S3_SERVER_PROP_MAP_NAME,s3ServerPropMap);
+		}
 	}
 
 	@Override
 	public Map<String, String> getBucketServerNoMap(){
-		return this.S3_BUCKET_SERVER_MAP;
+		Map<String, String> bucketMap = new HashMap<>();
+		Map<String, S3ServerProp> s3ServerPropMap = (Map<String, S3ServerProp>)redisTemplate.opsForValue().get(S3_SERVER_PROP_MAP_NAME);
+		if(s3ServerPropMap != null && !s3ServerPropMap.isEmpty()){
+			for(S3ServerProp s3ServerProp:s3ServerPropMap.values()){
+				if(s3ServerProp.getBucketMap() != null && !s3ServerProp.getBucketMap().isEmpty()){
+					bucketMap.putAll(s3ServerProp.getBucketMap());
+				}
+			}
+		}
+		
+		return bucketMap;
 	}
 
 	@Override
 	public boolean judgeBucket(String bucket1, String bucket2) {
-		return S3_BUCKET_SERVER_MAP.get(bucket1).equals(S3_BUCKET_SERVER_MAP.get(bucket2));
+		String serverNo = getServerNo(bucket1);
+		return serverNo != null && serverNo.equals(getServerNo(bucket2));
 	}
 
 
@@ -201,16 +235,6 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		return response;
 	}
 
-
-
-
-	@PostConstruct
-	private void awsS3Init(){
-		amazonS3ClientInit();
-		//遍历服务器，将bucket-serverNo查询保存到map
-		amazonS3BucketInit();
-	}
-
 	/**
 	 * 客户端连接护初始化
 	 * @description
@@ -219,75 +243,69 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	 * @param
 	 * @return void
 	 **/
+	@PostConstruct
 	private void amazonS3ClientInit(){
 		log.info("=amazonS3ClientInit.start=");
-		DefaultSdkHttpClientBuilder defaultSdkHttpClientBuilder = new DefaultSdkHttpClientBuilder();
-		AttributeMap attributeMap = AttributeMap.builder()
-										.put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
-										.put(SdkHttpConfigurationOption.WRITE_TIMEOUT, Duration.ofSeconds(300))//写入超时
-										.put(SdkHttpConfigurationOption.READ_TIMEOUT, Duration.ofSeconds(300))//读取超时
-										.put(SdkHttpConfigurationOption.CONNECTION_TIMEOUT, Duration.ofSeconds(10))//连接超时
-										.put(SdkHttpConfigurationOption.CONNECTION_MAX_IDLE_TIMEOUT, Duration.ofSeconds(300))//连接最大空闲超时
-										.build();
-
+		
+		Map<String, S3ServerProp> s3ServerPropMap = new HashMap<>();
 		List<S3ServerProp> s3ServerProps = s3ServerConfig.getServers();
 		if(!CollectionUtils.isEmpty(s3ServerProps)){
 			for (S3ServerProp props : s3ServerProps) {
-
-				this.S3_SERVER_MAP.put(props.getServerNo(),props);
-
-				//初始化s3连接
-				AwsBasicCredentials awsCreds = AwsBasicCredentials.create(props.getAccessKey(), props.getSecretKey());
-				S3Client s3Client = S3Client
-									.builder()
-									.httpClient(defaultSdkHttpClientBuilder.buildWithDefaults(attributeMap))
-									.credentialsProvider(StaticCredentialsProvider.create(awsCreds))
-									.endpointOverride(URI.create(props.getEndpoint()))
-									.region(Region.US_EAST_1)
-									.build();
-				this.S3_SERVER_CLIENT_MAP.put(props.getServerNo(),s3Client);
+				//bucket列表
+				props.setBucketMap(getBucketList(props.getServerNo(),createS3Client(props)));
+				s3ServerPropMap.put(props.getServerNo(),props);
 
 				log.info("=amazonS3ClientInit.success:serverNo:{}-->{}=",props.getServerNo(),props.getEndpoint());
 			}
 		}else{
 			log.info("=amazonS3ClientInit.warn:no server found.=");
 		}
-
+		
+		redisTemplate.opsForValue().set(S3_SERVER_PROP_MAP_NAME,s3ServerPropMap);
+		
 		log.info("=amazonS3ClientInit.end=");
 	}
 
-	/**
-	 * bucket与serverNo对应关系查询初始化
-	 * @description
-	 * @author miaomingming
-	 * @date 21:39 2020/3/23
-	 * @param
-	 * @return void
-	 **/
-	@Override
-	public void amazonS3BucketInit(){
-		log.info("=amazonS3BucketInit.start=");
-
+	
+	private Map<String,String> getBucketList(String serverNo,S3Client s3Client){
+		Map<String,String> bucketMap = new HashMap<>();
 		ListBucketsRequest listBucketsRequest = ListBucketsRequest.builder().build();
-
-		if(!this.S3_SERVER_CLIENT_MAP.isEmpty()){
-			for(String serverNo:this.S3_SERVER_CLIENT_MAP.keySet()){
-				S3Client s3Client = this.S3_SERVER_CLIENT_MAP.get(serverNo);
-				ListBucketsResponse response = s3Client.listBuckets(listBucketsRequest);
-
-				if(response != null && !CollectionUtils.isEmpty(response.buckets())){
-					response.buckets().forEach(bucket -> {
-						this.S3_BUCKET_SERVER_MAP.put(bucket.name(),serverNo);
-						log.info("=amazonS3BucketInit.found.bucket:{}=", bucket.name());
-					});
-				}
-			}
-		}else{
-			log.info("=amazonS3BucketInit.warn:no server found.=");
+		ListBucketsResponse response = s3Client.listBuckets(listBucketsRequest);
+		
+		if(response != null && !CollectionUtils.isEmpty(response.buckets())){
+			response.buckets().forEach(bucket -> {
+				bucketMap.put(bucket.name(),serverNo);
+				log.info("=amazonS3BucketInit.found.bucket:{}=", bucket.name());
+			});
 		}
-
-		log.info("=amazonS3BucketInit.end=");
+		return bucketMap;
 	}
-
+	
+	
+	private S3Client createS3Client(S3ServerProp props){
+		log.info("createS3Client start {}",props.getServerNo());
+		DefaultSdkHttpClientBuilder defaultSdkHttpClientBuilder = new DefaultSdkHttpClientBuilder();
+		AttributeMap attributeMap = AttributeMap.builder()
+			.put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
+			.put(SdkHttpConfigurationOption.WRITE_TIMEOUT, Duration.ofSeconds(300))//写入超时
+			.put(SdkHttpConfigurationOption.READ_TIMEOUT, Duration.ofSeconds(300))//读取超时
+			.put(SdkHttpConfigurationOption.CONNECTION_TIMEOUT, Duration.ofSeconds(10))//连接超时
+			.put(SdkHttpConfigurationOption.CONNECTION_MAX_IDLE_TIMEOUT, Duration.ofSeconds(300))//连接最大空闲超时
+			.build();
+		
+		//初始化s3连接
+		AwsBasicCredentials awsCreds = AwsBasicCredentials.create(props.getAccessKey(), props.getSecretKey());
+		S3Client s3Client = S3Client
+			.builder()
+			.httpClient(defaultSdkHttpClientBuilder.buildWithDefaults(attributeMap))
+			.credentialsProvider(StaticCredentialsProvider.create(awsCreds))
+			.endpointOverride(URI.create(props.getEndpoint()))
+			.region(Region.US_EAST_1)
+			.build();
+		
+		log.info("createS3Client end {}",props.getServerNo());
+		return s3Client;
+	}
+	
 
 }
