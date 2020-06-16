@@ -3,6 +3,7 @@ import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.StringUtils;
+import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -14,8 +15,9 @@ public class Test {
     String srcPath = "temp-002:/mmm/a";
     String destPath = "b/";
     try{
-      
-      System.out.println(DateUtils.getDateToString(new Date()));
+      URI uri = new URI("s3://s001/temp-002/mmm/a/b/1.txt#112233");
+      String[] items = uri.getPath().split("/");
+      System.out.println("--" + items.length);
     }catch (Exception e){
       e.printStackTrace();
     }

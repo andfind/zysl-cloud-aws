@@ -223,9 +223,9 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			response = callS3MethodWithBody(r,null,s3Client,methodName);
 		}catch (AppLogicException e) {//AppLogicException
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
-				log.error("callS3Method.error({}),param:{},err:", methodName, r);
+				log.warn("ESLOG callS3Method.noSuchKey({}) {}", methodName, r);
 			}else{
-				log.error("callS3Method.error({}),param:{},err:", methodName, r,e);
+				log.warn("ESLOG callS3Method.error({}) {}->{}", methodName, r,ExceptionUtil.getMessage(e));
 			}
 			
 			if (throwLogicException) {

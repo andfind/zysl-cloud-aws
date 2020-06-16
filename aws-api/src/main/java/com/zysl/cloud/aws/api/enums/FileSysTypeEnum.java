@@ -13,7 +13,8 @@ import lombok.Getter;
 public enum  FileSysTypeEnum {
 	S3("s3", "s3"),
 	LOCAL("local", "local"),
-	FTP("ftp", "ftp");
+	FTP("ftp", "ftp"),
+	SHAREPOINT("sharepoint", "sharepoint");
 	
 	private String code;
 	

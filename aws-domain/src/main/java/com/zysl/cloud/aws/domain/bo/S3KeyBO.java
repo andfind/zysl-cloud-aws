@@ -53,4 +53,69 @@ public class S3KeyBO implements Serializable {
 	private Integer versionNo;
 	//是否物理删除，1是0否，默认0
 	private Integer deleteStore;
+	
+	
+	@Override
+	public String toString() {
+		final StringBuffer sb = new StringBuffer("{\"S3KeyBO\":{");
+		if (bucket != null) {
+			sb.append("bucket='").append(bucket).append('\'');
+		}
+		if (key != null) {
+			sb.append(", key='").append(key).append('\'');
+		}
+		if (contentEncoding != null) {
+			sb.append(", contentEncoding='").append(contentEncoding).append('\'');
+		}
+		if (contentLength != null) {
+			sb.append(", contentLength=").append(contentLength);
+		}
+		if (contentType != null) {
+			sb.append(", contentType='").append(contentType).append('\'');
+		}
+		if (expires != null) {
+			sb.append(", expires=").append(expires);
+		}
+		if (versionId != null) {
+			sb.append(", versionId='").append(versionId).append('\'');
+		}
+		if (range != null) {
+			sb.append(", range='").append(range).append('\'');
+		}
+		if (uploadTime != null) {
+			sb.append(", uploadTime=").append(uploadTime);
+		}
+		if (lastModified != null) {
+			sb.append(", lastModified=").append(lastModified);
+		}
+		if (eTag != null) {
+			sb.append(", eTag='").append(eTag).append('\'');
+		}
+		if (tagList != null) {
+			sb.append(", tagList=").append(tagList);
+		}
+		if (bodys != null) {
+			sb.append(", bodys").append("_length=").append(bodys.length);
+		}
+		if (uploadId != null) {
+			sb.append(", uploadId='").append(uploadId).append('\'');
+		}
+		if (partNumber != null) {
+			sb.append(", partNumber=").append(partNumber);
+		}
+		if (eTagList != null) {
+			sb.append(", eTagList=").append(eTagList);
+		}
+		if (subKeyList != null) {
+			sb.append(", subKeyList=").append(subKeyList);
+		}
+		if (versionNo != null) {
+			sb.append(", versionNo=").append(versionNo);
+		}
+		if (deleteStore != null) {
+			sb.append(", deleteStore=").append(deleteStore);
+		}
+		sb.append("}}");
+		return sb.toString();
+	}
 }
