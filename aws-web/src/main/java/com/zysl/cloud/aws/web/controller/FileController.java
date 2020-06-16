@@ -12,6 +12,7 @@ import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.utils.DataAuthUtils;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
@@ -204,7 +205,7 @@ public class FileController extends BaseController implements FileSrv {
 				return downloadFileDTO;
 			}else {
 				//获取标签中的文件名称
-				String tagValue = fileService.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
+				String tagValue = S3Utils.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
 				String fileId = StringUtils.isEmpty(tagValue) ? t.getFileName() : tagValue;
 				HttpUtils.downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
 				return null;
@@ -322,7 +323,7 @@ public class FileController extends BaseController implements FileSrv {
             fileInfoDTO.setTageList(BeanCopyUtil.copyList(object.getTagList(), TagDTO.class));
 			fileInfoDTO.setPath(object.getPath());
 			//获取标签中的文件名称
-			fileInfoDTO.setFileName(fileService.getTagValue(object.getTagList(), S3TagKeyEnum.FILE_NAME.getCode()));
+			fileInfoDTO.setFileName(S3Utils.getTagValue(object.getTagList(), S3TagKeyEnum.FILE_NAME.getCode()));
             return fileInfoDTO;
         },"getFileInfo");
     }
@@ -688,7 +689,7 @@ public class FileController extends BaseController implements FileSrv {
 			response.setHeader("Content-Range",rspRange);
 			
 			//获取标签中的文件名称
-			String tagValue = fileService.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
+			String tagValue = S3Utils.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
 			String fileId = StringUtils.isEmpty(tagValue) ? t.getFileName() : tagValue;
 			
 			//下载数据

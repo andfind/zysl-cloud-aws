@@ -30,6 +30,8 @@ public class SysFileDTO implements Serializable {
 	private Date lastModified;
 	@ApiModelProperty(value = "versionId", name = "versionId", dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String versionId;
+	@ApiModelProperty(value = "versionNo", name = "versionNo", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
+	private Integer versionNo;
 	
 	@Override
 	public String toString() {
@@ -57,6 +59,9 @@ public class SysFileDTO implements Serializable {
 		}
 		if (versionId != null) {
 			sb.append(", versionId='").append(versionId).append('\'');
+		}
+		if (versionNo != null) {
+			sb.append(", versionNo=").append(versionNo);
 		}
 		sb.append("}}");
 		return sb.toString();

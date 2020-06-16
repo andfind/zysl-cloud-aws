@@ -9,6 +9,7 @@ import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.domain.bo.ObjectInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
@@ -47,7 +48,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 												.key(t.getPath());
 		
 		//设置标签信息
-		Tagging tagging = fileService.getTagging(t.getTagList());
+		Tagging tagging = S3Utils.creatTagging(t.getTagList());
 		if(null != tagging){
 			request.tagging(tagging);
 		}

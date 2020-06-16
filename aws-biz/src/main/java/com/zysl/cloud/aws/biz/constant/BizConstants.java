@@ -26,9 +26,11 @@ public class BizConstants {
     public static final Integer PDF_MARK_TEXT_WIDTH = 300;
     public static final Integer PDF_MARK_TEXT_HEIGHT = 300;
 
+    //s3对象tag中版本号的key
+    public static final String S3_TAG_KEY_VERSION_NO = "verNo";
     
-    // 分享默认目录
-    public static final String SHARE_DEFAULT_FOLDER = "share";
+//    // 分享默认目录
+//    public static final String SHARE_DEFAULT_FOLDER = "share";
     
     // 分片下载单次最大字节数，bizconfig启动时会初始化
     public static long MULTI_DOWNLOAD_FILE_MAX_SIZE = 0L;

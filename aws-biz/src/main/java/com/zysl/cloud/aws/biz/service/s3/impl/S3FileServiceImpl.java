@@ -11,6 +11,7 @@ import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.utils.DataAuthUtils;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
@@ -100,7 +101,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 												.contentEncoding(t.getContentEncoding())
 												.expires(t.getExpires() == null ? null : t.getExpires().toInstant());
 		//获取目标文件标签内容
-		Tagging tagging = getTagging(t.getTagList());
+		Tagging tagging = S3Utils.creatTagging(t.getTagList());
 		if(null != tagging){
 			request.tagging(tagging);
 		}
@@ -364,7 +365,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 														.bucket(t.getBucketName())
 														.key(StringUtils.join(t.getPath() ,t.getFileName()));
 		
-		Tagging tagging = getTagging(tageList);
+		Tagging tagging = S3Utils.creatTagging(tageList);
 		if(tagging != null){
 			request.tagging(tagging);
 		}
@@ -414,7 +415,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 													.bucket(dest.getBucketName())
 													.key(StringUtils.join(dest.getPath() ,dest.getFileName()));
 			
-			Tagging tagging = getTagging(dest.getTagList());
+			Tagging tagging = S3Utils.creatTagging(dest.getTagList());
 			if(tagging != null){
 				request.tagging(tagging).taggingDirective(TaggingDirective.REPLACE);
 			}
@@ -597,7 +598,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		// 是对象
 		if (StringUtils.isNotBlank(s3ObjectBO.getFileName())) {
 			//读取对象的标签--权限列表
-			objAuths = getTagValue(getTags(s3ObjectBO),S3TagKeyEnum.USER_AUTH.getCode());
+			objAuths = S3Utils.getTagValue(getTags(s3ObjectBO),S3TagKeyEnum.USER_AUTH.getCode());
 			if(dataAuthUtils.checkAuth(opAuthTypes,objAuths)){
 				return;
 			}
@@ -611,7 +612,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		bo.setBucketName(s3ObjectBO.getBucketName());
 		while(StringUtils.isNotBlank(curPath)){
 			bo.setPath(curPath);
-			objAuths = getTagValue(getTags(s3ObjectBO),S3TagKeyEnum.USER_AUTH.getCode());
+			objAuths = S3Utils.getTagValue(getTags(s3ObjectBO),S3TagKeyEnum.USER_AUTH.getCode());
 			if(dataAuthUtils.checkAuth(opAuthTypes,objAuths)){
 				return;
 			}
@@ -625,7 +626,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		//检查bucket
 		List<TagBO> bucketTags = s3BucketService.getBucketTag(bo.getBucketName());
 		if(!CollectionUtils.isEmpty(bucketTags)){
-			objAuths = getTagValue(bucketTags,S3TagKeyEnum.USER_AUTH.getCode());
+			objAuths = S3Utils.getTagValue(bucketTags,S3TagKeyEnum.USER_AUTH.getCode());
 			if(dataAuthUtils.checkAuth(opAuthTypes,objAuths)){
 				return;
 			}
@@ -667,27 +668,4 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 	}
 
-	@Override
-	public String getTagValue(List<TagBO> tagList, String key) {
-		for (TagBO tag :tagList) {
-			if(key.equals(tag.getKey())){
-				return tag.getValue();
-			}
-		}
-		return null;
-	}
-	
-	@Override
-	public Tagging getTagging(List<TagBO> tagList){
-		if(!CollectionUtils.isEmpty(tagList)){
-			List<Tag> tagSet = Lists.newArrayList();
-			tagList.forEach(obj -> {
-				tagSet.add(Tag.builder().key(obj.getKey()).value(obj.getValue()).build());
-			});
-			//设置标签信息
-			return CollectionUtils.isEmpty(tagSet) ? null : Tagging.builder().tagSet(tagSet).build();
-		}
-		return null;
-	}
-	
 }

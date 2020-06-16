@@ -12,15 +12,19 @@ import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
+import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.service.utils.ObjectFormatUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.util.ArrayList;
@@ -28,6 +32,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 @Slf4j
 @Service
@@ -102,7 +107,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			
-			Object obj = s3FileService.getBaseInfo(s3ObjectBO);
+			Object obj = s3FileService.getDetailInfo(s3ObjectBO);
 			if(obj != null){
 				S3ObjectBO rst = (S3ObjectBO)obj;
 				dto = new SysFileDTO();
@@ -114,6 +119,11 @@ public class SysFileManagerImpl implements ISysFileManager {
 				dto.setSize(rst.getContentLength());
 				dto.setVersionId(rst.getVersionId());
 				dto.setPath(rst.getBucketName() + ":/" + rst.getPath());
+				
+				String verNo = S3Utils.getTagValue(rst.getTagList(),BizConstants.S3_TAG_KEY_VERSION_NO);
+				if(StringUtils.isNotEmpty(verNo)){
+					dto.setVersionNo(Integer.parseInt(verNo));
+				}
 				return dto;
 			}
 			
@@ -132,9 +142,35 @@ public class SysFileManagerImpl implements ISysFileManager {
 			}
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			s3ObjectBO.setBodys(bodys);
+			
+			List<TagBO> tagList = new ArrayList<>();
+			TagBO tagBO = new TagBO(BizConstants.S3_TAG_KEY_VERSION_NO,createVersionNo(s3ObjectBO));
+			tagList.add(tagBO);
+			s3ObjectBO.setTagList(tagList);
+			
 			s3FileService.create(s3ObjectBO);
 		}
 		
+	}
+	
+	private String createVersionNo(S3ObjectBO s3ObjectBO){
+		int verNoInt = 1;
+		Object obj = s3FileService.getDetailInfo(s3ObjectBO);
+		if (obj != null ) {
+			S3ObjectBO bo = (S3ObjectBO)obj;
+			if(!CollectionUtils.isEmpty(bo.getTagList())){
+				try{
+					String verNo = S3Utils.getTagValue(bo.getTagList(), BizConstants.S3_TAG_KEY_VERSION_NO);
+					if(StringUtils.isNotEmpty(verNo)){
+						verNoInt =  Integer.parseInt(verNo) + 1;
+					}
+				}catch (NumberFormatException e){
+					log.warn("ESLOG {} {}",s3ObjectBO, "createVersionNo:"+ExceptionUtil.getMessage(e));
+				}
+			}
+		}
+		
+		return String.valueOf(verNoInt);
 	}
 	
 	@Override
@@ -161,7 +197,13 @@ public class SysFileManagerImpl implements ISysFileManager {
 			
 			List<S3ObjectBO> list = (List<S3ObjectBO>)s3FileService.getVersions(s3ObjectBO);
 			for(S3ObjectBO bo : list){
-				rstList.add(ObjectFormatUtils.s3ObjectBOToSysFileDTO(bo));
+				SysFileDTO dto = ObjectFormatUtils.s3ObjectBOToSysFileDTO(bo);
+				List<TagBO> tagList = s3FileService.getTags(bo);
+				String verNo = S3Utils.getTagValue(tagList,BizConstants.S3_TAG_KEY_VERSION_NO);
+				if(StringUtils.isNotEmpty(verNo)){
+					dto.setVersionNo(Integer.parseInt(verNo));
+				}
+				rstList.add(dto);
 			}
 			
 			return rstList;

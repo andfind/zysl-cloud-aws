@@ -6,16 +6,20 @@ import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.domain.bo.ObjectInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
+import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysDirManager;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.service.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
 import java.util.ArrayList;
@@ -63,6 +67,15 @@ public class SysDirManagerImpl implements ISysDirManager {
 					dto.setLastModified(DateUtils.from(bo.getUploadTime()));
 					dto.setSize(bo.getFileSize());
 					ObjectFormatUtils.setPathAndFileName(dto,bo.getBucket(),bo.getKey());
+					
+					
+					s3ObjectBO.setPath(bo.getKey());
+					List<TagBO> tagList = s3FileService.getTags(s3ObjectBO);
+					String verNo = S3Utils.getTagValue(tagList, BizConstants.S3_TAG_KEY_VERSION_NO);
+					if(StringUtils.isNotEmpty(verNo)){
+						dto.setVersionNo(Integer.parseInt(verNo));
+					}
+					
 					list.add(dto);
 				}
 			}

@@ -29,13 +29,6 @@ public interface IS3FileService<T> extends IFileService<T> {
 	 */
 	List<TagBO> getTags(S3ObjectBO t);
 
-	/**
-	 * 查询指定标签key的value
-	 * @param tagList
-	 * @param key
-	 * @return
-	 */
-	String getTagValue(List<TagBO> tagList, String key);
 
 	/**
 	 * 合并标签计算
@@ -115,13 +108,4 @@ public interface IS3FileService<T> extends IFileService<T> {
 	 **/
 	String getMultiUploadId(T t);
 	
-	/**
-	 * 生成tagging
-	 * @description 
-	 * @author miaomingming
-	 * @date 14:22 2020/6/10 
-	 * @param tagList
-	 * @return software.amazon.awssdk.services.s3.model.Tagging
-	 **/
-	Tagging getTagging(List<TagBO> tagList);
 }
