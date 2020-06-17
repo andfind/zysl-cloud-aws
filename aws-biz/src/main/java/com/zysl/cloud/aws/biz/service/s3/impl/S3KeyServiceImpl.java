@@ -51,7 +51,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public S3KeyBO create(S3KeyBO t) {
-		log.info("ESLOG create-param {} ", t);
+		log.info("ES_LOG create-param {} ", t);
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucket(),Boolean.TRUE);
 		
 		PutObjectRequest.Builder request = PutObjectRequest.builder()
@@ -64,16 +64,22 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		if(null != tagging){
 			request.tagging(tagging);
 		}
+		RequestBody requestBody = null;
+		if(t.getBodys() == null){
+			requestBody = RequestBody.empty();
+		}else{
+			requestBody = RequestBody.fromBytes(t.getBodys());
+		}
 		
-		s3FactoryService.callS3MethodWithBody(request.build(), RequestBody.fromBytes(t.getBodys()),s3Client, S3Method.PUT_OBJECT);
-		log.info("ESLOG create-success {}", t);
+		s3FactoryService.callS3MethodWithBody(request.build(), requestBody,s3Client, S3Method.PUT_OBJECT);
+		log.info("ES_LOG create-success {}", t);
 		
 		return t;
 	}
 	
 	@Override
 	public void delete(S3KeyBO t) {
-		log.info("ESLOG delete-param {}", t);
+		log.info("ES_LOG delete-param {}", t);
 		
 //		//获取s3初始化对象
 //		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
@@ -122,7 +128,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 //			log.debug("--delete文件删除返回；{}--", response);
 //		}
 		
-		log.info("ESLOG delete-success {}", t);
+		log.info("ES_LOG delete-success {}", t);
 	}
 	
 	@Override
@@ -147,7 +153,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public S3KeyBO getBaseInfo(S3KeyBO t) {
-		log.info("ESLOG getBaseInfo.param {}", t);
+		log.info("ES_LOG getBaseInfo.param {}", t);
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucket());
 		
 		HeadObjectRequest.Builder request = HeadObjectRequest.builder()
@@ -156,7 +162,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 												.versionId(t.getVersionId());
 		
 		HeadObjectResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
-		log.info("ESLOG getBaseInfo.resp {}", response);
+		log.info("ES_LOG getBaseInfo.resp {}", response);
 		
 		if(response != null){
 			t.setVersionId(response.versionId());
@@ -165,7 +171,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 			t.setLastModified(DateUtils.from(response.lastModified()));
 			t.setContentEncoding(response.contentEncoding());
 			t.setContentType(response.contentType());
-			log.info("ESLOG getBaseInfo.rst {}", t);
+			log.info("ES_LOG getBaseInfo.rst {}", t);
 			return t;
 		}
 		
@@ -179,7 +185,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public List<TagBO> getTagList(S3KeyBO t){
-		log.info("ESLOG getTagList.param {}", t);
+		log.info("ES_LOG getTagList.param {}", t);
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucket());
 		//查询文件的标签信息
 		GetObjectTaggingRequest.Builder request = GetObjectTaggingRequest.builder()
@@ -187,7 +193,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 													.key(t.getKey())
 													.versionId(t.getVersionId());
 		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3, S3Method.GET_OBJECT_TAGGING, false);
-		log.info("ESLOG getTagList.resp {}", response);
+		log.info("ES_LOG getTagList.resp {}", response);
 		
 		
 		List<TagBO> tagList = Lists.newArrayList();
@@ -202,7 +208,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 				});
 			}
 		}
-		log.info("ESLOG getTagList.rst({}) {}", t.getKey(),JSON.toJSONString(tagList));
+		log.info("ES_LOG getTagList.rst({}) {}", t.getKey(),JSON.toJSONString(tagList));
 		return tagList;
 	}
 	

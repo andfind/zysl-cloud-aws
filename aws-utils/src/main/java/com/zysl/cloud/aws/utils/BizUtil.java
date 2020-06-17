@@ -56,26 +56,5 @@ public class BizUtil {
         return strs[strs.length-1];
     }
 
-    /**
-     * 入参path格式化
-     * scheme://编号或IP/完整路径#版本号
-     * 完整路径格式:  /bucket/key   或者   /目录/文件
-     * @description
-     * @author miaomingming
-     * @date 15:38 2020/6/16
-     * @param path
-     * @return java.net.URI
-     **/
-    public static URI formatPathURI(String path){
-        try{
-            URI uri = new URI(path);
-            if(StringUtils.isNotEmpty(uri.getPath())
-                && uri.getPath().split("/").length > 2){
-                return uri;
-            }
-        }catch (URISyntaxException e){
-            throw new AppLogicException("path.URISyntaxException", RespCodeEnum.ILLEGAL_PARAMETER.getCode());
-        }
-        throw new AppLogicException("path.URISyntaxException", RespCodeEnum.ILLEGAL_PARAMETER.getCode());
-    }
+    
 }

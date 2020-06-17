@@ -165,7 +165,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 						verNoInt =  Integer.parseInt(verNo) + 1;
 					}
 				}catch (NumberFormatException e){
-					log.warn("ESLOG {} {}",s3ObjectBO, "createVersionNo:"+ExceptionUtil.getMessage(e));
+					log.warn("ES_LOG {} {}",s3ObjectBO, "createVersionNo:"+ExceptionUtil.getMessage(e));
 				}
 			}
 		}

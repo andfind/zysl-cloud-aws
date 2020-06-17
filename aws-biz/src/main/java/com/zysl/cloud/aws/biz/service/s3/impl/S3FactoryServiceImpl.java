@@ -223,9 +223,9 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			response = callS3MethodWithBody(r,null,s3Client,methodName);
 		}catch (AppLogicException e) {//AppLogicException
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
-				log.warn("ESLOG callS3Method.noSuchKey({}) {}", methodName, r);
+				log.warn("ES_LOG callS3Method.noSuchKey({}) {}", methodName, r);
 			}else{
-				log.warn("ESLOG callS3Method.error({}) {}->{}", methodName, r,ExceptionUtil.getMessage(e));
+				log.warn("ES_LOG callS3Method.error({}) {}->{}", methodName, r,ExceptionUtil.getMessage(e));
 			}
 			
 			if (throwLogicException) {
@@ -283,7 +283,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	
 	
 	private S3Client createS3Client(S3ServerProp props){
-		log.info("createS3Client start {}",props.getServerNo());
+		log.info("ES_LOG createS3Client-param {}",props.getServerNo());
 		DefaultSdkHttpClientBuilder defaultSdkHttpClientBuilder = new DefaultSdkHttpClientBuilder();
 		AttributeMap attributeMap = AttributeMap.builder()
 			.put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
@@ -303,7 +303,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			.region(Region.US_EAST_1)
 			.build();
 		
-		log.info("createS3Client end {}",props.getServerNo());
+		log.info("ES_LOG createS3Client-end {}",props.getServerNo());
 		return s3Client;
 	}
 	

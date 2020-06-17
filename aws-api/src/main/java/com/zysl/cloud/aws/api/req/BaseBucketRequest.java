@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @ApiModel(description = "创建bucket请求对象")
-public class CreateBucketRequest extends BaseReqeust {
+public class BaseBucketRequest extends BaseReqeust {
 
 	private static final long serialVersionUID = -7490764197092211455L;
 
@@ -24,7 +24,7 @@ public class CreateBucketRequest extends BaseReqeust {
 
 	@Override
 	public String toString() {
-		return "CreateBucketRequest{" +
+		return "BaseBucketRequest{" +
 				   "serverNo='" + serverNo + '\'' +
 				   ", bucketName='" + bucketName + '\'' +
 				   '}';

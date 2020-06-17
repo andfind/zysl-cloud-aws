@@ -3,13 +3,20 @@ package com.zysl.cloud.aws.rule.service.impl;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysKeyRequest;
-import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.WebConfig;
+import com.zysl.cloud.aws.domain.bo.PathUriBO;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
+import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
-import com.zysl.cloud.aws.utils.BizUtil;
-import java.net.URI;
+import com.zysl.cloud.aws.rule.service.utils.ObjectFormatUtils;
+import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.StringUtils;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,13 +32,14 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public void create(SysKeyRequest request, byte[] bodys, Boolean isOverWrite){
-		URI uri = BizUtil.formatPathURI(request.getPath());
-		if(FileSysTypeEnum.S3.getCode().equals(uri.getScheme())){
-			S3KeyBO keyBO = createS3KeyBO(uri);
+		PathUriBO pathUriBO = ObjectFormatUtils.formatS3PathURI(request.getPath());
+		if(FileSysTypeEnum.S3.getCode().equals(pathUriBO.getScheme())){
+			S3KeyBO keyBO = BeanCopyUtil.copy(pathUriBO,S3KeyBO.class);
 			keyBO.setBodys(bodys);
-			//查询信息
-			s3KeyService.getDetailInfo(keyBO);
 			//设置版本号
+			List<TagBO> tagList = new ArrayList<>();
+			tagList.add(new TagBO(BizConstants.S3_TAG_KEY_VERSION_NO,createVersionNo(keyBO)));
+			keyBO.setTagList(tagList);
 			
 			s3KeyService.create(keyBO);
 		}
@@ -42,15 +50,21 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 		return null;
 	}
 	
-	private S3KeyBO createS3KeyBO(URI uri){
-		S3KeyBO keyBO = new S3KeyBO();
-		keyBO.setVersionId(uri.getFragment());
-		String path = uri.getPath();
-		//去掉首个/
-		path = path.substring(1);
-		keyBO.setBucket(path.substring(0,path.indexOf("/")));
-		keyBO.setKey(path.substring(keyBO.getBucket().length()+1));
+	
+	private String createVersionNo(S3KeyBO keyBO){
+		int verNoInt = 1;
+		//查询信息
+		List<TagBO> tagBOList = s3KeyService.getTagList(keyBO);
+		String verNo = S3Utils.getTagValue(tagBOList, BizConstants.S3_TAG_KEY_VERSION_NO);
 		
-		return  keyBO;
+		try{
+			if(StringUtils.isNotEmpty(verNo)){
+				verNoInt =  Integer.parseInt(verNo) + 1;
+			}
+		}catch (NumberFormatException e){
+			log.warn("ES_LOG {} {}",keyBO, "createVersionNo:"+ ExceptionUtil.getMessage(e));
+		}
+		
+		return String.valueOf(verNoInt);
 	}
 }

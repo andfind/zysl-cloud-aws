@@ -14,7 +14,7 @@ public class FilePartInfoBO implements Serializable {
     private Integer partNumber;
     private Date lastModified;
     private String eTag;
-    private Integer size;
+    private Long size;
     private String uploadId;
     
     @Override

@@ -4,8 +4,13 @@ import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
+import com.zysl.cloud.aws.domain.bo.PathUriBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.utils.StringUtils;
+import com.zysl.cloud.utils.common.AppLogicException;
+import com.zysl.cloud.utils.enums.RespCodeEnum;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class ObjectFormatUtils {
 	
@@ -93,5 +98,37 @@ public class ObjectFormatUtils {
 		setPathAndFileName(dto,bo.getBucketName(),bo.getFileName());
 		
 		return dto;
+	}
+	
+	/**
+	 * 入参path格式化
+	 * scheme://编号或IP/完整路径#版本号
+	 * 完整路径格式:  /bucket/key   或者   /目录/文件
+	 * @description
+	 * @author miaomingming
+	 * @date 15:38 2020/6/16
+	 * @param pathUri
+	 * @return java.net.URI
+	 **/
+	public static PathUriBO formatS3PathURI(String pathUri){
+		try{
+			PathUriBO bo = new PathUriBO();
+			//bucket 及 key
+			String[] paths = new String[2];
+			URI uri = new URI(pathUri);
+			String path = uri.getPath();
+			//去掉首个/
+			path = path.substring(1);
+			bo.setBucket(path.substring(0,path.indexOf("/")));
+			bo.setKey(path.substring(paths[0].length()+1));
+			bo.setScheme(uri.getScheme());
+			bo.setVersionId(uri.getFragment());
+			bo.setServerNo(uri.getHost());
+			return  bo;
+		}catch (URISyntaxException e){
+			throw new AppLogicException("path.URISyntaxException", RespCodeEnum.ILLEGAL_PARAMETER.getCode());
+		}catch (Exception e){
+			throw new AppLogicException("path.formatException", RespCodeEnum.ILLEGAL_PARAMETER.getCode());
+		}
 	}
 }

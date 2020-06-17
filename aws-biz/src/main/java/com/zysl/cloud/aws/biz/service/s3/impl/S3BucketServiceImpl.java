@@ -17,6 +17,7 @@ import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
@@ -159,5 +160,40 @@ public class S3BucketServiceImpl implements IS3BucketService {
 		}
      return null;
 	}
+	
+	@Override
+	public void getBucketInfo(String bucketName){
+		log.info("ES_LOG getBucketInfo-param {}",bucketName);
+		Map<String,String> map = new HashMap<>();
+		//获取s3初始化对象
+		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
+		
+//		HeadBucketRequest request = HeadBucketRequest.builder()
+//										.bucket(bucketName)
+//										.build();
+//		HeadBucketResponse response = s3FactoryService.callS3Method(request, s3, S3Method.HEAD_BUCKET);
+//		log.info("ES_LOG getBucketInfo-rsp {}",response);
+		
+		//遍历文件，统计数量及大小
+		//技术验证，查询只有元信息：	response.responseMetadata()
+	}
+	
+	@Override
+	public void delete(String bucketName){
+		log.info("ES_LOG delete-param {}",bucketName);
+		//获取s3初始化对象
+		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
+		
+		//清空文件
+		
+		
+		//删除bucket
+		DeleteBucketRequest request = DeleteBucketRequest.builder()
+			.bucket(bucketName)
+			.build();
+		DeleteBucketResponse response = s3FactoryService.callS3Method(request, s3, S3Method.DELETE_BUCKET);
+		log.info("ES_LOG delete-rsp {}",response);
+	}
+	
 
 }

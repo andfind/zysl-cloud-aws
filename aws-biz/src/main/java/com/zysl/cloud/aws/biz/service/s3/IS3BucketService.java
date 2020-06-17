@@ -63,5 +63,24 @@ public interface IS3BucketService {
 	 * @return java.util.List<com.zysl.cloud.aws.domain.bo.TagBO>
 	 **/
 	List<TagBO> getBucketTag(String bucketName);
-
+	
+	/**
+	 * 查询bucket信息-->原生函数只有云信息，待讨论需求
+	 * @description
+	 * @author miaomingming
+	 * @date 9:45 2020/6/17
+	 * @param bucketName
+	 * @return void
+	 **/
+	void getBucketInfo(String bucketName);
+	
+	/**
+	 * 删除bucket
+	 * @description
+	 * @author miaomingming
+	 * @date 9:46 2020/6/17
+	 * @param bucketName
+	 * @return void
+	 **/
+	void delete(String bucketName);
 }

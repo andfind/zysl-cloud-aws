@@ -1,6 +1,6 @@
 package com.zysl.cloud.aws.api.srv;
 
-import com.zysl.cloud.aws.api.req.CreateBucketRequest;
+import com.zysl.cloud.aws.api.req.BaseBucketRequest;
 import com.zysl.cloud.aws.api.req.GetBucketsRequest;
 import com.zysl.cloud.aws.api.req.SetFileVersionRequest;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
@@ -19,7 +19,7 @@ public interface S3BucketSrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@GetMapping("/createBucket")
-	BaseResponse<String> createBucket(CreateBucketRequest request);
+	BaseResponse<String> createBucket(BaseBucketRequest request);
 
 
 	/**
@@ -40,4 +40,26 @@ public interface S3BucketSrv {
 	 **/
 	@GetMapping("/getBuckets")
 	BasePaginationResponse<String> getBuckets(GetBucketsRequest request);
+	
+	/**
+	 * 查询bucket信息
+	 * @description
+	 * @author miaomingming
+	 * @date 9:14 2020/6/17
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@GetMapping("/info")
+	BaseResponse<String> info(BaseBucketRequest request);
+	
+	/**
+	 * 删除bucket
+	 * @description
+	 * @author miaomingming
+	 * @date 9:44 2020/6/17
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@GetMapping("/info")
+	BaseResponse<String> delete(BaseBucketRequest request);
 }
