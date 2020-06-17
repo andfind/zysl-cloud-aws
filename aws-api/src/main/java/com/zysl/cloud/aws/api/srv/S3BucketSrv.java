@@ -60,6 +60,6 @@ public interface S3BucketSrv {
 	 * @param request
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
-	@GetMapping("/info")
+	@GetMapping("/delete")
 	BaseResponse<String> delete(BaseBucketRequest request);
 }

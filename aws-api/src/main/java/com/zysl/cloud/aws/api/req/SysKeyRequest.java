@@ -22,4 +22,8 @@ public class SysKeyRequest extends BaseReqeust {
 	@ApiModelProperty(value = "路径", name = "path",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String path;
 	
+	@Override
+	public String getEsLogMsg() {
+		return this.path;
+	}
 }

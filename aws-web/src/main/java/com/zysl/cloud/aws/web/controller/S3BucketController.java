@@ -7,6 +7,7 @@ import com.zysl.cloud.aws.api.req.SetFileVersionRequest;
 import com.zysl.cloud.aws.api.srv.S3BucketSrv;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
+import com.zysl.cloud.aws.rule.service.ISysBucketManager;
 import com.zysl.cloud.aws.web.validator.BaseBucketRequestV;
 import com.zysl.cloud.aws.web.validator.CreateBucketRequestV;
 import com.zysl.cloud.aws.web.validator.SetFileVersionRequestV;
@@ -28,6 +29,8 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 	private IS3BucketService s3BucketService;
 	@Autowired
 	private IS3FactoryService s3FactoryService;
+	@Autowired
+	private ISysBucketManager sysBucketManager;
 
 
 	@Override
@@ -75,8 +78,8 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 	@Override
 	public BaseResponse<String> delete(BaseBucketRequest request){
 		return ServiceProvider.call(request, BaseBucketRequestV.class, String.class,req->{
-			s3BucketService.getBucketInfo(request.getBucketName());
+			sysBucketManager.delete(request.getBucketName());
 			return RespCodeEnum.SUCCESS.getName();
-		},"bucketInfo");
+		},"deleteBucket");
 	}
 }

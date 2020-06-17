@@ -82,5 +82,5 @@ public interface IS3BucketService {
 	 * @param bucketName
 	 * @return void
 	 **/
-	void delete(String bucketName);
+	void delete(S3Client s3Client,String bucketName);
 }

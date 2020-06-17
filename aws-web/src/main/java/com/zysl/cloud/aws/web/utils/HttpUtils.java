@@ -139,7 +139,7 @@ public class HttpUtils {
 		try {
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
 			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
-			return multipartFile.getBytes();
+			return multipartFile == null ? null : multipartFile.getBytes();
 		} catch (IOException e) {
 			log.error("--uploadFile获取文件流异常--：{}", e);
 			throw new AppLogicException("获取文件流异常");

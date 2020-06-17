@@ -71,8 +71,16 @@ public interface IS3FactoryService {
 	 * @return java.lang.Boolean
 	 **/
 	void addBucket(String bucketName,String serverNo);
-
-
+	
+	/**
+	 * 更新bucket列表
+	 * @description
+	 * @author miaomingming
+	 * @date 18:39 2020/6/17
+	 * @param serverNo
+	 * @return void
+	 **/
+	void updateBucket(String serverNo);
 	/**
 	 * 查询bucket和serverNo的map
 	 * @description

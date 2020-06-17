@@ -13,7 +13,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-public class SysKeyCreateRequestV implements IValidator {
+public class SysKeyRequestV implements IValidator {
 
 	@NotBlank
 	 private String path;
@@ -21,6 +21,10 @@ public class SysKeyCreateRequestV implements IValidator {
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase) {
 		PathUriBO pathUriBO = ObjectFormatUtils.formatS3PathURI(path);
+		if(pathUriBO == null){
+			errors.add("pathFormat is error.");
+			return;
+		}
 		if(StringUtils.isNotEmpty(pathUriBO.getBucket()) && !Pattern.matches(WebConstants.S3_BUCKET_VALID_PATTERN, pathUriBO.getBucket())){
 			errors.add(WebConstants.S3_BUCKET_VALID_DESC);
 		}

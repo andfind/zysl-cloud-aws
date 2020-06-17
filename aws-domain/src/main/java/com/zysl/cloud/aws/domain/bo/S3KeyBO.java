@@ -13,6 +13,25 @@ public class S3KeyBO implements Serializable {
 	
 	private static final long serialVersionUID = 1305151760299486233L;
 	
+	public S3KeyBO(){}
+	
+	
+	public S3KeyBO(String bucket){
+		this.setBucket(bucket);
+	}
+	
+	public S3KeyBO(String bucket,String key){
+		this.setBucket(bucket);
+		this.setKey(key);
+	}
+	
+	public S3KeyBO(String key,String versionId,Long contentLength){
+		this.setKey(key);
+		this.setVersionId(versionId);
+		this.setContentLength(contentLength);
+	}
+	
+	
 	private String bucket;
 	
 	private String key;
@@ -51,9 +70,8 @@ public class S3KeyBO implements Serializable {
 	
 	//自定义-版本号-存在tag
 	private Integer versionNo;
-	//是否物理删除，1是0否，默认0
-	private Integer deleteStore;
-	
+	//是否已删除
+	private Boolean isDeleted;
 	
 	@Override
 	public String toString() {
@@ -112,8 +130,8 @@ public class S3KeyBO implements Serializable {
 		if (versionNo != null) {
 			sb.append(", versionNo=").append(versionNo);
 		}
-		if (deleteStore != null) {
-			sb.append(", deleteStore=").append(deleteStore);
+		if (isDeleted != null) {
+			sb.append(", isDeleted=").append(isDeleted);
 		}
 		sb.append("}}");
 		return sb.toString();

@@ -72,7 +72,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			}
 		}
 		
-		log.warn("not.exist.serverNo:{}",serverNo);
+		log.warn("ES_LOG not.exist.serverNo {}",serverNo);
 		throw new AppLogicException(ErrCodeEnum.S3_SERVER_NO_NOT_EXIST.getCode());
 	}
 
@@ -92,7 +92,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 						//写操作但是服务器没有空间
 						if(s3ServerProp.getNoSpace() != null && s3ServerProp.getNoSpace()
 							&& isWrite != null && isWrite){
-							log.error("s3.no.space.serverNo:{}",s3ServerProp.getServerNo());
+							log.error("ES_LOG s3.no.space.serverNo {}",s3ServerProp.getServerNo());
 							throw new AppLogicException(ErrCodeEnum.S3_NO_SPACE_WARN.getCode());
 						}
 						return getS3ClientByServerNo(s3ServerProp.getServerNo());
@@ -101,7 +101,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			}
 		}
 		
-		log.error("s3.not.exist.bucket:{}",bucketName);
+		log.error("ES_LOG s3.not.exist.bucket {}",bucketName);
 		throw new AppLogicException(ErrCodeEnum.S3_BUCKET_NOT_EXIST.getCode());
 	}
 
@@ -112,16 +112,16 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 
 	@Override
 	public void addBucket(String bucketName,String serverNo){
+		updateBucket(serverNo);
+	}
+	
+	@Override
+	public void updateBucket(String serverNo){
 		Map<String, S3ServerProp> s3ServerPropMap = (Map<String, S3ServerProp>)redisTemplate.opsForValue().get(S3_SERVER_PROP_MAP_NAME);
 		if(s3ServerPropMap != null && !s3ServerPropMap.isEmpty()){
 			for(S3ServerProp s3ServerProp:s3ServerPropMap.values()){
 				if(s3ServerProp.getServerNo().equals(serverNo)){
-					Map<String, String> bucketMap = s3ServerProp.getBucketMap();
-					if(bucketMap == null){
-						bucketMap = new HashMap<>();
-					}
-					bucketMap.put(bucketName,serverNo);
-					s3ServerProp.setBucketMap(bucketMap);
+					s3ServerProp.setBucketMap(getBucketList(serverNo,createS3Client(s3ServerProp)));
 				}
 			}
 			redisTemplate.opsForValue().set(S3_SERVER_PROP_MAP_NAME,s3ServerPropMap);
@@ -158,7 +158,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 
 	@Override
 	public <T extends S3Response,R extends S3Request>T callS3MethodWithBody(R r, RequestBody requestBody,S3Client s3Client,String methodName) throws AppLogicException{
-		log.info("=callS3Method:service_name:{},methodName:{},param:{}=",S3Client.SERVICE_NAME,methodName, r);
+		log.info("ES_LOG callS3API:{} server:{},param:{}",methodName, s3Client.serviceName(),r);
 		long start = System.currentTimeMillis();
 		T response = null;
 		try{
@@ -173,41 +173,40 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			if(obj != null){
 				response = (T)obj;
 			}
-
+			
+			
+			//结果判断
 			if(response == null || response.sdkHttpResponse() == null ){
-				log.error("callS3Method.invoke({})->no.response",methodName);
+				log.error("ES_LOG_EXCEPTION callS3API:{} no.response",methodName);
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_RESPONSE.getCode());
 			} else if(!response.sdkHttpResponse().isSuccessful()){
-				log.error("callS3Method.invoke({})->response.status.error:{}",methodName,response.sdkHttpResponse().statusCode());
-				
+				log.error("ES_LOG_EXCEPTION callS3API:{} response.status.error:{}",methodName,response.sdkHttpResponse().statusCode());
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_RESPONSE_STATUS_ERROR.getCode());
 			}else{
-				log.debug("callS3Method.invoke({}).success:{}",methodName, response);
+				log.info("ES_LOG callS3API:{} success",methodName);
 			}
 		}catch (NoSuchKeyException e){
-			log.error("callS3Method.invoke({}).NoSuchKeyException",methodName);
+			log.warn("ES_LOG_WARNING callS3API:{} NoSuchKey",methodName);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (BucketAlreadyExistsException e){
-			log.error("callS3Method.invoke({}).BucketAlreadyExistsException",methodName);
+			log.warn("ES_LOG_WARNING callS3API:{} BucketAlreadyExists",methodName,e);
 			throw new AppLogicException(ErrCodeEnum.S3_CREATE_BUCKET_EXIST.getCode());
-		}catch (IllegalAccessException | IllegalArgumentException  e){
-			log.error("callS3Method.invoke({}).error:{}",methodName,e);
+		}catch (IllegalAccessException | IllegalArgumentException e){
+			log.error("ES_LOG_EXCEPTION callS3API:{} error:{}",methodName,e.getMessage(),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_INVOKE_ERROR.getCode());
 		}catch (InvocationTargetException e){
-			log.error("callS3Method.invoke({}).error=>{}",methodName,e.getTargetException().getMessage(),e);
 			if(e.getTargetException() instanceof NoSuchKeyException){
-				log.error("noSuchKey {} {} [ES_LOG_EXCEPTION]", r, ExceptionUtil.getMessage(e));
+				log.warn("ES_LOG_WARNING callS3API:{} noSuchKey:{}", r, ExceptionUtil.getMessage(e));
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}else{
+				log.error("ES_LOG_EXCEPTION callS3API:{} error:{}",methodName,ExceptionUtil.getMessage(e),e);
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
 			}
-			
-			
 		}catch (Exception e){
-			log.error("callS3Method.error({}),param:{},err:",methodName,r,e);
+			log.error("ES_LOG_EXCEPTION callS3API:{} param:{},error:",methodName,r,ExceptionUtil.getMessage(e),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}finally{
-			log.info("=callS3Method.end:service_name:{},methodName:{},param:{}=use:{}",S3Client.SERVICE_NAME,methodName, r,(System.currentTimeMillis()-start));
+			log.info("ES_LOG callS3API:{} param:{}->use:{}",S3Client.SERVICE_NAME,methodName, r,(System.currentTimeMillis()-start));
 		}
 		return response;
 	}
@@ -245,7 +244,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	 **/
 	@PostConstruct
 	private void amazonS3ClientInit(){
-		log.info("=amazonS3ClientInit.start=");
+		log.info("ES_LOG amazonS3ClientInit start");
 		
 		Map<String, S3ServerProp> s3ServerPropMap = new HashMap<>();
 		List<S3ServerProp> s3ServerProps = s3ServerConfig.getServers();
@@ -263,7 +262,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		
 		redisTemplate.opsForValue().set(S3_SERVER_PROP_MAP_NAME,s3ServerPropMap);
 		
-		log.info("=amazonS3ClientInit.end=");
+		log.info("ES_LOG amazonS3ClientInit end");
 	}
 
 	
@@ -275,7 +274,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		if(response != null && !CollectionUtils.isEmpty(response.buckets())){
 			response.buckets().forEach(bucket -> {
 				bucketMap.put(bucket.name(),serverNo);
-				log.info("=amazonS3BucketInit.found.bucket:{}=", bucket.name());
+				log.info("ES_LOG amazonS3BucketInit.found.bucket {}", bucket.name());
 			});
 		}
 		return bucketMap;

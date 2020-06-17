@@ -2,7 +2,11 @@ package com.zysl.cloud.aws.biz.service.s3.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
+import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
+import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
+import com.zysl.cloud.aws.api.req.SysFileRequest;
+import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.constant.S3Method;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
@@ -14,8 +18,11 @@ import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.DateUtils;
+import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
+import com.zysl.cloud.utils.common.MyPage;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,16 +30,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.Delete;
+import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
+import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
+import software.amazon.awssdk.services.s3.model.ObjectVersion;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.Tag;
 import software.amazon.awssdk.services.s3.model.Tagging;
 
@@ -50,9 +66,8 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	private IS3BucketService s3BucketService;
 	
 	@Override
-	public S3KeyBO create(S3KeyBO t) {
+	public S3KeyBO create(S3Client s3Client,S3KeyBO t) {
 		log.info("ES_LOG create-param {} ", t);
-		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucket(),Boolean.TRUE);
 		
 		PutObjectRequest.Builder request = PutObjectRequest.builder()
 												.bucket(t.getBucket())
@@ -78,83 +93,54 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	}
 	
 	@Override
-	public void delete(S3KeyBO t) {
+	public void delete(S3Client s3Client,S3KeyBO t) {
 		log.info("ES_LOG delete-param {}", t);
-		
-//		//获取s3初始化对象
-//		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
-//
-//		DeleteObjectsRequest deleteObjectsRequest = null;
-//		Delete delete = null;
-//		//逻辑删除或者指定版本号
-//		if(StringUtils.isNotBlank(t.getVersionId()) || DeleteStoreEnum.NOCOVER.getCode().equals(t.getDeleteStore())){
-//			ObjectIdentifier.Builder objectIdentifier = ObjectIdentifier.builder()
-//				.key(StringUtils.join(t.getPath() ,t.getFileName()));
-//			if(StringUtils.isNotBlank(t.getVersionId())){
-//				objectIdentifier.versionId(t.getVersionId());
-//			}
-//			;
-//			List<ObjectIdentifier> objects = new ArrayList<>();
-//			objects.add(objectIdentifier.build());
-//			delete = Delete.builder().objects(objects).build();
-//
-//		}else if(DeleteStoreEnum.COVER.getCode().equals(t.getDeleteStore())){
-//			//删除整个文件信息, 先查询文件的版本信息
-//			List<S3ObjectBO> objectList = getVersions(t);
-//
-//			List<ObjectIdentifier> objects = Lists.newArrayList();
-//			//查询文件的版本信息
-//			if(!CollectionUtils.isEmpty(objectList)){
-//				objectList.forEach(obj -> {
-//					ObjectIdentifier objectIdentifier = ObjectIdentifier.builder()
-//						.key(obj.getFileName())
-//						.versionId(obj.getVersionId()).build();
-//					objects.add(objectIdentifier);
-//				});
-//
-//				//删除列表
-//				delete = Delete.builder().objects(objects).build();
-//			}
-//
-//		}
-//		//逻辑删除
-//		if(delete != null){
-//			deleteObjectsRequest = DeleteObjectsRequest.builder()
-//				.bucket(t.getBucketName())
-//				.delete(delete)
-//				.build();
-//			//文件删除
-//			DeleteObjectsResponse response = s3FactoryService.callS3Method(deleteObjectsRequest, s3, S3Method.DELETE_OBJECTS);
-//			log.debug("--delete文件删除返回；{}--", response);
-//		}
+		if(StringUtils.isNotEmpty(t.getKey())){
+			DeleteObjectRequest request = DeleteObjectRequest.builder()
+				.bucket(t.getBucket())
+				.key(t.getKey())
+				.versionId(t.getVersionId())
+				.build();
+			
+			s3FactoryService.callS3Method(request, s3Client, S3Method.DELETE_OBJECT);
+		}
 		
 		log.info("ES_LOG delete-success {}", t);
 	}
 	
 	@Override
-	public void rename(S3KeyBO src, S3KeyBO dest) {
-	
+	public void deleteList(S3Client s3Client, String bucket, List<S3KeyBO> s3KeyBOs) {
+		log.info("ES_LOG deleteList-param.size {}", CollectionUtils.isEmpty(s3KeyBOs) ? 0 : s3KeyBOs.size());
+		if(!CollectionUtils.isEmpty(s3KeyBOs)){
+			int max=500;
+			List<ObjectIdentifier> objects = Lists.newArrayList();
+			
+			//查询结果一般是返回时是目录在前，所以删除要倒序
+			for(int i=s3KeyBOs.size()-1;i>=0;i--){
+				S3KeyBO bo = s3KeyBOs.get(i);
+				ObjectIdentifier objectIdentifier = ObjectIdentifier.builder().key(bo.getKey()).versionId(bo.getVersionId()).build();
+				objects.add(objectIdentifier);
+				
+				if(i==0 || i%max == 0){
+					Delete delete = Delete.builder().objects(objects).build();
+					DeleteObjectsRequest request = DeleteObjectsRequest.builder().bucket(bucket).delete(delete).build();
+					s3FactoryService.callS3Method(request, s3Client, S3Method.DELETE_OBJECTS);
+					objects = Lists.newArrayList();
+				}
+			}
+		}
+		log.info("ES_LOG deleteList-success.size {}", CollectionUtils.isEmpty(s3KeyBOs) ? 0 : s3KeyBOs.size());
 	}
 	
 	@Override
-	public S3KeyBO copy(S3KeyBO src, S3KeyBO dest) {
+	public S3KeyBO copy(S3Client s3Client, S3KeyBO src, S3KeyBO dest) {
 		return null;
 	}
 	
-	@Override
-	public void move(S3KeyBO src, S3KeyBO dest) {
-	
-	}
 	
 	@Override
-	public void modify(S3KeyBO t) {
-	
-	}
-	
-	@Override
-	public S3KeyBO getBaseInfo(S3KeyBO t) {
+	public S3KeyBO getBaseInfo(S3Client s3Client,S3KeyBO t) {
 		log.info("ES_LOG getBaseInfo.param {}", t);
-		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucket());
 		
 		HeadObjectRequest.Builder request = HeadObjectRequest.builder()
 												.bucket(t.getBucket())
@@ -179,20 +165,20 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	}
 	
 	@Override
-	public S3KeyBO getDetailInfo(S3KeyBO t) {
+	public S3KeyBO getInfoAndBody(S3Client s3Client, S3KeyBO s3KeyBO) {
 		return null;
 	}
 	
+	
 	@Override
-	public List<TagBO> getTagList(S3KeyBO t){
+	public List<TagBO> getTagList(S3Client s3Client,S3KeyBO t){
 		log.info("ES_LOG getTagList.param {}", t);
-		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucket());
 		//查询文件的标签信息
 		GetObjectTaggingRequest.Builder request = GetObjectTaggingRequest.builder()
 													.bucket(t.getBucket())
 													.key(t.getKey())
 													.versionId(t.getVersionId());
-		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3, S3Method.GET_OBJECT_TAGGING, false);
+		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.GET_OBJECT_TAGGING, false);
 		log.info("ES_LOG getTagList.resp {}", response);
 		
 		
@@ -212,18 +198,116 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		return tagList;
 	}
 	
+	
 	@Override
-	public S3KeyBO getInfoAndBody(S3KeyBO t) {
-		return null;
+	public List<S3KeyBO> getVersions(S3Client s3Client,S3KeyBO t) {
+		log.info("ES_log getVersions-param {}}",t);
+		
+		ListObjectVersionsRequest.Builder request = ListObjectVersionsRequest.builder().
+												bucket(t.getBucket()).
+												prefix(t.getKey());
+		
+		ListObjectVersionsResponse response = null;
+		String nextMarker = null;
+		List<S3KeyBO> versionList = Lists.newArrayList();
+		while (response == null || response.isTruncated()){
+			request.keyMarker(nextMarker);
+			response = s3FactoryService.callS3Method(request.build(),s3Client, S3Method.LIST_OBJECT_VERSIONS);
+			nextMarker = response.nextKeyMarker();
+			//未删除文件
+			if(!CollectionUtils.isEmpty(response.versions())){
+				response.versions().forEach(obj -> {
+					S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),obj.size());
+					s3KeyBO.setLastModified(Date.from(obj.lastModified()));
+					s3KeyBO.setIsDeleted(Boolean.FALSE);
+					versionList.add(s3KeyBO);
+				});
+			}
+			//已删除文件
+			if(!CollectionUtils.isEmpty(response.deleteMarkers())){
+				response.deleteMarkers().forEach(obj -> {
+					S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),0L);
+					s3KeyBO.setLastModified(Date.from(obj.lastModified()));
+					s3KeyBO.setIsDeleted(Boolean.TRUE);
+					versionList.add(s3KeyBO);
+				});
+			}
+		}
+		
+		log.info("ES_log getVersions-rst.size {}}",versionList.size());
+		return versionList;
 	}
 	
 	@Override
-	public List<S3KeyBO> getVersions(S3KeyBO t) {
-		return null;
+	public List<S3KeyBO> list(S3Client s3Client, S3KeyBO s3KeyBO, MyPage myPage) {
+		log.info("ES_log keyList-param {}}",s3KeyBO);
+		//查询结果
+		List<S3KeyBO> list = new ArrayList<>();
+		//获取查询对象列表入参
+		int totalRecords = 0,rspCount = 1;
+		String nextMarker = null;
+		ListObjectsResponse response = null;
+		ListObjectsRequest.Builder request = ListObjectsRequest.builder().bucket(s3KeyBO.getBucket())
+													.prefix(s3KeyBO.getKey())
+													.delimiter(BizConstants.PATH_SEPARATOR);
+		//查询目录下的对象信息
+		while (response == null || response.isTruncated()){
+			request.marker(nextMarker);
+			response = s3FactoryService.callS3Method(request.build(),s3Client, S3Method.LIST_OBJECTS);
+			nextMarker = response.nextMarker();
+			if(!CollectionUtils.isEmpty(response.contents())){
+				totalRecords += response.contents().size();
+			}
+			if(!CollectionUtils.isEmpty(response.commonPrefixes())){
+				totalRecords += response.commonPrefixes().size();
+			}
+			//根据当前记录数及传入的页码+每页数据读取读取
+			setS3KeyBOList(s3KeyBO.getBucket(),list,response,myPage,rspCount++);
+		}
+		myPage.setTotalRecords(totalRecords);
+		
+		return list;
 	}
 	
-	@Override
-	public S3KeyBO rename(S3KeyBO t) {
-		return null;
+	/**
+	 * 根据查询结果设置翻页数据
+	 * @description
+	 * @author miaomingming
+	 * @date 16:08 2020/6/17
+	 * @param list
+	 * @param response
+	 * @param myPage
+	 * @param rspCount
+	 * @return void
+	 **/
+	private void setS3KeyBOList(String bucket,List<S3KeyBO> list,ListObjectsResponse response,MyPage myPage,int rspCount){
+		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize();
+		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize()-1;
+		int rspStartIndex = (rspCount - 1) * 1000;
+		
+		if(!CollectionUtils.isEmpty(response.commonPrefixes())){
+			for(int i=0;i<response.commonPrefixes().size();i++,rspStartIndex++){
+				if(rspStartIndex >= myPageStart && rspStartIndex <= myPageEnd){
+					list.add(new S3KeyBO(bucket,response.commonPrefixes().get(i).prefix()));
+				}
+			}
+		}
+		
+		if(!CollectionUtils.isEmpty(response.contents())){
+			for(int i=0;i<response.contents().size();i++,rspStartIndex++){
+				if(rspStartIndex >= myPageStart && rspStartIndex <= myPageEnd){
+					S3Object s3Object = response.contents().get(i);
+					S3KeyBO s3KeyBO = new S3KeyBO(bucket,s3Object.key());
+					s3KeyBO.setLastModified(DateUtils.from(s3Object.lastModified()));
+					s3KeyBO.setContentLength(s3Object.size());
+					s3KeyBO.setETag(s3Object.eTag());
+					
+					list.add(s3KeyBO);
+				}
+			}
+		}
+		
+		
 	}
+	
 }

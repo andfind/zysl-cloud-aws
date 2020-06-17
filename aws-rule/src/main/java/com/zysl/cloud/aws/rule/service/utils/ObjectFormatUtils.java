@@ -6,12 +6,15 @@ import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.domain.bo.PathUriBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
+import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import java.net.URI;
 import java.net.URISyntaxException;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ObjectFormatUtils {
 	
 	/**
@@ -114,21 +117,21 @@ public class ObjectFormatUtils {
 		try{
 			PathUriBO bo = new PathUriBO();
 			//bucket 及 key
-			String[] paths = new String[2];
 			URI uri = new URI(pathUri);
 			String path = uri.getPath();
 			//去掉首个/
 			path = path.substring(1);
 			bo.setBucket(path.substring(0,path.indexOf("/")));
-			bo.setKey(path.substring(paths[0].length()+1));
+			bo.setKey(path.substring(bo.getBucket().length()+1));
 			bo.setScheme(uri.getScheme());
 			bo.setVersionId(uri.getFragment());
 			bo.setServerNo(uri.getHost());
 			return  bo;
 		}catch (URISyntaxException e){
-			throw new AppLogicException("path.URISyntaxException", RespCodeEnum.ILLEGAL_PARAMETER.getCode());
+			log.warn("ES_LOG URISyntaxException {}",pathUri);
 		}catch (Exception e){
-			throw new AppLogicException("path.formatException", RespCodeEnum.ILLEGAL_PARAMETER.getCode());
+			log.warn("ES_LOG_Exception {} {}",pathUri, ExceptionUtil.getMessage(e));
 		}
+		return null;
 	}
 }

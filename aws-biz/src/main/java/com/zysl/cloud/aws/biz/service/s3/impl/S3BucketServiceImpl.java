@@ -11,6 +11,8 @@ import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
+import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
+import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.utils.StringUtils;
@@ -35,6 +37,8 @@ public class S3BucketServiceImpl implements IS3BucketService {
 	private IS3FactoryService s3FactoryService;
 	@Autowired
 	private IS3FileService fileService;
+	@Autowired
+	private IS3KeyService s3KeyService;
 
 	@Override
 	public List<Bucket> getBucketList(S3Client s3){
@@ -164,10 +168,9 @@ public class S3BucketServiceImpl implements IS3BucketService {
 	@Override
 	public void getBucketInfo(String bucketName){
 		log.info("ES_LOG getBucketInfo-param {}",bucketName);
-		Map<String,String> map = new HashMap<>();
 		//获取s3初始化对象
-		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
-		
+//		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
+//
 //		HeadBucketRequest request = HeadBucketRequest.builder()
 //										.bucket(bucketName)
 //										.build();
@@ -175,24 +178,17 @@ public class S3BucketServiceImpl implements IS3BucketService {
 //		log.info("ES_LOG getBucketInfo-rsp {}",response);
 		
 		//遍历文件，统计数量及大小
-		//技术验证，查询只有元信息：	response.responseMetadata()
+		//已技术验证，查询只有元信息：	response.responseMetadata()
 	}
 	
 	@Override
-	public void delete(String bucketName){
+	public void delete(S3Client s3Client,String bucketName){
 		log.info("ES_LOG delete-param {}",bucketName);
-		//获取s3初始化对象
-		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
-		
-		//清空文件
-		
-		
 		//删除bucket
-		DeleteBucketRequest request = DeleteBucketRequest.builder()
-			.bucket(bucketName)
-			.build();
-		DeleteBucketResponse response = s3FactoryService.callS3Method(request, s3, S3Method.DELETE_BUCKET);
-		log.info("ES_LOG delete-rsp {}",response);
+		DeleteBucketRequest request = DeleteBucketRequest.builder().bucket(bucketName).build();
+		s3FactoryService.callS3Method(request, s3Client, S3Method.DELETE_BUCKET);
+		
+		log.info("ES_LOG delete-rsp {}",bucketName);
 	}
 	
 
