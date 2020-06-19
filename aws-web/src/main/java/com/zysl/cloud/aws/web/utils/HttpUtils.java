@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.web.utils;
 
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.utils.StringUtils;
@@ -145,6 +146,20 @@ public class HttpUtils {
 		}
 	}
 	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysFileUploadRequest request)throws AppLogicException{
+		try {
+			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
+			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
+			if(StringUtils.isEmpty(request.getFileName())){
+				request.setFileName(multipartFile.getOriginalFilename());
+			}
+			return multipartFile.getBytes();
+		} catch (IOException e) {
+			log.error("--uploadFile获取文件流异常--：{}", e);
+			throw new AppLogicException("获取文件流异常");
+		}
+	}
+	
+	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysKeyUploadRequest request)throws AppLogicException{
 		try {
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
 			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");

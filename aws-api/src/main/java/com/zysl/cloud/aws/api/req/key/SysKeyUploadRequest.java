@@ -15,11 +15,17 @@ public class SysKeyUploadRequest extends SysKeyRequest {
 	@ApiModelProperty(value = "是否覆盖", name = "isCover",dataType = SwaggerConstants.DATA_TYPE_BOOLEAN)
 	private Boolean isCover = true;
 	
+	@ApiModelProperty(value = "下载用的文件名", name = "fileName",dataType = SwaggerConstants.DATA_TYPE_STRING)
+	private String fileName;
+	
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer("{\"SysKeyUploadRequest\":{");
 		if (isCover != null) {
 			sb.append("isCover=").append(isCover);
+		}
+		if (fileName != null) {
+			sb.append(", fileName='").append(fileName).append('\'');
 		}
 		sb.append("},\"super-SysKeyUploadRequest\":")
 			.append(super.toString()).append("}");

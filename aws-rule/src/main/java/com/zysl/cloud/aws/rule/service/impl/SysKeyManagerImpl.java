@@ -82,6 +82,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			//设置版本号
 			List<TagBO> tagList = new ArrayList<>();
 			tagList.add(new TagBO(BizConstants.S3_TAG_KEY_VERSION_NO,createVersionNo(keyBO)));
+			tagList.add(new TagBO(BizConstants.S3_TAG_KEY_FILE_NAME,request.getFileName()));
 			keyBO.setTagList(tagList);
 			s3KeyService.create(s3,keyBO);
 		}

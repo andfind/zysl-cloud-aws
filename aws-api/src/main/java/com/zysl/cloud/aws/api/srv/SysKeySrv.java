@@ -1,11 +1,11 @@
 package com.zysl.cloud.aws.api.srv;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
-import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
-import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.utils.common.BaseResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,6 +39,19 @@ public interface SysKeySrv {
 	 **/
 	@PostMapping("/upload")
 	BaseResponse<SysKeyDTO> upload(HttpServletRequest req, SysKeyUploadRequest request);
+	
+	/**
+	 * 下载
+	 * @description
+	 * @author miaomingming
+	 * @date 18:31 2020/6/19
+	 * @param req
+	 * @param rsp
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@GetMapping("/download")
+	BaseResponse<String> download(HttpServletRequest req, HttpServletResponse rsp, SysKeyDownloadRequest request);
 	
 	/**
 	 * 查询信息
