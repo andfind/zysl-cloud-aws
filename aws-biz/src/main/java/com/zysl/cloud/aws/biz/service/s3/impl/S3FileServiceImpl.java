@@ -177,8 +177,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				.key(StringUtils.join(t.getPath(), t.getFileName()))
 				.uploadId(t.getUploadId())
 				.partNumber(t.getPartNumber())
-				.contentLength(100L)
 				.build();
+		
 		RequestBody requestBody = RequestBody.fromBytes(t.getBodys());
 
 		UploadPartResponse response = s3FactoryService.callS3MethodWithBody(request, requestBody, s3, S3Method.UPLOAD_PART);
@@ -280,8 +280,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
-
-
+		
+		
 		ListMultipartUploadsRequest request = ListMultipartUploadsRequest.builder()
 				.bucket(t.getBucketName())
 				.prefix(StringUtils.join(t.getPath(),t.getFileName()))

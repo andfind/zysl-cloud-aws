@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.biz.test;
 
+import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.utils.StringUtils;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -7,12 +8,13 @@ import java.util.regex.Pattern;
 
 public class Test {
 	public static void main(String[] args){
-		long start = System.currentTimeMillis();
-		System.out.println("---start---");
 		Test test = new Test();
-		String filePath = "temp:/";
-		filePath = filePath.substring(filePath.indexOf(":")+2);
-		System.out.println("---end---used:" + filePath);
+		long start = System.currentTimeMillis();
+		for(int i=0;i<1000000;i++){
+			//System.out.println(i);
+		}
+		System.out.println(System.currentTimeMillis() - start);
+		
 	}
 	
 	public void testUrlEncode(){
@@ -24,6 +26,11 @@ public class Test {
 		}
 		
 	}
+	
+	public void testa(S3KeyBO s3KeyBO){
+		s3KeyBO.setBucket("33");
+	}
+	
 	
 	public void getRegin(){
 		String path = "temp-002:/m/a-1";
