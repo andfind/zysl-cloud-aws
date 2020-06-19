@@ -22,7 +22,7 @@ import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
-import com.zysl.cloud.aws.rule.service.utils.ObjectFormatUtils;
+import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;

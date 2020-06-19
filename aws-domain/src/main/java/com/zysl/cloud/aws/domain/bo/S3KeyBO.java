@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.domain.bo;
 
+import com.zysl.cloud.utils.StringUtils;
 import java.io.Serializable;
 import java.time.Instant;
 import java.util.Date;
@@ -72,6 +73,8 @@ public class S3KeyBO implements Serializable {
 	private Integer versionNo;
 	//是否已删除
 	private Boolean isDeleted;
+	//是否文件
+	private Boolean isFile;
 	
 	@Override
 	public String toString() {
@@ -132,6 +135,9 @@ public class S3KeyBO implements Serializable {
 		}
 		if (isDeleted != null) {
 			sb.append(", isDeleted=").append(isDeleted);
+		}
+		if (isFile != null) {
+			sb.append(", isFile=").append(isFile);
 		}
 		sb.append("}}");
 		return sb.toString();

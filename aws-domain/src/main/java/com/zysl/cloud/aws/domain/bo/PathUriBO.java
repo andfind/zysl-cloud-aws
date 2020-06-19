@@ -15,12 +15,13 @@ public class PathUriBO implements Serializable {
 	
 	private static final long serialVersionUID = -5088955709475471751L;
 	
-	
+	//协议：s3，sharePoint、ftp
 	private String scheme;
-	private String bucket;
+	//bucket或者IP
+	private String host;
+	//完整路径
 	private String key;
 	private String versionId;
-	private String serverNo;
 	
 	@Override
 	public String toString() {
@@ -28,17 +29,14 @@ public class PathUriBO implements Serializable {
 		if (scheme != null) {
 			sb.append("scheme='").append(scheme).append('\'');
 		}
-		if (bucket != null) {
-			sb.append(", bucket='").append(bucket).append('\'');
+		if (host != null) {
+			sb.append(", host='").append(host).append('\'');
 		}
 		if (key != null) {
 			sb.append(", key='").append(key).append('\'');
 		}
 		if (versionId != null) {
 			sb.append(", versionId='").append(versionId).append('\'');
-		}
-		if (serverNo != null) {
-			sb.append(", serverNo='").append(serverNo).append('\'');
 		}
 		sb.append("}}");
 		return sb.toString();

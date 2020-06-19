@@ -1,4 +1,4 @@
-package com.zysl.cloud.aws.api.req;
+package com.zysl.cloud.aws.api.req.key;
 
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
@@ -11,15 +11,16 @@ import lombok.Setter;
 @ApiModel(description = "创建文件请求对象")
 public class SysKeyCreateRequest extends SysKeyRequest {
 	
-	private static final long serialVersionUID = -7745824360969448935L;
-	@ApiModelProperty(value = "是否覆盖：1是0否,默认0", name = "isOverWrite",dataType = SwaggerConstants.DATA_TYPE_NUMBER)
-	private Integer isOverWrite;
+	private static final long serialVersionUID = 7761690283840948077L;
+	@ApiModelProperty(value = "文件流base64", name = "data",dataType = SwaggerConstants.DATA_TYPE_NUMBER)
+	private String data;
+	
 	
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer("{\"SysKeyCreateRequest\":{");
-		if (isOverWrite != null) {
-			sb.append("isOverWrite=").append(isOverWrite);
+		if (data != null) {
+			sb.append("data='").append(data).append('\'');
 		}
 		sb.append("},\"super-SysKeyCreateRequest\":")
 			.append(super.toString()).append("}");

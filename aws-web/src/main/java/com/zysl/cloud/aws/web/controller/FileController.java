@@ -33,7 +33,6 @@ import com.zysl.cloud.utils.service.provider.ServiceProvider;
 import com.zysl.cloud.utils.validator.BeanValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartHttpServletRequest;

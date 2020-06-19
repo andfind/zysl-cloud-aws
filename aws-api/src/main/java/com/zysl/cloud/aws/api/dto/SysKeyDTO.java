@@ -14,8 +14,8 @@ import lombok.Setter;
 public class SysKeyDTO implements Serializable {
 	
 	private static final long serialVersionUID = 5855827655850640540L;
-	@ApiModelProperty(value = "是否文件：1是0目录", name = "isFile", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
-	private Integer isFile;
+//	@ApiModelProperty(value = "是否文件：1是0目录", name = "isFile", dataType = SwaggerConstants.DATA_TYPE_BOOLEAN)
+//	private Boolean isFile;
 	@ApiModelProperty(value = "路径", name = "path",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
 	private String path;
 	@ApiModelProperty(value = "分区文件大小", name = "size", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
@@ -30,9 +30,6 @@ public class SysKeyDTO implements Serializable {
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer("{\"SysKeyDTO\":{");
-		if (isFile != null) {
-			sb.append("isFile=").append(isFile);
-		}
 		if (path != null) {
 			sb.append(", path='").append(path).append('\'');
 		}

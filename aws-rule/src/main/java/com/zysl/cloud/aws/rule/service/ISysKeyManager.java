@@ -1,9 +1,10 @@
 package com.zysl.cloud.aws.rule.service;
 
-import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
-import com.zysl.cloud.aws.api.req.SysFileRequest;
-import com.zysl.cloud.aws.api.req.SysKeyRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import java.util.List;
 
 public interface ISysKeyManager {
@@ -12,11 +13,20 @@ public interface ISysKeyManager {
 	 * @description
 	 * @author miaomingming
 	 * @param request
-	 * @param bodys
-	 * @param isOverWrite 是否覆盖
 	 * @return void
 	 **/
-	void create(SysKeyRequest request,byte[] bodys,Boolean isOverWrite);
+	void create(SysKeyCreateRequest request);
+	
+	/**
+	 * 上传文件流
+	 * @description
+	 * @author miaomingming
+	 * @date 15:11 2020/6/19
+	 * @param request
+	 * @param bodys
+	 * @return void
+	 **/
+	void upload(SysKeyUploadRequest request,byte[] bodys);
 	
 	/**
 	 * 对象信息查询
@@ -54,8 +64,7 @@ public interface ISysKeyManager {
 	 * @author miaomingming
 	 * @date 11:39 2020/6/17
 	 * @param request
-	 * @param isPhy
 	 * @return void
 	 **/
-	void delete(SysKeyRequest request,Boolean isPhy);
+	void delete(SysKeyDeleteRequest request);
 }

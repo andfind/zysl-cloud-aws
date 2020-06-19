@@ -1,15 +1,14 @@
-package com.zysl.cloud.aws.rule.service.utils;
+package com.zysl.cloud.aws.rule.utils;
 
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;
+import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.domain.bo.PathUriBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
-import com.zysl.cloud.utils.common.AppLogicException;
-import com.zysl.cloud.utils.enums.RespCodeEnum;
 import java.net.URI;
 import java.net.URISyntaxException;
 import lombok.extern.slf4j.Slf4j;
@@ -118,14 +117,16 @@ public class ObjectFormatUtils {
 			PathUriBO bo = new PathUriBO();
 			//bucket 及 key
 			URI uri = new URI(pathUri);
-			String path = uri.getPath();
-			//去掉首个/
-			path = path.substring(1);
-			bo.setBucket(path.substring(0,path.indexOf("/")));
-			bo.setKey(path.substring(bo.getBucket().length()+1));
 			bo.setScheme(uri.getScheme());
 			bo.setVersionId(uri.getFragment());
-			bo.setServerNo(uri.getHost());
+			bo.setHost(uri.getHost());
+			if(StringUtils.isNotEmpty(uri.getPath())){
+				if(FileSysTypeEnum.S3.getCode().equals(bo.getScheme())){
+					bo.setKey(uri.getPath().substring(1));
+				}else{
+					bo.setKey(uri.getPath());
+				}
+			}
 			return  bo;
 		}catch (URISyntaxException e){
 			log.warn("ES_LOG URISyntaxException {}",pathUri);
@@ -134,4 +135,6 @@ public class ObjectFormatUtils {
 		}
 		return null;
 	}
+	
+	
 }

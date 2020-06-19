@@ -301,6 +301,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 					s3KeyBO.setLastModified(DateUtils.from(s3Object.lastModified()));
 					s3KeyBO.setContentLength(s3Object.size());
 					s3KeyBO.setETag(s3Object.eTag());
+					s3KeyBO.setIsFile(Boolean.TRUE);
 					
 					list.add(s3KeyBO);
 				}

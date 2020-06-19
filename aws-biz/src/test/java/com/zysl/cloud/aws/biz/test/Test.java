@@ -9,11 +9,12 @@ import java.util.regex.Pattern;
 public class Test {
 	public static void main(String[] args){
 		Test test = new Test();
-		long start = System.currentTimeMillis();
-		for(int i=0;i<1000000;i++){
-			//System.out.println(i);
+		try{
+			System.out.println((S3KeyBO)null);
+		}catch (Exception e){
+			e.printStackTrace();
 		}
-		System.out.println(System.currentTimeMillis() - start);
+		
 		
 	}
 	

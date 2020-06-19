@@ -1,6 +1,5 @@
-package com.zysl.cloud.aws.api.req;
+package com.zysl.cloud.aws.api.req.key;
 
-import com.zysl.cloud.utils.common.BaseReqeust;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;

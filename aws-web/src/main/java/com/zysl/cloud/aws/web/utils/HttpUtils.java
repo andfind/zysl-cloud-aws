@@ -1,7 +1,6 @@
 package com.zysl.cloud.aws.web.utils;
 
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
-import com.zysl.cloud.aws.api.req.SysKeyCreateRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.utils.StringUtils;
