@@ -8,6 +8,7 @@ import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.constant.S3Method;
+import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
@@ -19,8 +20,11 @@ import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
+import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -28,7 +32,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
+import software.amazon.awssdk.awscore.exception.AwsServiceException;
+import software.amazon.awssdk.core.ResponseBytes;
+import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.Delete;
@@ -36,6 +44,8 @@ import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
@@ -44,6 +54,7 @@ import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.ObjectVersion;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
@@ -51,6 +62,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.Tag;
 import software.amazon.awssdk.services.s3.model.Tagging;
+import sun.misc.BASE64Decoder;
 
 @Slf4j
 @Service("s3KeyService")
@@ -166,7 +178,37 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public S3KeyBO getInfoAndBody(S3Client s3Client, S3KeyBO s3KeyBO) {
-		return null;
+		log.info("ES_LOG getInfoAndBody.param {}", s3KeyBO);
+		//获取下载对象
+		GetObjectRequest.Builder request = GetObjectRequest.builder()
+												.bucket(s3KeyBO.getBucket())
+												.key(s3KeyBO.getKey())
+												.versionId(s3KeyBO.getVersionId())
+												.range(s3KeyBO.getRange());
+		
+		try{
+			ResponseBytes<GetObjectResponse> responseBytes = s3Client.getObject(request.build(), ResponseTransformer.toBytes());
+			if(responseBytes == null || responseBytes.response() == null){
+				return null;
+			}
+			GetObjectResponse response = responseBytes.response();
+			s3KeyBO.setContentLength(response.contentLength());
+			s3KeyBO.setETag(response.eTag());
+			s3KeyBO.setLastModified(DateUtils.from(response.lastModified()));
+			s3KeyBO.setBodys(responseBytes.asByteArray());
+			s3KeyBO.setExpires(DateUtils.from(response.expires()));
+			
+			return  s3KeyBO;
+		}catch (NoSuchKeyException e){
+			log.warn("ES_LOG {} getInfoAndBody.NoSuchKeyException",s3KeyBO.getKey());
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+		}catch (AwsServiceException | SdkClientException e){
+			log.warn("ES_LOG {} getInfoAndBody.AwsServiceException:{}", s3KeyBO.getKey(), ExceptionUtil.getMessage(e),e);
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
+		}catch (Exception e){
+			log.error("ES_LOG {} getInfoAndBody.Exception:{}", s3KeyBO.getKey(), ExceptionUtil.getMessage(e),e);
+			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
+		}
 	}
 	
 	

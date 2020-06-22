@@ -3,8 +3,10 @@ package com.zysl.cloud.aws.rule.service;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
+import com.zysl.cloud.aws.domain.bo.TagBO;
 import java.util.List;
 
 public interface ISysKeyManager {
@@ -67,4 +69,25 @@ public interface ISysKeyManager {
 	 * @return void
 	 **/
 	void delete(SysKeyDeleteRequest request);
+	
+	/**
+	 * 查询范围内对象数据流
+	 * @description
+	 * @author miaomingming
+	 * @date 9:43 2020/6/22
+	 * @param request
+	 * @param range
+	 * @return byte[]
+	 **/
+	byte[] getBody(SysKeyRequest request,String range);
+	
+	/**
+	 * 标签列表查询
+	 * @description
+	 * @author miaomingming
+	 * @date 10:06 2020/6/22
+	 * @param request
+	 * @return java.util.List<com.zysl.cloud.aws.domain.bo.TagBO>
+	 **/
+	List<TagBO> tagList(SysKeyRequest request);
 }

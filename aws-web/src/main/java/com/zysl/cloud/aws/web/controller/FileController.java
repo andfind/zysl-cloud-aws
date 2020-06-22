@@ -194,7 +194,7 @@ public class FileController extends BaseController implements FileSrv {
 
 			byte[] bytes = s3ObjectBO.getBodys();
 			log.info("--下载接口返回的文件数据大小--", bytes.length);
-			if(DownTypeEnum.COVER.getCode().equals(req.getType())){
+			if(DownTypeEnum.BASE64.getCode().equals(req.getType())){
 				DownloadFileDTO downloadFileDTO = new DownloadFileDTO();
 
 				BASE64Encoder encoder = new BASE64Encoder();

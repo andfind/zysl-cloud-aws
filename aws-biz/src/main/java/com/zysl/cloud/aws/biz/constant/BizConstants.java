@@ -26,9 +26,6 @@ public class BizConstants {
     public static final Integer PDF_MARK_TEXT_WIDTH = 300;
     public static final Integer PDF_MARK_TEXT_HEIGHT = 300;
 
-    //s3对象tag中版本号的key
-    public static final String S3_TAG_KEY_VERSION_NO = "verNo";
-    public static final String S3_TAG_KEY_FILE_NAME = "fileName";
     
 //    // 分享默认目录
 //    public static final String SHARE_DEFAULT_FOLDER = "share";

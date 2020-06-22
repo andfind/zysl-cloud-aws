@@ -8,6 +8,7 @@ import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
+import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
@@ -71,7 +72,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 					
 					s3ObjectBO.setPath(bo.getKey());
 					List<TagBO> tagList = s3FileService.getTags(s3ObjectBO);
-					String verNo = S3Utils.getTagValue(tagList, BizConstants.S3_TAG_KEY_VERSION_NO);
+					String verNo = S3Utils.getTagValue(tagList, S3TagKeyEnum.VERSION_NUMBER.getCode());
 					if(StringUtils.isNotEmpty(verNo)){
 						dto.setVersionNo(Integer.parseInt(verNo));
 					}

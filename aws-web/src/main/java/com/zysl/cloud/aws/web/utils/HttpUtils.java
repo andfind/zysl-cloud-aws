@@ -1,13 +1,16 @@
 package com.zysl.cloud.aws.web.utils;
 
+import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
+import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -80,15 +83,35 @@ public class HttpUtils {
 	 * @return void
 	 **/
 	public static void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys){
+		downloadFileByte(request,response,fileName,bodys, DownTypeEnum.FILE.getContentType());
+	}
+	
+	public static void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys,String contentType){
 		try {
 			//1下载文件流
 			OutputStream outputStream = response.getOutputStream();
-			//告诉浏览器输出内容为流
-			response.setContentType("application/octet-stream");
 			response.setCharacterEncoding("UTF-8");
-			//获取浏览器名（IE/Chome/firefox）
-			String userAgent = request.getHeader("User-Agent");
+			//告诉浏览器输出内容为流
+			response.setContentType(contentType);
 			
+			if(DownTypeEnum.FILE.getContentType().equals(contentType)){
+				setFileName(request,response,fileName);
+			}
+			
+			outputStream.write(bodys);
+			outputStream.flush();
+			outputStream.close();
+			
+		} catch (IOException e) {
+			log.error("ES_LOG_EXCEPTION {} IOException:{}", fileName, ExceptionUtil.getMessage(e));
+			throw new AppLogicException(ErrCodeEnum.DOWNLOAD_FILE_ERROR.getCode());
+		}
+	}
+	
+	public static void setFileName(HttpServletRequest request, HttpServletResponse response, String fileName){
+		//获取浏览器名（IE/Chome/firefox）
+		String userAgent = request.getHeader("User-Agent");
+		try{
 			// IE浏览器
 			if (isIE(userAgent)) {
 				fileName = URLEncoder.encode(fileName, "UTF-8");
@@ -97,17 +120,10 @@ public class HttpUtils {
 				fileName = new String(fileName.getBytes("UTF-8"), "ISO8859-1");
 			}
 			response.setHeader("Content-Disposition", "attachment;fileName="+fileName);
-			
-			outputStream.write(bodys);
-			outputStream.flush();
-			outputStream.close();
-			
-		} catch (IOException e) {
-			log.error("--文件下载异常：--", e);
-			throw new AppLogicException(ErrCodeEnum.DOWNLOAD_FILE_ERROR.getCode());
+		}catch (UnsupportedEncodingException e){
+			log.warn("ES_LOG {} UnsupportedEncodingException", fileName,e);
 		}
 	}
-	
 	/**
 	 * 判断是否IE浏览器
 	 * @description

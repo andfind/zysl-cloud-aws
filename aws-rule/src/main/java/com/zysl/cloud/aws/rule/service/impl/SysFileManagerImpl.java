@@ -14,6 +14,7 @@ import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
+import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.WebConfig;
@@ -120,7 +121,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 				dto.setVersionId(rst.getVersionId());
 				dto.setPath(rst.getBucketName() + ":/" + rst.getPath());
 				
-				String verNo = S3Utils.getTagValue(rst.getTagList(),BizConstants.S3_TAG_KEY_VERSION_NO);
+				String verNo = S3Utils.getTagValue(rst.getTagList(), S3TagKeyEnum.VERSION_NUMBER.getCode());
 				if(StringUtils.isNotEmpty(verNo)){
 					dto.setVersionNo(Integer.parseInt(verNo));
 				}
@@ -144,7 +145,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 			s3ObjectBO.setBodys(bodys);
 			
 			List<TagBO> tagList = new ArrayList<>();
-			TagBO tagBO = new TagBO(BizConstants.S3_TAG_KEY_VERSION_NO,createVersionNo(s3ObjectBO));
+			TagBO tagBO = new TagBO(S3TagKeyEnum.VERSION_NUMBER.getCode(),createVersionNo(s3ObjectBO));
 			tagList.add(tagBO);
 			s3ObjectBO.setTagList(tagList);
 			
@@ -160,7 +161,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 			S3ObjectBO bo = (S3ObjectBO)obj;
 			if(!CollectionUtils.isEmpty(bo.getTagList())){
 				try{
-					String verNo = S3Utils.getTagValue(bo.getTagList(), BizConstants.S3_TAG_KEY_VERSION_NO);
+					String verNo = S3Utils.getTagValue(bo.getTagList(), S3TagKeyEnum.VERSION_NUMBER.getCode());
 					if(StringUtils.isNotEmpty(verNo)){
 						verNoInt =  Integer.parseInt(verNo) + 1;
 					}
@@ -199,7 +200,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 			for(S3ObjectBO bo : list){
 				SysFileDTO dto = ObjectFormatUtils.s3ObjectBOToSysFileDTO(bo);
 				List<TagBO> tagList = s3FileService.getTags(bo);
-				String verNo = S3Utils.getTagValue(tagList,BizConstants.S3_TAG_KEY_VERSION_NO);
+				String verNo = S3Utils.getTagValue(tagList,S3TagKeyEnum.VERSION_NUMBER.getCode());
 				if(StringUtils.isNotEmpty(verNo)){
 					dto.setVersionNo(Integer.parseInt(verNo));
 				}
