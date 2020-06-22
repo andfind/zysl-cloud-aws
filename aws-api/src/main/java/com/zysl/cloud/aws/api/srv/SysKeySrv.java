@@ -2,10 +2,14 @@ package com.zysl.cloud.aws.api.srv;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
+import com.zysl.cloud.utils.common.BasePaginationRequest;
+import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -74,4 +78,68 @@ public interface SysKeySrv {
 	 **/
 	@PostMapping("/delete")
 	BaseResponse<String> delete(@RequestBody SysKeyDeleteRequest request);
+	
+	/**
+	 * 批量删除对象
+	 * @description
+	 * @author miaomingming
+	 * @date 11:11 2020/6/22
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@PostMapping("/deleteList")
+	BaseResponse<String> deleteList(@RequestBody SysKeyDeleteListRequest request);
+	
+	/**
+	 * 查询对象列表
+	 * @description
+	 * @author miaomingming
+	 * @date 11:11 2020/6/22
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<com.zysl.cloud.aws.api.dto.SysKeyDTO>
+	 **/
+	@PostMapping("/list")
+	BasePaginationResponse<SysKeyDTO> infoList(@RequestBody SysKeyPageRequest request);
+	
+	/**
+	 * 查询版本列表
+	 * @description
+	 * @author miaomingming
+	 * @date 11:12 2020/6/22
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<com.zysl.cloud.aws.api.dto.SysKeyDTO>
+	 **/
+	@PostMapping("/versions")
+	BasePaginationResponse<SysKeyDTO> versionList(@RequestBody SysKeyPageRequest request);
+	
+	/**
+	 * 复制对象
+	 * @description
+	 * @author miaomingming
+	 * @date 11:13 2020/6/22
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@PostMapping("/copy")
+	BaseResponse<String> copy(@RequestBody SysKeyRequest request);
+	
+	/**
+	 * 对象是否存在
+	 * @description
+	 * @author miaomingming
+	 * @date 11:13 2020/6/22
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@PostMapping("/isExist")
+	BaseResponse<String> isExist(@RequestBody SysKeyRequest request);
+	
+	/*
+	分片对象上传
+	分片列表查询
+	分片对象取消
+	
+	分享对象
+	分享对象下载
+	office转pdf*/
 }

@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.rule.service;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
@@ -90,4 +91,14 @@ public interface ISysKeyManager {
 	 * @return java.util.List<com.zysl.cloud.aws.domain.bo.TagBO>
 	 **/
 	List<TagBO> tagList(SysKeyRequest request);
+	
+	/**
+	 * 批量删除
+	 * @description
+	 * @author miaomingming
+	 * @date 11:38 2020/6/22
+	 * @param request
+	 * @return void
+	 **/
+	void deleteList(SysKeyDeleteListRequest request);
 }

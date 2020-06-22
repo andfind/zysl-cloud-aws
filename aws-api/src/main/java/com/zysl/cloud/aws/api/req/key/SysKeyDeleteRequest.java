@@ -8,7 +8,7 @@ import lombok.Setter;
 
 @Setter
 @Getter
-@ApiModel(description = "创建操作请求对象")
+@ApiModel(description = "删除操作请求对象")
 public class SysKeyDeleteRequest extends SysKeyRequest {
 	
 	

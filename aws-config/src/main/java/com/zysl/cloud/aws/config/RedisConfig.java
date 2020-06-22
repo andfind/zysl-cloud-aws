@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.config;
 
+import com.zysl.cloud.utils.StringUtils;
 import java.time.Duration;
 import lombok.Getter;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
@@ -76,7 +77,7 @@ public class RedisConfig {
         RedisStandaloneConfiguration redisStandaloneConfiguration = new RedisStandaloneConfiguration();
         redisStandaloneConfiguration.setDatabase(this.database);
         redisStandaloneConfiguration.setHostName(this.host);
-        redisStandaloneConfiguration.setPassword(RedisPassword.none());
+        redisStandaloneConfiguration.setPassword(StringUtils.isEmpty(this.password) ? RedisPassword.none() : RedisPassword.of(this.password));
         redisStandaloneConfiguration.setPort(this.port);
         return new JedisConnectionFactory(redisStandaloneConfiguration, getJedisClientConfiguration());
     }

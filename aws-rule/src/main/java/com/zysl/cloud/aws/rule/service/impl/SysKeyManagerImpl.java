@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.rule.service.impl;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
@@ -32,6 +33,7 @@ import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import software.amazon.awssdk.services.s3.S3Client;
 import sun.misc.BASE64Decoder;
 
@@ -193,6 +195,30 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 		}
 		
 		return null;
+	}
+	
+	@Override
+	public void deleteList(SysKeyDeleteListRequest request){
+		if(CollectionUtils.isEmpty(request.getPathList())){
+			return;
+		}
+		List<S3KeyBO> keys = new ArrayList<>();
+		String bucket = null;
+		for(SysKeyDeleteRequest deleteRequest : request.getPathList()){
+			if (FileSysTypeEnum.S3.getCode().equals(deleteRequest.getScheme())) {
+				if(bucket == null){
+					bucket = deleteRequest.getHost();
+				}
+				keys.add(new S3KeyBO(deleteRequest.getKey(),deleteRequest.getVersionId(),0L));
+			}
+		}
+		
+		//不为空说明是s3
+		if(bucket != null){
+			S3Client s3 = s3FactoryService.getS3ClientByBucket(bucket);
+			s3KeyService.deleteList(s3,bucket,keys);
+		}
+		
 	}
 	/**
 	 * 生成版本号

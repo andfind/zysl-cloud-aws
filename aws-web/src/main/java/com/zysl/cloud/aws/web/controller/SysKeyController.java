@@ -7,7 +7,9 @@ import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.DownloadFileRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
@@ -23,10 +25,12 @@ import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
+import com.zysl.cloud.aws.web.validator.SysKeyDeleteListRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
+import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
@@ -174,9 +178,12 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	public BaseResponse<SysKeyDTO> info(SysKeyRequest request){
 		return ServiceProvider.call(request, SysKeyRequestV.class, SysKeyDTO.class,req -> {
 			request.formatPathURI();
-			
+			SysKeyDTO dto = sysKeyManager.info(BeanCopyUtil.copy(request, SysKeyRequest.class));
+			if(dto == null){
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+			}
 			//设置返回参数
-			return sysKeyManager.info(BeanCopyUtil.copy(request, SysKeyRequest.class));
+			return dto;
 		},"info");
 	}
 	
@@ -190,6 +197,36 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			sysKeyManager.delete(request);
 			return RespCodeEnum.SUCCESS.getCode();
 		},"delete");
+	}
+	
+	@Override
+	public BaseResponse<String> deleteList(SysKeyDeleteListRequest request) {
+		return ServiceProvider.call(request, SysKeyDeleteListRequestV.class, String.class,req -> {
+			request.formatPathURI();
+			
+			sysKeyManager.deleteList(request);
+			return RespCodeEnum.SUCCESS.getCode();
+		},"deleteList");
+	}
+	
+	@Override
+	public BasePaginationResponse<SysKeyDTO> infoList(SysKeyPageRequest request) {
+		return null;
+	}
+	
+	@Override
+	public BasePaginationResponse<SysKeyDTO> versionList(SysKeyPageRequest request) {
+		return null;
+	}
+	
+	@Override
+	public BaseResponse<String> copy(SysKeyRequest request) {
+		return null;
+	}
+	
+	@Override
+	public BaseResponse<String> isExist(SysKeyRequest request) {
+		return null;
 	}
 	
 	
