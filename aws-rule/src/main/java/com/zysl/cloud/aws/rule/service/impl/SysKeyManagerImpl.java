@@ -19,6 +19,7 @@ import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
+import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.ExceptionUtil;
@@ -109,28 +110,52 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			if(s3KeyBO == null){
 				return null;
 			}
-			dto = BeanCopyUtil.copy(s3KeyBO, SysKeyDTO.class);
-			dto.setSize(s3KeyBO.getContentLength());
-			dto.setPath(request.getPath());
-			//版本号
-			List<TagBO> tagBOList = s3KeyService.getTagList(s3,keyBO);
-			String verNo = S3Utils.getTagValue(tagBOList, S3TagKeyEnum.VERSION_NUMBER.getCode());
-			if(StringUtils.isNotEmpty(verNo)){
-				dto.setVersionNo(Integer.parseInt(verNo));
-			}
+			
+			dto = ObjectFormatUtils.s3KeyBO2SysKeyDTO(s3KeyBO,s3KeyService.getTagList(s3,keyBO));
 		}
 		
 		return dto;
 	}
 	
 	@Override
-	public List<SysKeyDTO> keyList(SysKeyRequest request){
-		return  null;
+	public List<SysKeyDTO> infoList(SysKeyRequest request, MyPage myPage){
+		List<SysKeyDTO> list = new ArrayList<>();
+		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
+			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
+			keyBO.setBucket(request.getHost());
+			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
+			
+			List<S3KeyBO> s3KeyBOList = s3KeyService.list(s3,keyBO,myPage);
+			
+			if(!CollectionUtils.isEmpty(s3KeyBOList)){
+				s3KeyBOList.forEach(bo->{
+					bo.setBucket(keyBO.getBucket());
+					list.add(ObjectFormatUtils.s3KeyBO2SysKeyDTO(bo,s3KeyService.getTagList(s3,bo)));
+				});
+			}
+		}
+		return  list;
 	}
 	
+	
 	@Override
-	public 	List<SysKeyDTO> versionList(SysKeyRequest request){
-		return null;
+	public 	List<SysKeyDTO> versionList(SysKeyRequest request, MyPage myPage){
+		List<SysKeyDTO> list = new ArrayList<>();
+		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
+			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
+			keyBO.setBucket(request.getHost());
+			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
+			
+			List<S3KeyBO> s3KeyBOList = s3KeyService.getVersions(s3,keyBO);
+			
+			if(!CollectionUtils.isEmpty(s3KeyBOList)){
+				s3KeyBOList.forEach(bo->{
+					bo.setBucket(keyBO.getBucket());
+					list.add(ObjectFormatUtils.s3KeyBO2SysKeyDTO(bo,s3KeyService.getTagList(s3,bo)));
+				});
+			}
+		}
+		return  list;
 	}
 	
 	@Override

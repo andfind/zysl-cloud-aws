@@ -8,6 +8,7 @@ import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.domain.bo.TagBO;
+import com.zysl.cloud.utils.common.MyPage;
 import java.util.List;
 
 public interface ISysKeyManager {
@@ -49,7 +50,7 @@ public interface ISysKeyManager {
 	 * @param request
 	 * @return java.util.List<com.zysl.cloud.aws.api.dto.SysKeyDTO>
 	 **/
-	List<SysKeyDTO> keyList(SysKeyRequest request);
+	List<SysKeyDTO> infoList(SysKeyRequest request, MyPage myPage);
 	
 	/**
 	 * 版本列表查询
@@ -59,7 +60,7 @@ public interface ISysKeyManager {
 	 * @param request
 	 * @return java.util.List<com.zysl.cloud.aws.api.dto.SysKeyDTO>
 	 **/
-	List<SysKeyDTO> versionList(SysKeyRequest request);
+	List<SysKeyDTO> versionList(SysKeyRequest request, MyPage myPage);
 	
 	/**
 	 * 删除对象

@@ -1,7 +1,9 @@
 package com.zysl.cloud.aws.biz.test;
 
+import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.utils.StringUtils;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
@@ -10,7 +12,9 @@ public class Test {
 	public static void main(String[] args){
 		Test test = new Test();
 		try{
-			System.out.println((S3KeyBO)null);
+			URI uri = new URI(FileSysTypeEnum.S3.getCode(),"temp","/mmm/a/1.txt","111111");
+			
+			System.out.println(uri.toString());
 		}catch (Exception e){
 			e.printStackTrace();
 		}

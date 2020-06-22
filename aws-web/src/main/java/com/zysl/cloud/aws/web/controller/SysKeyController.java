@@ -211,12 +211,23 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	
 	@Override
 	public BasePaginationResponse<SysKeyDTO> infoList(SysKeyPageRequest request) {
-		return null;
+		return ServiceProvider.callList(request, SysKeyRequestV.class, SysKeyDTO.class, (req,myPage) -> {
+			request.formatPathURI();
+			if(myPage.getPageNo() == -1){
+				myPage.setPageNo(1);
+				myPage.setPageSize(99999);
+			}
+			
+			return sysKeyManager.infoList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
+		},"infoList");
 	}
 	
 	@Override
 	public BasePaginationResponse<SysKeyDTO> versionList(SysKeyPageRequest request) {
-		return null;
+		return ServiceProvider.callList(request, SysKeyRequestV.class, SysKeyDTO.class, (req,myPage) -> {
+			request.formatPathURI();
+			return sysKeyManager.versionList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
+		},"versionList");
 	}
 	
 	@Override

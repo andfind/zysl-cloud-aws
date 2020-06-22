@@ -1,16 +1,23 @@
 package com.zysl.cloud.aws.rule.utils;
 
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
+import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
+import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
+import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.domain.bo.PathUriBO;
+import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
+import com.zysl.cloud.aws.domain.bo.TagBO;
+import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -136,5 +143,37 @@ public class ObjectFormatUtils {
 		return null;
 	}
 	
+	/**
+	 * 对象转换
+	 * @description
+	 * @author miaomingming
+	 * @date 14:38 2020/6/22
+	 * @param s3KeyBO
+	 * @param tagBOList
+	 * @return com.zysl.cloud.aws.api.dto.SysKeyDTO
+	 **/
+	public static SysKeyDTO s3KeyBO2SysKeyDTO(S3KeyBO s3KeyBO, List<TagBO> tagBOList){
+		SysKeyDTO dto =  BeanCopyUtil.copy(s3KeyBO, SysKeyDTO.class);
+		dto.setSize(s3KeyBO.getContentLength());
+		dto.setPath(ObjectFormatUtils.getUriString(s3KeyBO));
+		
+		String verNo = S3Utils.getTagValue(tagBOList, S3TagKeyEnum.VERSION_NUMBER.getCode());
+		if(StringUtils.isNotEmpty(verNo)){
+			dto.setVersionNo(Integer.parseInt(verNo));
+		}
+		return dto;
+	}
+	
+	public static String getUriString(S3KeyBO s3KeyBO){
+		try{
+			URI uri = new URI(FileSysTypeEnum.S3.getCode(),s3KeyBO.getBucket(),
+								StringUtils.join("/",s3KeyBO.getKey()),
+								s3KeyBO.getVersionId());
+			return uri.toString();
+		}catch (URISyntaxException e){
+			log.warn("ES_LOG URISyntaxException {}",s3KeyBO);
+		}
+		return null;
+	}
 	
 }
