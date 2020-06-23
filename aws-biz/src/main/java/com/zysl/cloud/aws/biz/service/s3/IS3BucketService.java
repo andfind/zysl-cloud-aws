@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.biz.service.s3;
 
 import com.zysl.cloud.aws.api.req.BucketFileRequest;
 import com.zysl.cloud.aws.api.req.SetFileVersionRequest;
+import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.utils.common.MyPage;
@@ -83,4 +84,5 @@ public interface IS3BucketService {
 	 * @return void
 	 **/
 	void delete(S3Client s3Client,String bucketName);
+	
 }

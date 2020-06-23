@@ -25,6 +25,7 @@ import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -39,6 +40,8 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
+import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -59,6 +62,8 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.ObjectVersion;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.Tag;
 import software.amazon.awssdk.services.s3.model.Tagging;
@@ -145,8 +150,24 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	}
 	
 	@Override
-	public S3KeyBO copy(S3Client s3Client, S3KeyBO src, S3KeyBO dest) {
-		return null;
+	public void copy(S3Client s3Client, S3KeyBO src, S3KeyBO dest) {
+		log.info("ES_LOG {} copy-param", src,dest);
+		
+		String srcUrl = null;
+		try{
+			srcUrl = java.net.URLEncoder.encode(StringUtils.join(src.getBucket(),BizConstants.PATH_SEPARATOR,src.getKey()), "utf-8");
+		}catch (UnsupportedEncodingException e){
+			throw new AppLogicException(ErrCodeEnum.S3_COPY_SOURCE_ENCODE_ERROR.getCode());
+		}
+		//复制文件
+		CopyObjectRequest.Builder request = CopyObjectRequest.builder()
+			.copySource(srcUrl)
+			.bucket(src.getBucket())
+			.key(StringUtils.join(dest.getBucket(),BizConstants.PATH_SEPARATOR,dest.getKey()));
+		
+		CopyObjectResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.COPY_OBJECT, Boolean.FALSE);
+		
+		log.info("ES_LOG getBaseInfo.resp {}", response);
 	}
 	
 	
@@ -238,6 +259,20 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		}
 		log.info("ES_LOG getTagList.rst({}) {}", t.getKey(),JSON.toJSONString(tagList));
 		return tagList;
+	}
+	
+	@Override
+	public void setTagList(S3Client s3Client,S3KeyBO t,List<TagBO> tagBOList){
+		log.info("ES_LOG setTagList.param {}", t);
+		//查询文件的标签信息
+		PutObjectTaggingRequest.Builder request = PutObjectTaggingRequest.builder()
+													.bucket(t.getBucket())
+													.key(t.getKey())
+													.tagging(S3Utils.creatTagging(tagBOList))
+													.versionId(t.getVersionId());
+		PutObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.PUT_OBJECT_TAGGING, false);
+		log.info("ES_LOG getTagList.resp {}", response);
+		
 	}
 	
 	

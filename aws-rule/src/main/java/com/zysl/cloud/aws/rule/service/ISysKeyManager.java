@@ -1,6 +1,8 @@
 package com.zysl.cloud.aws.rule.service;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
+import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
+import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
@@ -50,7 +52,7 @@ public interface ISysKeyManager {
 	 * @param request
 	 * @return java.util.List<com.zysl.cloud.aws.api.dto.SysKeyDTO>
 	 **/
-	List<SysKeyDTO> infoList(SysKeyRequest request, MyPage myPage);
+	List<SysKeyFileDTO> infoList(SysKeyRequest request, MyPage myPage);
 	
 	/**
 	 * 版本列表查询
@@ -71,6 +73,17 @@ public interface ISysKeyManager {
 	 * @return void
 	 **/
 	void delete(SysKeyDeleteRequest request);
+	
+	
+	/**
+	 * 批量删除
+	 * @description
+	 * @author miaomingming
+	 * @date 11:38 2020/6/22
+	 * @param request
+	 * @return void
+	 **/
+	void deleteList(SysKeyDeleteListRequest request);
 	
 	/**
 	 * 查询范围内对象数据流
@@ -93,13 +106,19 @@ public interface ISysKeyManager {
 	 **/
 	List<TagBO> tagList(SysKeyRequest request);
 	
+	
+	
 	/**
-	 * 批量删除
+	 * 复制对象
 	 * @description
 	 * @author miaomingming
-	 * @date 11:38 2020/6/22
-	 * @param request
+	 * @date 15:18 2020/6/22
+	 * @param source
+	 * @param target
+	 * @param isCover
 	 * @return void
 	 **/
-	void deleteList(SysKeyDeleteListRequest request);
+	void copy(SysKeyRequest source,SysKeyRequest target,Boolean isCover);
+	
+	
 }

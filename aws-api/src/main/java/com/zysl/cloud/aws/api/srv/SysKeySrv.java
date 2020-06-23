@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.api.srv;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
+import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
@@ -99,7 +100,7 @@ public interface SysKeySrv {
 	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<com.zysl.cloud.aws.api.dto.SysKeyDTO>
 	 **/
 	@PostMapping("/list")
-	BasePaginationResponse<SysKeyDTO> infoList(@RequestBody SysKeyPageRequest request);
+	BasePaginationResponse<SysKeyFileDTO> infoList(@RequestBody SysKeyPageRequest request);
 	
 	/**
 	 * 查询版本列表

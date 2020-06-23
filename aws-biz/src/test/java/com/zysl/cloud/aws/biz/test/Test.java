@@ -13,8 +13,13 @@ public class Test {
 		Test test = new Test();
 		try{
 			URI uri = new URI(FileSysTypeEnum.S3.getCode(),"temp","/mmm/a/1.txt","111111");
+			Boolean testa = null;
+			if(testa){
+				System.out.println(uri.toString());
+			}else {
+				System.out.println("---false---");
+			}
 			
-			System.out.println(uri.toString());
 		}catch (Exception e){
 			e.printStackTrace();
 		}

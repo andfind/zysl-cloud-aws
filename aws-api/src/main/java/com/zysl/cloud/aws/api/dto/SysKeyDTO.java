@@ -14,24 +14,12 @@ import lombok.Setter;
 public class SysKeyDTO implements Serializable {
 	
 	private static final long serialVersionUID = 5855827655850640540L;
-//	@ApiModelProperty(value = "是否文件：1是0目录", name = "isFile", dataType = SwaggerConstants.DATA_TYPE_BOOLEAN)
-//	private Boolean isFile;
-	@ApiModelProperty(value = "路径", name = "path",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
-	private String path;
-	@ApiModelProperty(value = "分区文件大小", name = "size", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
-	private Long size;
-	@ApiModelProperty(value = "最后修改时间", name = "lastModified", dataType = SwaggerConstants.DATA_TYPE_OBJECT)
-	private Date lastModified;
-	@ApiModelProperty(value = "versionId", name = "versionId", dataType = SwaggerConstants.DATA_TYPE_STRING)
-	private String versionId;
-	@ApiModelProperty(value = "versionNo", name = "versionNo", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
-	private Integer versionNo;
 	
 	@Override
 	public String toString() {
 		final StringBuffer sb = new StringBuffer("{\"SysKeyDTO\":{");
 		if (path != null) {
-			sb.append(", path='").append(path).append('\'');
+			sb.append("path='").append(path).append('\'');
 		}
 		if (size != null) {
 			sb.append(", size=").append(size);
@@ -48,4 +36,16 @@ public class SysKeyDTO implements Serializable {
 		sb.append("}}");
 		return sb.toString();
 	}
+	
+	@ApiModelProperty(value = "路径", name = "path",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
+	private String path;
+	@ApiModelProperty(value = "分区文件大小", name = "size", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
+	private Long size;
+	@ApiModelProperty(value = "最后修改时间", name = "lastModified", dataType = SwaggerConstants.DATA_TYPE_OBJECT)
+	private Date lastModified;
+	@ApiModelProperty(value = "versionId", name = "versionId", dataType = SwaggerConstants.DATA_TYPE_STRING)
+	private String versionId;
+	@ApiModelProperty(value = "versionNo", name = "versionNo", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
+	private Integer versionNo;
+	
 }

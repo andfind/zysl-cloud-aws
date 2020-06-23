@@ -25,6 +25,11 @@ public class S3KeyBO implements Serializable {
 		this.setBucket(bucket);
 		this.setKey(key);
 	}
+	public S3KeyBO(String bucket,String key,String versionId){
+		this.setBucket(bucket);
+		this.setKey(key);
+		this.setVersionId(versionId);
+	}
 	
 	public S3KeyBO(String key,String versionId,Long contentLength){
 		this.setKey(key);

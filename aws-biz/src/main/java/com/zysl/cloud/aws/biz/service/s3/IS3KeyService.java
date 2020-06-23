@@ -53,7 +53,7 @@ public interface IS3KeyService<T> {
 	 * @param dest
 	 * @return void
 	 **/
-	T copy(S3Client s3Client,T src, T dest);
+	 void copy(S3Client s3Client,T src, T dest);
 	
 	/**
 	 * 查询文件基础信息
@@ -110,4 +110,15 @@ public interface IS3KeyService<T> {
 	 **/
 	List<TagBO> getTagList(S3Client s3Client,T t);
 	
+	/**
+	 * 设置标签
+	 * @description
+	 * @author miaomingming
+	 * @date 19:35 2020/6/22
+	 * @param s3Client
+	 * @param t
+	 * @param tagBOList
+	 * @return void
+	 **/
+	void setTagList(S3Client s3Client,T t,List<TagBO> tagBOList);
 }

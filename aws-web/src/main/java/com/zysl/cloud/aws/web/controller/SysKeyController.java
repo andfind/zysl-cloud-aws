@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.web.controller;
 import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
+import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.DownloadFileRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
@@ -26,6 +27,7 @@ import com.zysl.cloud.aws.rule.service.ISysKeyManager;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyDeleteListRequestV;
+import com.zysl.cloud.aws.web.validator.SysKeyPageRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
@@ -210,12 +212,12 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	}
 	
 	@Override
-	public BasePaginationResponse<SysKeyDTO> infoList(SysKeyPageRequest request) {
-		return ServiceProvider.callList(request, SysKeyRequestV.class, SysKeyDTO.class, (req,myPage) -> {
+	public BasePaginationResponse<SysKeyFileDTO> infoList(SysKeyPageRequest request) {
+		return ServiceProvider.callList(request, SysKeyPageRequestV.class, SysKeyFileDTO.class, (req,myPage) -> {
 			request.formatPathURI();
 			if(myPage.getPageNo() == -1){
 				myPage.setPageNo(1);
-				myPage.setPageSize(99999);
+				myPage.setPageSize(999999);
 			}
 			
 			return sysKeyManager.infoList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
@@ -224,7 +226,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	
 	@Override
 	public BasePaginationResponse<SysKeyDTO> versionList(SysKeyPageRequest request) {
-		return ServiceProvider.callList(request, SysKeyRequestV.class, SysKeyDTO.class, (req,myPage) -> {
+		return ServiceProvider.callList(request, SysKeyPageRequestV.class, SysKeyDTO.class, (req,myPage) -> {
 			request.formatPathURI();
 			return sysKeyManager.versionList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
 		},"versionList");

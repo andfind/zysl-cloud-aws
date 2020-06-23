@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.rule.utils;
 
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
+import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.enums.FileDirEnum;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
@@ -154,6 +155,18 @@ public class ObjectFormatUtils {
 	 **/
 	public static SysKeyDTO s3KeyBO2SysKeyDTO(S3KeyBO s3KeyBO, List<TagBO> tagBOList){
 		SysKeyDTO dto =  BeanCopyUtil.copy(s3KeyBO, SysKeyDTO.class);
+		dto.setSize(s3KeyBO.getContentLength());
+		dto.setPath(ObjectFormatUtils.getUriString(s3KeyBO));
+		
+		String verNo = S3Utils.getTagValue(tagBOList, S3TagKeyEnum.VERSION_NUMBER.getCode());
+		if(StringUtils.isNotEmpty(verNo)){
+			dto.setVersionNo(Integer.parseInt(verNo));
+		}
+		return dto;
+	}
+	
+	public static SysKeyFileDTO s3KeyBO2SysKeyFileDTO(S3KeyBO s3KeyBO, List<TagBO> tagBOList){
+		SysKeyFileDTO dto =  BeanCopyUtil.copy(s3KeyBO, SysKeyFileDTO.class);
 		dto.setSize(s3KeyBO.getContentLength());
 		dto.setPath(ObjectFormatUtils.getUriString(s3KeyBO));
 		
