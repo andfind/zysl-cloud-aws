@@ -25,7 +25,7 @@ public class SysKeyRequestV implements IValidator {
 			|| StringUtils.isEmpty(pathUriBO.getScheme())
 			|| StringUtils.isEmpty(pathUriBO.getHost())
 			|| StringUtils.isEmpty(pathUriBO.getKey())){
-			errors.add("path format error.");
+			errors.add("path格式化异常.");
 			return;
 		}
 		if(!Pattern.matches(WebConstants.S3_BUCKET_VALID_PATTERN, pathUriBO.getHost())){

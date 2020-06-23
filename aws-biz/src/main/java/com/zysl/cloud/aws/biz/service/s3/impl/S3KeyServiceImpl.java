@@ -163,7 +163,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		CopyObjectRequest.Builder request = CopyObjectRequest.builder()
 			.copySource(srcUrl)
 			.bucket(src.getBucket())
-			.key(StringUtils.join(dest.getBucket(),BizConstants.PATH_SEPARATOR,dest.getKey()));
+			.key(dest.getKey());
 		
 		CopyObjectResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.COPY_OBJECT, Boolean.FALSE);
 		

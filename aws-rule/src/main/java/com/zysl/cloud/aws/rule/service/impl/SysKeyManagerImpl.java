@@ -172,7 +172,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 				s3KeyService.delete(s3,keyBO);
 			}else{
 				List<S3KeyBO> s3KeyBOList = new ArrayList<>();
-				MyPage myPage = new MyPage(1,9999999);
+				MyPage myPage = new MyPage(1,BizConstants.MAX_PAGE_SIE);
 				
 				//物理删除，需要删除所有版本
 				if(request.getIsPhy() != null && request.getIsPhy()){
@@ -260,60 +260,104 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	@Override
 	public void copy(SysKeyRequest source,SysKeyRequest target,Boolean isCover){
 		log.info("ES_LOG {}->{} copy-param",source,target);
-		List<S3KeyBO> list = null;
+		MyPage myPage = new MyPage(1,1);
 		//step 1.判断数据源是否存在
 		if(FileSysTypeEnum.S3.getCode().equals(source.getScheme())){
-			MyPage myPage = new MyPage(1,999999);
-			S3KeyBO keyBO = BeanCopyUtil.copy(source, S3KeyBO.class);
-			keyBO.setBucket(source.getHost());
-			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
-			
-			list = s3KeyService.list(s3,keyBO,myPage);
-			
-			if(CollectionUtils.isEmpty(list)){
+			List<SysKeyFileDTO> dtoList = this.infoList(BeanCopyUtil.copy(source,SysKeyRequest.class),myPage);
+			if(CollectionUtils.isEmpty(dtoList)){
 				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_NOT_EXIST.getCode());
 			}
 		}
 		//step 2. 不能覆盖时，需要判断目标是否存在
 		if(FileSysTypeEnum.S3.getCode().equals(target.getScheme())){
 			if(isCover == null || !isCover){
-				MyPage myPage = new MyPage(1,1);
-				if(!CollectionUtils.isEmpty(this.infoList(BeanCopyUtil.copy(source,SysKeyRequest.class),myPage))){
+				List<SysKeyFileDTO> dtoList = this.infoList(BeanCopyUtil.copy(target,SysKeyRequest.class),myPage);
+				if(!CollectionUtils.isEmpty(dtoList)){
 					throw new AppLogicException(ErrCodeEnum.COPY_TARGET_EXIST.getCode());
 				}
 			}
-			
 		}
 
-		//step 3.循环复制
-		for(S3KeyBO bo:list){
-			String targetKey = target.getKey() + bo.getKey().replace(source.getKey(),"");
-			S3KeyBO targetBO = new S3KeyBO(target.getHost(),targetKey);
-			
-			if(bo.getIsFile() == null ||  !bo.getIsFile()){
-				SysKeyCreateRequest sysKeyCreateRequest = BeanCopyUtil.copy(bo,SysKeyCreateRequest.class);
-				sysKeyCreateRequest.setScheme(FileSysTypeEnum.S3.getCode());
-				sysKeyCreateRequest.setHost(source.getHost());
-				sysKeyCreateRequest.setKey(targetKey);
-				this.create(sysKeyCreateRequest);
-			}else{
-				S3Client sourceClient = s3FactoryService.getS3ClientByBucket(source.getHost());
-				S3Client targetClient = s3FactoryService.getS3ClientByBucket(target.getHost());
-				//同一个s3服务器
-				if(s3FactoryService.judgeBucket(source.getHost(),target.getHost())){
-					s3KeyService.copy(sourceClient,bo,targetBO);
+		//step 3.循环复制:
+		S3Client sourceClient = s3FactoryService.getS3ClientByBucket(source.getHost());
+		S3Client targetClient = s3FactoryService.getS3ClientByBucket(target.getHost());
+		
+		copyDir(sourceClient,targetClient,
+				new S3KeyBO(source.getHost(),source.getKey()),
+				source.getKey(),
+				new S3KeyBO(target.getHost(),target.getKey()));
+		
+	}
+	
+	/**
+	 * 复制目录
+	 * @description
+	 * @author miaomingming
+	 * @date 14:11 2020/6/23
+	 * @param sourceClient
+	 * @param targetClient
+	 * @param srcBo
+	 * @param srcKey
+	 * @param targetBo
+	 * @return void
+	 **/
+	private void copyDir(S3Client sourceClient,S3Client targetClient,S3KeyBO srcBo,String srcKey, S3KeyBO targetBo){
+		List<S3KeyBO> list =  s3KeyService.list(sourceClient,srcBo,new MyPage(1,BizConstants.MAX_PAGE_SIE));
+		
+		if(!CollectionUtils.isEmpty(list)){
+			for(S3KeyBO bo:list){
+				if(bo.getIsFile() == null ||  !bo.getIsFile()){
+					copyDir(sourceClient,targetClient,bo,srcKey,targetBo);
 				}else{
-					SysKeyUploadRequest sysKeyRequest = BeanCopyUtil.copy(bo,SysKeyUploadRequest.class);
-					byte[] bodys = this.getBody(sysKeyRequest,null);
-					
-					this.upload(sysKeyRequest,bodys);
+					copyFile(sourceClient,targetClient,bo,srcKey,targetBo);
 				}
-				//复制tagList
-				List<TagBO> tagBOList = s3KeyService.getTagList(sourceClient,bo);
-				s3KeyService.setTagList(targetClient,targetBO,tagBOList);
 			}
 		}
 	}
+	
+	/**
+	 * 复制文件
+	 * @description
+	 * @author miaomingming
+	 * @date 11:43 2020/6/23
+	 * @param sourceClient
+	 * @param targetClient
+	 * @param bo
+	 * @param srcKey
+	 * @param targetBo
+	 * @return void
+	 **/
+	private void copyFile(S3Client sourceClient,S3Client targetClient,S3KeyBO bo,String srcKey, S3KeyBO targetBo){
+		//默认文件->目录
+		String targetKey = targetBo.getKey();
+		//目标为目录
+		if(targetKey.endsWith(BizConstants.PATH_SEPARATOR)){
+			//源为目录
+			if(srcKey.endsWith(BizConstants.PATH_SEPARATOR)){
+				targetKey += bo.getKey().replace(srcKey,"");
+			}else {
+				//源为文件
+				targetKey += srcKey.substring(srcKey.lastIndexOf(BizConstants.PATH_SEPARATOR) + 1);
+			}
+		}
+		S3KeyBO target = new S3KeyBO(targetBo.getBucket(),targetKey);
+		
+		//同一个s3服务器
+		if(s3FactoryService.judgeBucket(bo.getBucket(),target.getBucket())){
+			s3KeyService.copy(sourceClient,bo,target);
+		}else{
+			SysKeyUploadRequest sysKeyRequest = BeanCopyUtil.copy(target,SysKeyUploadRequest.class);
+			byte[] bodys = this.getBody(sysKeyRequest,null);
+			
+			this.upload(sysKeyRequest,bodys);
+		}
+		//复制tagList
+		List<TagBO> tagBOList = s3KeyService.getTagList(sourceClient,bo);
+		s3KeyService.setTagList(targetClient,target,tagBOList);
+	}
+	
+	
+	
 	/**
 	 * 生成版本号
 	 * @description

@@ -49,6 +49,12 @@ public class SysKeyRequest extends BaseReqeust {
 		return this.path;
 	}
 	
+	
+	public SysKeyRequest(){}
+	
+	public SysKeyRequest(String path){
+		this.setPath(path);
+	}
 	/**
 	 * 转化path到其他字段
 	 * @description

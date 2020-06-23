@@ -101,7 +101,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 		List<SysFileDTO> list = null;
 		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
 			SysDirListRequest request = BeanCopyUtil.copy(source,SysDirListRequest.class);
-			MyPage myPage = new MyPage(1,999999999);
+			MyPage myPage = new MyPage(1,BizConstants.MAX_PAGE_SIE);
 			list = list(request,myPage);
 			if(list == null){
 				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_NOT_EXIST.getCode());

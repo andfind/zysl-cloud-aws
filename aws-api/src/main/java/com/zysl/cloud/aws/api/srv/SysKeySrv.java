@@ -2,6 +2,7 @@ package com.zysl.cloud.aws.api.srv;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
+import com.zysl.cloud.aws.api.req.key.SysKeyCopyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
@@ -122,7 +123,7 @@ public interface SysKeySrv {
 	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
 	 **/
 	@PostMapping("/copy")
-	BaseResponse<String> copy(@RequestBody SysKeyRequest request);
+	BaseResponse<String> copy(@RequestBody SysKeyCopyRequest request);
 	
 	/**
 	 * 对象是否存在

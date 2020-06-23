@@ -7,6 +7,7 @@ import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.DownloadFileRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyCopyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
@@ -21,11 +22,13 @@ import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.WebConfig;
+import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
+import com.zysl.cloud.aws.web.validator.SysKeyCopyRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyDeleteListRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyPageRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
@@ -217,7 +220,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			request.formatPathURI();
 			if(myPage.getPageNo() == -1){
 				myPage.setPageNo(1);
-				myPage.setPageSize(999999);
+				myPage.setPageSize(BizConstants.MAX_PAGE_SIE);
 			}
 			
 			return sysKeyManager.infoList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
@@ -233,8 +236,18 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	}
 	
 	@Override
-	public BaseResponse<String> copy(SysKeyRequest request) {
-		return null;
+	public BaseResponse<String> copy(SysKeyCopyRequest request) {
+		return ServiceProvider.call(request, SysKeyCopyRequestV.class, String.class,req -> {
+			
+			SysKeyRequest src = new SysKeyRequest(request.getSrcPath());
+			src.formatPathURI();
+			
+			SysKeyRequest dest = new SysKeyRequest(request.getDestPath());
+			dest.formatPathURI();
+			
+			sysKeyManager.copy(src,dest,request.getIsCover() == null ? Boolean.TRUE : request.getIsCover());
+			return RespCodeEnum.SUCCESS.getCode();
+		},"copy");
 	}
 	
 	@Override
