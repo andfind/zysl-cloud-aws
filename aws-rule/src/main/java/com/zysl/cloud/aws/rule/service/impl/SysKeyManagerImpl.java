@@ -145,15 +145,12 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			keyBO.setBucket(request.getHost());
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
 			
-			List<S3KeyBO> s3KeyBOList = s3KeyService.getVersions(s3,keyBO);
+			List<S3KeyBO> s3KeyBOList = s3KeyService.getVersions(s3,keyBO,myPage);
 			
 			if(!CollectionUtils.isEmpty(s3KeyBOList)){
 				s3KeyBOList.forEach(bo->{
-					if(!bo.getIsDeleted()){
-						bo.setBucket(keyBO.getBucket());
-						list.add(ObjectFormatUtils.s3KeyBO2SysKeyDTO(bo,s3KeyService.getTagList(s3,bo)));
-					}
-					
+					bo.setBucket(keyBO.getBucket());
+					list.add(ObjectFormatUtils.s3KeyBO2SysKeyDTO(bo,s3KeyService.getTagList(s3,bo)));
 				});
 			}
 		}
@@ -173,17 +170,25 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			}else{
 				List<S3KeyBO> s3KeyBOList = new ArrayList<>();
 				MyPage myPage = new MyPage(1,BizConstants.MAX_PAGE_SIE);
+				boolean hasNext = Boolean.TRUE;
 				
-				//物理删除，需要删除所有版本
-				if(request.getIsPhy() != null && request.getIsPhy()){
-					s3KeyBOList = s3KeyService.getVersions(s3,keyBO);
-				}else{
-					//目录或单个文件
-					s3KeyBOList = s3KeyService.list(s3,keyBO,myPage);
+				while (hasNext){
+					//物理删除，需要删除所有版本
+					if(request.getIsPhy() != null && request.getIsPhy()){
+						s3KeyBOList = s3KeyService.getVersions(s3,keyBO,myPage);
+					}else{
+						//目录或单个文件
+						s3KeyBOList = s3KeyService.list(s3,keyBO,myPage);
+					}
+					
+					//删除当前对象
+					s3KeyService.deleteList(s3,keyBO.getBucket(),s3KeyBOList);
+					
+					if(myPage.getPageCount() <= 1){
+						hasNext = Boolean.FALSE;
+					}
 				}
 				
-				//删除当前对象
-				s3KeyService.deleteList(s3,keyBO.getBucket(),s3KeyBOList);
 			}
 		}
 	}
@@ -302,17 +307,31 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	 * @return void
 	 **/
 	private void copyDir(S3Client sourceClient,S3Client targetClient,S3KeyBO srcBo,String srcKey, S3KeyBO targetBo){
-		List<S3KeyBO> list =  s3KeyService.list(sourceClient,srcBo,new MyPage(1,BizConstants.MAX_PAGE_SIE));
+		MyPage myPage = new MyPage(1,BizConstants.MAX_PAGE_SIE);
+		boolean hasNext = Boolean.TRUE;
 		
-		if(!CollectionUtils.isEmpty(list)){
-			for(S3KeyBO bo:list){
-				if(bo.getIsFile() == null ||  !bo.getIsFile()){
-					copyDir(sourceClient,targetClient,bo,srcKey,targetBo);
-				}else{
-					copyFile(sourceClient,targetClient,bo,srcKey,targetBo);
+		while (hasNext){
+			List<S3KeyBO> list =  s3KeyService.list(sourceClient,srcBo,myPage);
+			
+			if(!CollectionUtils.isEmpty(list)){
+				for(S3KeyBO bo:list){
+					if(bo.getIsFile() == null ||  !bo.getIsFile()){
+						copyDir(sourceClient,targetClient,bo,srcKey,targetBo);
+					}else{
+						copyFile(sourceClient,targetClient,bo,srcKey,targetBo);
+					}
 				}
+				if(myPage.getPageCount() <= 1){
+					hasNext = Boolean.FALSE;
+				}
+				
+			}else{
+				hasNext = Boolean.FALSE;
 			}
+			
 		}
+		
+		
 	}
 	
 	/**

@@ -48,6 +48,8 @@ public class ObjectFormatUtils {
 		
 	}
 	
+	
+	
 	/**
 	 * 合并bucket、path、fileName
 	 * @description
@@ -142,6 +144,17 @@ public class ObjectFormatUtils {
 			log.warn("ES_LOG_Exception {} {}",pathUri, ExceptionUtil.getMessage(e));
 		}
 		return null;
+	}
+	
+	public static PathUriBO checkS3PathURINotNull(String pathUri,List<String> errors){
+		PathUriBO pathUriBO = ObjectFormatUtils.formatS3PathURI(pathUri);
+		if(pathUriBO == null
+			|| StringUtils.isEmpty(pathUriBO.getScheme())
+			|| StringUtils.isEmpty(pathUriBO.getHost())
+			|| StringUtils.isEmpty(pathUriBO.getKey())){
+			errors.add("path格式化异常.");
+		}
+		return pathUriBO;
 	}
 	
 	/**

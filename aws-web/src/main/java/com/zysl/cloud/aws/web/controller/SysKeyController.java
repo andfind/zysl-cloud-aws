@@ -230,6 +230,9 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 				myPage.setPageNo(1);
 				myPage.setPageSize(BizConstants.MAX_PAGE_SIE);
 			}
+			if(request.getPageSize() == null){
+				myPage.setPageSize(BizConstants.MAX_PAGE_SIE);
+			}
 			
 			return sysKeyManager.infoList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
 		},"infoList");
@@ -239,6 +242,10 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	public BasePaginationResponse<SysKeyDTO> versionList(SysKeyPageRequest request) {
 		return ServiceProvider.callList(request, SysKeyPageRequestV.class, SysKeyDTO.class, (req,myPage) -> {
 			request.formatPathURI();
+			
+			if(request.getPageSize() == null){
+				myPage.setPageSize(BizConstants.MAX_PAGE_SIE);
+			}
 			return sysKeyManager.versionList(BeanCopyUtil.copy(request,SysKeyRequest.class),myPage);
 		},"versionList");
 	}

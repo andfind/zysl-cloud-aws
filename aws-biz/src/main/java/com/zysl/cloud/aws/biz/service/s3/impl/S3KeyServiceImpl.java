@@ -150,6 +150,39 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	}
 	
 	@Override
+	public void deleteAllKey(S3Client s3Client,String bucket){
+		ListObjectVersionsRequest.Builder request = ListObjectVersionsRequest.builder().bucket(bucket);
+		
+		ListObjectVersionsResponse response = null;
+		String nextMarker = null;
+		List<S3KeyBO> versionList = Lists.newArrayList();
+		while (response == null || response.isTruncated()){
+			request.keyMarker(nextMarker);
+			response = s3FactoryService.callS3Method(request.build(),s3Client, S3Method.LIST_OBJECT_VERSIONS);
+			nextMarker = response.nextKeyMarker();
+			//未删除文件
+			if(!CollectionUtils.isEmpty(response.versions())){
+				response.versions().forEach(obj -> {
+					S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),obj.size());
+					s3KeyBO.setLastModified(Date.from(obj.lastModified()));
+					s3KeyBO.setIsDeleted(Boolean.FALSE);
+					versionList.add(s3KeyBO);
+				});
+			}
+			//已删除文件
+			if(!CollectionUtils.isEmpty(response.deleteMarkers())){
+				response.deleteMarkers().forEach(obj -> {
+					S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),0L);
+					s3KeyBO.setLastModified(Date.from(obj.lastModified()));
+					s3KeyBO.setIsDeleted(Boolean.TRUE);
+					versionList.add(s3KeyBO);
+				});
+			}
+			this.deleteList(s3Client,bucket,versionList);
+		}
+	}
+	
+	@Override
 	public void copy(S3Client s3Client, S3KeyBO src, S3KeyBO dest) {
 		log.info("ES_LOG {} copy-param", src,dest);
 		
@@ -277,40 +310,44 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	
 	@Override
-	public List<S3KeyBO> getVersions(S3Client s3Client,S3KeyBO t) {
+	public List<S3KeyBO> getVersions(S3Client s3Client,S3KeyBO t, MyPage myPage) {
 		log.info("ES_log getVersions-param {}}",t);
+		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize();
+		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize()-1;
+		int curIndex = 0;
 		
 		ListObjectVersionsRequest.Builder request = ListObjectVersionsRequest.builder().
 												bucket(t.getBucket()).
 												prefix(t.getKey());
 		
 		ListObjectVersionsResponse response = null;
+		int totalRecords = 0;
 		String nextMarker = null;
 		List<S3KeyBO> versionList = Lists.newArrayList();
 		while (response == null || response.isTruncated()){
+			curIndex = totalRecords;
 			request.keyMarker(nextMarker);
 			response = s3FactoryService.callS3Method(request.build(),s3Client, S3Method.LIST_OBJECT_VERSIONS);
 			nextMarker = response.nextKeyMarker();
 			//未删除文件
 			if(!CollectionUtils.isEmpty(response.versions())){
-				response.versions().forEach(obj -> {
-					S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),obj.size());
-					s3KeyBO.setLastModified(Date.from(obj.lastModified()));
-					s3KeyBO.setIsDeleted(Boolean.FALSE);
-					versionList.add(s3KeyBO);
-				});
-			}
-			//已删除文件
-			if(!CollectionUtils.isEmpty(response.deleteMarkers())){
-				response.deleteMarkers().forEach(obj -> {
-					S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),0L);
-					s3KeyBO.setLastModified(Date.from(obj.lastModified()));
-					s3KeyBO.setIsDeleted(Boolean.TRUE);
-					versionList.add(s3KeyBO);
-				});
+				totalRecords += response.versions().size();
+				
+				for(ObjectVersion obj:response.versions()){
+					if(curIndex >= myPageStart && curIndex <= myPageEnd){
+						S3KeyBO s3KeyBO = new S3KeyBO(obj.key(),obj.versionId(),obj.size());
+						s3KeyBO.setLastModified(Date.from(obj.lastModified()));
+						s3KeyBO.setIsDeleted(Boolean.FALSE);
+						versionList.add(s3KeyBO);
+					}
+					curIndex++;
+				}
+				
+				
 			}
 		}
 		
+		myPage.setTotalRecords(totalRecords);
 		log.info("ES_log getVersions-rst.size {}}",versionList.size());
 		return versionList;
 	}

@@ -25,8 +25,10 @@ public class BizConfig {
 
     @Value("${share.file.bucket.name}")
     public String shareFileBucket;
-
-  
+    
+    
+    @Value("${pdf.file.bucket.name}")
+    public String pdfFileBucket;
 
     /**
      * 版本号，测试用，可以不配置

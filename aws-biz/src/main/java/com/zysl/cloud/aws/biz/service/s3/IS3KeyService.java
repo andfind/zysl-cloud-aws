@@ -44,6 +44,17 @@ public interface IS3KeyService<T> {
 	void deleteList(S3Client s3Client,String bucket,List<T> tList);
 	
 	/**
+	 * 删除bucket下所有文件
+	 * @description
+	 * @author miaomingming
+	 * @date 15:16 2020/6/23
+	 * @param s3Client
+	 * @param bucket
+	 * @return void
+	 **/
+	void deleteAllKey(S3Client s3Client,String bucket);
+	
+	/**
 	 * 复制文件
 	 * @description
 	 * @author miaomingming
@@ -86,7 +97,7 @@ public interface IS3KeyService<T> {
 	 * @param t
 	 * @return java.util.List<T>
 	 **/
-	List<T> getVersions(S3Client s3Client,T t);
+	List<T> getVersions(S3Client s3Client,T t, MyPage myPage);
 	
 	/**
 	 * 查询文件列表信息

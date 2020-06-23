@@ -44,13 +44,8 @@ public class SysKeyCopyRequestV implements IValidator {
 			errors.add(msgName + "不能为空.");
 		}
 		
-		PathUriBO pathUriBO = ObjectFormatUtils.formatS3PathURI(path);
-		if(pathUriBO == null
-			|| StringUtils.isEmpty(pathUriBO.getScheme())
-			|| StringUtils.isEmpty(pathUriBO.getHost())
-			|| StringUtils.isEmpty(pathUriBO.getKey())
-			){
-			errors.add(msgName + "格式化异常.");
+		PathUriBO pathUriBO = ObjectFormatUtils.checkS3PathURINotNull(path,errors);
+		if(errors.size() > 0){
 			return pathUriBO;
 		}
 		

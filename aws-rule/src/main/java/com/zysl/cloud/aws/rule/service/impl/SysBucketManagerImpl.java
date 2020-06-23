@@ -30,12 +30,8 @@ public class SysBucketManagerImpl implements ISysBucketManager {
 	public void delete(String bucketName) {
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
-		//清空文件
-		S3KeyBO s3KeyBO = new S3KeyBO(bucketName);
-		//版本列表查询
-		List<S3KeyBO> s3KeyBOList = s3KeyService.getVersions(s3,s3KeyBO);
 		//删除所有版本
-		s3KeyService.deleteList(s3,bucketName,s3KeyBOList);
+		s3KeyService.deleteAllKey(s3,bucketName);
 		
 		//删除bucket
 		s3BucketService.delete(s3,bucketName);

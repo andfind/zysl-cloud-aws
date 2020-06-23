@@ -38,7 +38,7 @@ public class BizConstants {
     //盘符分隔符
     public static final String DISK_SEPARATOR = ":";
     
-    public static final int MAX_PAGE_SIE = 9999999;
+    public static final int MAX_PAGE_SIE = 1000;
     
     @PostConstruct
     public void init() {
