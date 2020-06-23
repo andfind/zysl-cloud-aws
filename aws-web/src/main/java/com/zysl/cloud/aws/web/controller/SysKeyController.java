@@ -6,11 +6,14 @@ import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.DownloadFileRequest;
+import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
+import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCopyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyExistRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
@@ -26,10 +29,13 @@ import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
+import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
+import com.zysl.cloud.aws.web.validator.SysFileExistRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyCopyRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyDeleteListRequestV;
+import com.zysl.cloud.aws.web.validator.SysKeyExistRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyPageRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
@@ -39,12 +45,14 @@ import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
+import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -251,8 +259,34 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	}
 	
 	@Override
-	public BaseResponse<String> isExist(SysKeyRequest request) {
-		return null;
+	public BaseResponse<Boolean> isExist(@RequestBody SysKeyExistRequest request){
+		return ServiceProvider.call(request, SysKeyExistRequestV.class, Boolean.class, req -> {
+			List<String> paths = request.getPaths();
+			//增加默认path
+			if(CollectionUtils.isEmpty(paths)){
+				paths = new ArrayList<>();
+				List<String> buckets = webConfig.getAnnouncementBuckets();
+				if(!CollectionUtils.isEmpty(buckets)){
+					for(String bucket:buckets){
+						paths.add(ObjectFormatUtils.getUriString(new S3KeyBO(bucket)));
+					}
+				}
+			}
+			
+			if(!CollectionUtils.isEmpty(paths)){
+				for(String path:paths){
+					SysKeyRequest sysKeyRequest = new SysKeyRequest();
+					sysKeyRequest.setPath(StringUtils.join(path,req.getFileName()));
+					sysKeyRequest.formatPathURI();
+					if(sysKeyManager.info(sysKeyRequest) != null){
+						return Boolean.TRUE;
+					}
+				}
+			}
+			
+			
+			return Boolean.FALSE;
+		},"isExist");
 	}
 	
 	

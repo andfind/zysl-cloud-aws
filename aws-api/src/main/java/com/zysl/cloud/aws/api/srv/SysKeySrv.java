@@ -2,11 +2,13 @@ package com.zysl.cloud.aws.api.srv;
 
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
+import com.zysl.cloud.aws.api.req.SysFileExistRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCopyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyExistRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
@@ -125,16 +127,18 @@ public interface SysKeySrv {
 	@PostMapping("/copy")
 	BaseResponse<String> copy(@RequestBody SysKeyCopyRequest request);
 	
+	
 	/**
 	 * 对象是否存在
+	 * 默认在announce及announce02查找
 	 * @description
 	 * @author miaomingming
-	 * @date 11:13 2020/6/22
+	 * @date 14:21 2020/6/23
 	 * @param request
-	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.Boolean>
 	 **/
-	@PostMapping("/isExist")
-	BaseResponse<String> isExist(@RequestBody SysKeyRequest request);
+	@PostMapping("/exist")
+	BaseResponse<Boolean> isExist(@RequestBody SysKeyExistRequest request);
 	
 	/*
 	分片对象上传
