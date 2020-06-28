@@ -15,6 +15,7 @@ import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
 import com.zysl.cloud.aws.biz.utils.DataAuthUtils;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.BizConfig;
+import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
@@ -39,9 +40,17 @@ import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
+import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
 import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.Delete;
 import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
@@ -53,13 +62,19 @@ import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.ListMultipartUploadsRequest;
+import software.amazon.awssdk.services.s3.model.ListMultipartUploadsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectVersionsResponse;
 import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
 import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.ListPartsRequest;
+import software.amazon.awssdk.services.s3.model.ListPartsResponse;
+import software.amazon.awssdk.services.s3.model.MultipartUpload;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.ObjectVersion;
+import software.amazon.awssdk.services.s3.model.Part;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
@@ -67,6 +82,8 @@ import software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.Tag;
 import software.amazon.awssdk.services.s3.model.Tagging;
+import software.amazon.awssdk.services.s3.model.UploadPartRequest;
+import software.amazon.awssdk.services.s3.model.UploadPartResponse;
 import sun.misc.BASE64Decoder;
 
 @Slf4j
@@ -86,16 +103,16 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	public S3KeyBO create(S3Client s3Client,S3KeyBO t) {
 		log.info("ES_LOG create-param {} ", t);
 		
+		//获取目标文件标签内容
+		Tagging tagging = S3Utils.creatTagging(t.getTagList());
+		
 		PutObjectRequest.Builder request = PutObjectRequest.builder()
 												.bucket(t.getBucket())
 												.key(t.getKey())
+												.tagging(tagging)
 												.contentEncoding(t.getContentEncoding())
 												.expires(t.getExpires() == null ? null : t.getExpires().toInstant());
-		//获取目标文件标签内容
-		Tagging tagging = S3Utils.creatTagging(t.getTagList());
-		if(null != tagging){
-			request.tagging(tagging);
-		}
+		
 		RequestBody requestBody = null;
 		if(t.getBodys() == null){
 			requestBody = RequestBody.empty();
@@ -295,21 +312,6 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	}
 	
 	@Override
-	public void setTagList(S3Client s3Client,S3KeyBO t,List<TagBO> tagBOList){
-		log.info("ES_LOG setTagList.param {}", t);
-		//查询文件的标签信息
-		PutObjectTaggingRequest.Builder request = PutObjectTaggingRequest.builder()
-													.bucket(t.getBucket())
-													.key(t.getKey())
-													.tagging(S3Utils.creatTagging(tagBOList))
-													.versionId(t.getVersionId());
-		PutObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.PUT_OBJECT_TAGGING, false);
-		log.info("ES_LOG getTagList.resp {}", response);
-		
-	}
-	
-	
-	@Override
 	public List<S3KeyBO> getVersions(S3Client s3Client,S3KeyBO t, MyPage myPage) {
 		log.info("ES_log getVersions-param {}}",t);
 		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize();
@@ -317,8 +319,8 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		int curIndex = 0;
 		
 		ListObjectVersionsRequest.Builder request = ListObjectVersionsRequest.builder().
-												bucket(t.getBucket()).
-												prefix(t.getKey());
+			bucket(t.getBucket()).
+			prefix(t.getKey());
 		
 		ListObjectVersionsResponse response = null;
 		int totalRecords = 0;
@@ -362,8 +364,8 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		String nextMarker = null;
 		ListObjectsResponse response = null;
 		ListObjectsRequest.Builder request = ListObjectsRequest.builder().bucket(s3KeyBO.getBucket())
-													.prefix(s3KeyBO.getKey())
-													.delimiter(BizConstants.PATH_SEPARATOR);
+			.prefix(s3KeyBO.getKey())
+			.delimiter(BizConstants.PATH_SEPARATOR);
 		//查询目录下的对象信息
 		while (response == null || response.isTruncated()){
 			request.marker(nextMarker);
@@ -382,6 +384,146 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		
 		return list;
 	}
+	
+	@Override
+	public void setTagList(S3Client s3Client,S3KeyBO t,List<TagBO> tagBOList){
+		log.info("ES_LOG setTagList.param {}", t);
+		//查询文件的标签信息
+		PutObjectTaggingRequest.Builder request = PutObjectTaggingRequest.builder()
+													.bucket(t.getBucket())
+													.key(t.getKey())
+													.tagging(S3Utils.creatTagging(tagBOList))
+													.versionId(t.getVersionId());
+		PutObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.PUT_OBJECT_TAGGING, false);
+		log.info("ES_LOG getTagList.resp {}", response);
+		
+	}
+	
+	@Override
+	public String createMultipartUpload(S3Client s3, S3KeyBO s3KeyBO) {
+		log.info("ES_LOG createMultipartUpload.param {}", s3KeyBO);
+		
+		//获取目标文件标签内容
+		Tagging tagging = S3Utils.creatTagging(s3KeyBO.getTagList());
+		//获取入参
+		CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+												.bucket(s3KeyBO.getBucket())
+												.key(s3KeyBO.getKey())
+												.tagging(tagging)
+												.build();
+		
+		CreateMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.CREATE_MULTIPART_UPLOAD);
+		log.info("ES_LOG createMultipartUpload.response {}", response);
+		
+		return response.uploadId();
+	}
+	
+	@Override
+	public S3KeyBO uploadPart(S3Client s3, S3KeyBO s3KeyBO) {
+		log.info("ES_LOG uploadPart.param {}", s3KeyBO);
+		
+		UploadPartRequest request = UploadPartRequest.builder()
+										.bucket(s3KeyBO.getBucket())
+										.key(s3KeyBO.getKey())
+										.uploadId(s3KeyBO.getUploadId())
+										.partNumber(s3KeyBO.getPartNumber())
+										.build();
+		
+		RequestBody requestBody = RequestBody.fromBytes(s3KeyBO.getBodys());
+		
+		UploadPartResponse response = s3FactoryService.callS3MethodWithBody(request, requestBody, s3, S3Method.UPLOAD_PART);
+		log.info("ES_LOG uploadPart.response {}", response);
+		
+		s3KeyBO.setETag(response.eTag());
+		return s3KeyBO;
+	}
+	
+	@Override
+	public S3KeyBO completeMultipartUpload(S3Client s3, S3KeyBO s3KeyBO) {
+		log.info("ES_LOG completeMultipartUpload.param {}", s3KeyBO);
+		
+		List<CompletedPart> completedParts = Lists.newArrayList();
+		if(!CollectionUtils.isEmpty(s3KeyBO.getETagList())){
+			s3KeyBO.getETagList().forEach(obj -> {
+				completedParts.add(CompletedPart.builder()
+							.partNumber(obj.getPartNumber())
+							.eTag(obj.getETag()).build());
+			});
+		}
+		
+		CompleteMultipartUploadRequest request =CompleteMultipartUploadRequest.builder()
+														.bucket(s3KeyBO.getBucket())
+														.key(s3KeyBO.getKey())
+														.uploadId(s3KeyBO.getUploadId())
+														.multipartUpload(CompletedMultipartUpload.builder()
+															.parts(completedParts).build())
+														.build();
+		
+		CompleteMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.COMPLETE_MULTIPART_UPLOAD);
+		log.info("ES_LOG completeMultipartUpload.response {}", response);
+		
+		s3KeyBO.setVersionId(response.versionId());
+		return s3KeyBO;
+	}
+	
+	@Override
+	public void abortMultipartUpload(S3Client s3, S3KeyBO s3KeyBO) {
+		log.info("ES_LOG abortMultipartUpload.param {}", s3KeyBO);
+		
+		AbortMultipartUploadRequest request = AbortMultipartUploadRequest.builder()
+												.bucket(s3KeyBO.getBucket())
+												.key(s3KeyBO.getKey())
+												.uploadId(s3KeyBO.getUploadId())
+												.build();
+		
+		AbortMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.ABORT_MULTIPART_UPLOAD);
+		log.info("ES_LOG abortMultipartUpload.response {}", response);
+	}
+	
+	@Override
+	public List<FilePartInfoBO> listParts(S3Client s3, S3KeyBO s3KeyBO) {
+		log.info("ES_LOG listParts.param {}", s3KeyBO);
+		
+		ListPartsRequest request = ListPartsRequest.builder()
+										.bucket(s3KeyBO.getBucket())
+										.key(s3KeyBO.getKey())
+										.uploadId(s3KeyBO.getUploadId())
+										.build();
+		
+		ListPartsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_PARTS);
+		List<Part> partList = response.parts();
+		
+		List<FilePartInfoBO> filePartInfoBOS = Lists.newArrayList();
+		if(!CollectionUtils.isEmpty(partList)){
+			partList.forEach(obj -> {
+				FilePartInfoBO filePartInfoBO = new FilePartInfoBO();
+				filePartInfoBO.setETag(obj.eTag());
+				filePartInfoBO.setPartNumber(obj.partNumber());
+				filePartInfoBO.setSize(obj.size());
+				filePartInfoBO.setLastModified(Date.from(obj.lastModified()));
+				filePartInfoBOS.add(filePartInfoBO);
+			});
+		}
+		return filePartInfoBOS;
+	}
+	@Override
+	public String getMultiUploadId(S3Client s3,S3KeyBO s3KeyBO){
+		log.info("ES_LOG getMultiUploadId.param {}", s3KeyBO);
+		ListMultipartUploadsRequest request = ListMultipartUploadsRequest.builder()
+												.bucket(s3KeyBO.getBucket())
+												.prefix(s3KeyBO.getKey())
+												.build();
+		ListMultipartUploadsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_MULTIPART_UPLOADS);
+		log.info("ES_LOG getMultiUploadId.response {}", response);
+		
+		List<MultipartUpload> uploads = response.uploads();
+		if(!CollectionUtils.isEmpty(uploads)){
+			MultipartUpload multipartUpload = uploads.get(0);
+			return multipartUpload.uploadId();
+		}
+		return null;
+	}
+	
 	
 	/**
 	 * 根据查询结果设置翻页数据

@@ -35,7 +35,7 @@ public enum  ErrCodeEnum  {
 	S3_COPY_SOURCE_ENCODE_ERROR(5020004, "复制对象时encode源url异常."),
 	S3_NO_SPACE_WARN(5020005, "s3服务器没有存储空间."),
 	
-	S3_BUCKET_OBJECT_NOT_EXIST(5020101, "创建对象已存在."),
+	S3_BUCKET_OBJECT_EXIST(5020101, "创建对象已存在."),
 	DOWNLOAD_FILE_ERROR(5020102, "下载文件异常."),
 	MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR(5020103, "分片下载文件时提交range格式异常."),
 

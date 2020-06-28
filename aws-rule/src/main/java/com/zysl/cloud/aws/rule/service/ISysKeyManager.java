@@ -1,12 +1,15 @@
 package com.zysl.cloud.aws.rule.service;
 
+import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.req.SysDirRequest;
+import com.zysl.cloud.aws.api.req.SysFileMultiCompleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.domain.bo.TagBO;
@@ -120,5 +123,36 @@ public interface ISysKeyManager {
 	 **/
 	void copy(SysKeyRequest source,SysKeyRequest target,Boolean isCover);
 	
+	/**
+	 * 取消分片上传对象
+	 * @description
+	 * @author miaomingming
+	 * @date 11:35 2020/6/28
+	 * @param request
+	 * @return void
+	 **/
+	void multiAbort(SysKeyRequest request);
+	
+	/**
+	 * 分片列表查询
+	 * @description
+	 * @author miaomingming
+	 * @date 11:40 2020/6/28
+	 * @param request
+	 * @return java.util.List<com.zysl.cloud.aws.api.dto.PartInfoDTO>
+	 **/
+	List<PartInfoDTO> multiList(SysKeyRequest request);
+	
+	/**
+	 * 分片上传
+	 * 不存在则创建分片对象
+	 * 上传完成后自动提交
+	 * @description
+	 * @author miaomingming
+	 * @date 11:47 2020/6/28
+	 * @param request
+	 * @return java.lang.Boolean  是否完成
+	 **/
+	Boolean multiUpload(SysKeyMultiUploadRequest request,byte[] bodys,Long contentLength);
 	
 }

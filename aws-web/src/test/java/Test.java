@@ -5,6 +5,7 @@ import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.StringUtils;
 import java.net.URI;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 
@@ -12,15 +13,31 @@ public class Test {
 
   public static void  main(String[] args){
     Test test = new Test();
-    String srcPath = "temp-002:/mmm/a";
-    String destPath = "b/";
+    copyArray();
+  }
+  
+  
+  public static void copyArray(){
+    int max = 10;
+    int size=21;
+    byte[] bodys = new byte[size];
+    for(int i=0;i<size;i++){
+      bodys[i] = 0;
+    }
+    
     try{
-      URI uri = new URI("s3://s001/temp-002/mmm/a/b/1.txt#112233");
-      String[] items = uri.getPath().split("/");
-      System.out.println("--" + items.length);
+      int start=0,end=0;
+      while(start < bodys.length){
+        end = start + max > bodys.length ? bodys.length : start + max;
+        
+        byte[] bytes = Arrays.copyOfRange(bodys,start,end);
+        start += max;
+      }
     }catch (Exception e){
       e.printStackTrace();
     }
+    
+    
   }
   
   public static void setBucketAndPath(S3ObjectBO s3ObjectBO,String filePath){

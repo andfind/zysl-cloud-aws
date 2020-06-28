@@ -3,6 +3,7 @@ package com.zysl.cloud.aws.api.dto;
 import com.zysl.cloud.utils.constants.SwaggerConstants;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
+import java.io.Serializable;
 import java.util.Date;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,8 +11,10 @@ import lombok.Setter;
 @Setter
 @Getter
 @ApiModel(description = "分区上传记录对象")
-public class PartInfoDTO {
+public class PartInfoDTO implements Serializable {
 	
+	
+	private static final long serialVersionUID = 7053195640073584735L;
 	@ApiModelProperty(value = "分区上传次数", name = "partNumber", dataType = SwaggerConstants.DATA_TYPE_INTEGER)
 	private Integer partNumber;
 	@ApiModelProperty(value = "分区文件内容MD5", name = "eTag", dataType = SwaggerConstants.DATA_TYPE_STRING)

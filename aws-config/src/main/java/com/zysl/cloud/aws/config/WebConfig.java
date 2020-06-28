@@ -44,4 +44,15 @@ public class WebConfig {
 	 **/
 	@Value("#{'${announcement.buckets}'.split(',')}")
 	public List<String> announcementBuckets;
+	
+	/**
+	 * 分片上传每片大小，单位M
+	 * @description
+	 * @author miaomingming
+	 * @date 15:14 2020/6/28
+	 * @param null
+	 * @return
+	 **/
+	@Value("${multipart.upload.max-file-size}")
+	public Integer uploadMultiPartSize;
 }

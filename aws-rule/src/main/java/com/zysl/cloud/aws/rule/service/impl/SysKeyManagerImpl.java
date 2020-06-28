@@ -1,11 +1,13 @@
 package com.zysl.cloud.aws.rule.service.impl;
 
+import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
@@ -16,6 +18,8 @@ import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
 import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.WebConfig;
+import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
+import com.zysl.cloud.aws.domain.bo.MultipartUploadBO;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
@@ -28,6 +32,7 @@ import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
@@ -84,7 +89,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			if(request.getIsCover() == null || !request.getIsCover()){
 				//判断是否存在，存在则返回
 				if(s3KeyService.getBaseInfo(s3,keyBO) != null){
-					throw new AppLogicException(ErrCodeEnum.S3_BUCKET_OBJECT_NOT_EXIST.getCode());
+					throw new AppLogicException(ErrCodeEnum.S3_BUCKET_OBJECT_EXIST.getCode());
 				}
 			}
 			keyBO.setBodys(bodys);
@@ -294,6 +299,131 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 				source.getKey(),
 				new S3KeyBO(target.getHost(),target.getKey()));
 		
+	}
+	
+	@Override
+	public void multiAbort(SysKeyRequest request){
+		log.info("ES_LOG {} multiAbort-param",request);
+		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
+			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
+			keyBO.setBucket(request.getHost());
+			
+			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
+			
+			String uploadId = s3KeyService.getMultiUploadId(s3,keyBO);
+			if(StringUtils.isEmpty(uploadId)){
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+			}
+			
+			
+			keyBO.setUploadId(uploadId);
+			s3KeyService.abortMultipartUpload(s3,keyBO);
+		}
+	}
+	
+	@Override
+	public List<PartInfoDTO> multiList(SysKeyRequest request){
+		log.info("ES_LOG {} multiList-param",request);
+		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
+			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
+			keyBO.setBucket(request.getHost());
+			
+			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
+			
+			String uploadId = s3KeyService.getMultiUploadId(s3,keyBO);
+			if(StringUtils.isEmpty(uploadId)){
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+			}
+			
+			keyBO.setUploadId(uploadId);
+			List<FilePartInfoBO> list = s3KeyService.listParts(s3,keyBO);
+			if(CollectionUtils.isEmpty(list)){
+				list.forEach(bo->bo.setETag(bo.getETag().replaceAll("\"","")));
+			}
+			return BeanCopyUtil.copyList(list, PartInfoDTO.class);
+		}
+		
+		return null;
+	}
+	
+	@Override
+	public Boolean multiUpload(SysKeyMultiUploadRequest request,byte[] bodys,Long contentLength){
+		log.info("ES_LOG {} multiUpload-param",request);
+		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
+			S3Client s3 = s3FactoryService.getS3ClientByBucket(request.getHost());
+			
+			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
+			keyBO.setBucket(request.getHost());
+			
+			//step 1.检查是否存在分片对象->不存在则创建
+			String uploadId = s3KeyService.getMultiUploadId(s3,keyBO);
+			if(StringUtils.isEmpty(uploadId)){
+				//标签
+				List<TagBO> tagList = new ArrayList<>();
+				tagList.add(new TagBO(S3TagKeyEnum.VERSION_NUMBER.getCode(),createVersionNo(keyBO)));
+				if(StringUtils.isNotEmpty(request.getFileName())){
+					tagList.add(new TagBO(S3TagKeyEnum.FILE_NAME.getCode(),request.getFileName()));
+				}
+				
+				keyBO.setTagList(tagList);
+				uploadId = s3KeyService.createMultipartUpload(s3,keyBO);
+			}else if(request.getIsCover() != null && !request.getIsCover()){
+				throw new AppLogicException(ErrCodeEnum.S3_BUCKET_OBJECT_EXIST.getCode());
+			}
+			keyBO.setUploadId(uploadId);
+			
+			//step 2.上传分片数据，将提交的文件流按片切割
+			int partNumber = 1;
+			int partMax = webConfig.uploadMultiPartSize * 1024 * 1024;
+			if(request.getPartNumber() != null && request.getPartNumber() > 0){
+				partNumber = request.getPartNumber();
+			}
+			if(bodys != null && bodys.length > 0){
+				int start=0,end=0;
+				byte[] bytes = null;
+				while(start < bodys.length){
+					end = start + partMax > bodys.length ? bodys.length : start + partMax;
+					bytes = Arrays.copyOfRange(bodys,start,end);
+					start += partMax;
+					
+					keyBO.setBodys(bytes);
+					keyBO.setPartNumber(partNumber++);
+					s3KeyService.uploadPart(s3,keyBO);
+				}
+			}
+			
+			
+			//step 3.全部上传完成后，提交合成
+			if(contentLength == null || contentLength <= 0){
+				return Boolean.FALSE;
+			}
+			List<FilePartInfoBO>  list = s3KeyService.listParts(s3,keyBO);
+			long count = 0;
+			List<MultipartUploadBO> eTagList = new ArrayList<>();
+			if(!CollectionUtils.isEmpty(list)){
+				for(int i=0;i<list.size();i++){
+					FilePartInfoBO bo = list.get(i);
+					//非最后一片的大小 小于规定分片大小
+					if(bo.getSize().longValue() < partMax && i != list.size() - 1){
+						return Boolean.FALSE;
+					}
+					count += bo.getSize().longValue();
+					
+					eTagList.add(new MultipartUploadBO(bo.getPartNumber(),bo.getETag()));
+				}
+				
+				if(count >= contentLength){
+					keyBO.setETagList(eTagList);
+					s3KeyService.completeMultipartUpload(s3,keyBO);
+					return Boolean.TRUE;
+				}
+			}
+			
+			
+		}
+		
+		
+		return Boolean.FALSE;
 	}
 	
 	/**

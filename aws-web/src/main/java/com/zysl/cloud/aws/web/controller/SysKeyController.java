@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.web.controller;
 
 import com.alibaba.fastjson.JSON;
+import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
@@ -14,6 +15,7 @@ import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyExistRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
@@ -36,6 +38,7 @@ import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyCopyRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyDeleteListRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyExistRequestV;
+import com.zysl.cloud.aws.web.validator.SysKeyMultiUploadRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyPageRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
@@ -294,6 +297,58 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			
 			return Boolean.FALSE;
 		},"isExist");
+	}
+	
+	@Override
+	public BaseResponse<SysKeyDTO> multiUpload(HttpServletRequest httpServletRequest, SysKeyMultiUploadRequest request){
+		return ServiceProvider.call(request, SysKeyMultiUploadRequestV.class, SysKeyDTO.class,req -> {
+			request.formatPathURI();
+			Boolean isCover = request.getIsCover() != null ? request.getIsCover() : Boolean.TRUE;
+			request.setIsCover(isCover);
+			
+			byte[] bodys = HttpUtils.getBytesFromHttpRequest(httpServletRequest,request);
+			
+			//格式：bytes=开始位置/总大小，例如  bytes=0/1200
+			String range = httpServletRequest.getHeader("Range");
+			long totalSize = 0;
+			if(StringUtils.isNotEmpty(range)){
+				totalSize = Long.parseLong(range.substring(range.indexOf("/") + 1));
+			}
+			
+			Boolean isComplite = sysKeyManager.multiUpload(request,bodys,totalSize);
+			
+			//设置返回参数
+			if(isComplite){
+				return sysKeyManager.info(request);
+			}else{
+				SysKeyDTO dto = new SysKeyDTO();
+				dto.setPath(request.getPath());
+				
+				return dto;
+			}
+			
+		},"multiUpload");
+	}
+	
+	@Override
+	public BasePaginationResponse<PartInfoDTO> multiList(SysKeyPageRequest request) {
+		return ServiceProvider.callList(request, SysKeyPageRequestV.class, PartInfoDTO.class, (req,myPage) -> {
+			request.formatPathURI();
+			
+			return sysKeyManager.multiList(BeanCopyUtil.copy(request,SysKeyRequest.class));
+		},"multiList");
+	}
+	
+	@Override
+	public BaseResponse<Boolean> multiAbort(SysKeyRequest request) {
+		return ServiceProvider.call(request, SysKeyRequestV.class, Boolean.class,req -> {
+			request.formatPathURI();
+			
+			sysKeyManager.multiAbort(request);
+			
+			//设置返回参数
+			return Boolean.TRUE;
+		},"multiAbort");
 	}
 	
 	

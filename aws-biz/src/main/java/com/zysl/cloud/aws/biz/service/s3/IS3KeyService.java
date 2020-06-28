@@ -1,6 +1,7 @@
 package com.zysl.cloud.aws.biz.service.s3;
 
 import com.zysl.cloud.aws.biz.service.IFileService;
+import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.utils.common.MyPage;
@@ -132,4 +133,70 @@ public interface IS3KeyService<T> {
 	 * @return void
 	 **/
 	void setTagList(S3Client s3Client,T t,List<TagBO> tagBOList);
+	
+	/**
+	 * 创建分片上传
+	 * @description
+	 * @author miaomingming
+	 * @date 10:53 2020/6/28
+	 * @param s3Client
+	 * @param t
+	 * @return java.lang.String
+	 **/
+	String createMultipartUpload(S3Client s3Client,T t);
+	
+	/**
+	 * 分片上传数据
+	 * @description
+	 * @author miaomingming
+	 * @date 10:53 2020/6/28
+	 * @param s3Client
+	 * @param t
+	 * @return T
+	 **/
+	T uploadPart(S3Client s3Client,T t);
+	
+	/**
+	 * 完成分片上传
+	 * @description
+	 * @author miaomingming
+	 * @date 10:54 2020/6/28
+	 * @param s3Client
+	 * @param t
+	 * @return T
+	 **/
+	T completeMultipartUpload(S3Client s3Client,T t);
+	
+	/**
+	 * 取消分片上传，将删除该对象
+	 * @description
+	 * @author miaomingming
+	 * @date 10:54 2020/6/28
+	 * @param s3Client
+	 * @param t
+	 * @return void
+	 **/
+	void abortMultipartUpload(S3Client s3Client,T t);
+	
+	/**
+	 * 查询分片上传列表信息
+	 * @description
+	 * @author miaomingming
+	 * @date 10:54 2020/6/28
+	 * @param s3Client
+	 * @param t
+	 * @return java.util.List<com.zysl.cloud.aws.domain.bo.FilePartInfoBO>
+	 **/
+	List<FilePartInfoBO> listParts(S3Client s3Client,T t);
+	
+	/**
+	 * 查询分片对象的uploadId
+	 * @description
+	 * @author miaomingming
+	 * @date 11:31 2020/6/28
+	 * @param s3Client
+	 * @param t
+	 * @return java.lang.String
+	 **/
+	String getMultiUploadId(S3Client s3Client,T t);
 }

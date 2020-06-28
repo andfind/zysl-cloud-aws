@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.api.srv;
 
+import com.zysl.cloud.aws.api.dto.PartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.req.SysFileExistRequest;
@@ -9,6 +10,7 @@ import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyExistRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
@@ -140,12 +142,37 @@ public interface SysKeySrv {
 	@PostMapping("/exist")
 	BaseResponse<Boolean> isExist(@RequestBody SysKeyExistRequest request);
 	
-	/*
-	分片对象上传
-	分片列表查询
-	分片对象取消
+	/**
+	 * 分片上传
+	 * @description
+	 * @author miaomingming
+	 * @date 11:17 2020/6/28
+	 * @param req
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.String>
+	 **/
+	@PostMapping("/multiUpload")
+	BaseResponse<SysKeyDTO> multiUpload(HttpServletRequest req, SysKeyMultiUploadRequest request);
 	
-	分享对象
-	分享对象下载
-	office转pdf*/
+	/**
+	 * 分片列表查询
+	 * @description
+	 * @author miaomingming
+	 * @date 11:28 2020/6/28
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BasePaginationResponse<com.zysl.cloud.aws.api.dto.PartInfoDTO>
+	 **/
+	@PostMapping("/multiList")
+	BasePaginationResponse<PartInfoDTO> multiList(@RequestBody SysKeyPageRequest request);
+	
+	/**
+	 * 取消分片
+	 * @description
+	 * @author miaomingming
+	 * @date 11:28 2020/6/28
+	 * @param request
+	 * @return com.zysl.cloud.utils.common.BaseResponse<java.lang.Boolean>
+	 **/
+	@PostMapping("/multiAbort")
+	BaseResponse<Boolean> multiAbort(@RequestBody SysKeyRequest request);
 }
