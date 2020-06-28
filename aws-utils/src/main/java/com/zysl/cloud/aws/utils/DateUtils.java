@@ -55,7 +55,9 @@ public class DateUtils {
 		if (date == null){
 			return "";
 		}
-		return org.apache.http.client.utils.DateUtils.formatDate(date,FORMAT_YYYYMMDDHHMMSS);
+		SimpleDateFormat dateFormat = new SimpleDateFormat(FORMAT_YYYYMMDDHHMMSS);
+		
+		return dateFormat.format(date);
 	}
 
 	/**

@@ -1,13 +1,16 @@
 package com.zysl.cloud.aws.web.utils;
 
+import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
+import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
+import com.zysl.cloud.utils.enums.RespCodeEnum;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -15,6 +18,7 @@ import java.net.URLEncoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -22,6 +26,7 @@ import org.springframework.web.multipart.MultipartHttpServletRequest;
 @Slf4j
 @Component
 public class HttpUtils {
+	
 	
 	/**
 	 * 校验range
@@ -188,4 +193,6 @@ public class HttpUtils {
 			throw new AppLogicException("获取文件流异常");
 		}
 	}
+	
+	
 }

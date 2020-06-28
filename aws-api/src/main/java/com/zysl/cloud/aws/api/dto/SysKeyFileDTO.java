@@ -14,8 +14,8 @@ import lombok.Setter;
 public class SysKeyFileDTO extends SysKeyDTO {
 	
 	private static final long serialVersionUID = 5855827655850640540L;
-	@ApiModelProperty(value = "是否文件：1是0目录", name = "isFile", dataType = SwaggerConstants.DATA_TYPE_BOOLEAN)
-	private Boolean isFile;
+	@ApiModelProperty(value = "是否文件", name = "isFile", dataType = SwaggerConstants.DATA_TYPE_BOOLEAN)
+	private Boolean isFile = Boolean.FALSE;
 	
 	@Override
 	public String toString() {

@@ -48,6 +48,7 @@ import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BaseResponse;
+import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -56,6 +57,7 @@ import java.util.List;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.swing.text.html.HTML.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
@@ -102,10 +104,15 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			SysKeyUploadRequest uploadRequest = createSysKeyUploadRequest(request);
 			sysKeyManager.upload(uploadRequest,bodys);
 			
-			//生成标签信息
+			//生成标签信息:查询本身标签+ 过期时间及下载次数
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(uploadRequest.getHost());
 			S3KeyBO s3KeyBO = new S3KeyBO(uploadRequest.getHost(),uploadRequest.getKey());
-			s3KeyService.setTagList(s3,s3KeyBO,createTagList(req));
+			List<TagBO> tagBOList = s3KeyService.getTagList(s3,s3KeyBO);
+			if(tagBOList == null || CollectionUtils.isEmpty(tagBOList)){
+				tagBOList = new ArrayList<>();
+			}
+			tagBOList.addAll(createTagList(req));
+			s3KeyService.setTagList(s3,s3KeyBO,tagBOList);
 			
 			return sysKeyManager.info(uploadRequest);
 		},"shareFile");
@@ -115,7 +122,12 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 	private SysKeyUploadRequest createSysKeyUploadRequest(BizKeyShareRequest request){
 		String targetKey = request.getKey();
 		if(StringUtils.isNotEmpty(request.getShareName())){
-			targetKey = targetKey.substring(0,targetKey.lastIndexOf(BizConstants.PATH_SEPARATOR)) + request.getShareName();
+			if(targetKey.indexOf(BizConstants.PATH_SEPARATOR) > -1){
+				targetKey = targetKey.substring(0,targetKey.lastIndexOf(BizConstants.PATH_SEPARATOR)+1) + request.getShareName();
+			}else {
+				targetKey = request.getShareName();
+			}
+			
 		}
 		//此处已指定了s3的某个特殊bucket
 		SysKeyUploadRequest uploadRequest = new SysKeyUploadRequest();
@@ -159,7 +171,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
-			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
+			if(!validator(baseResponse,downRequest, SysKeyRequestV.class)){
 				return baseResponse;
 			}
 			downRequest.formatPathURI();
@@ -205,7 +217,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 		return ServiceProvider.call(request, SysKeyOfficeRequestV.class, SysKeyDTO.class, req -> {
 			request.formatPathURI();
 			//step 0.校验
-			String fileName = getFileName(request).toLowerCase();
+			String fileName = request.getKey().toLowerCase();
 			if(!(fileName.endsWith("doc") || fileName.endsWith("docx")
 				|| fileName.endsWith("ppt") || fileName.endsWith("pptx"))){
 				throw new AppLogicException(ErrCodeEnum.FILE_TO_PDF_TYPE_LIMIT.getCode());
