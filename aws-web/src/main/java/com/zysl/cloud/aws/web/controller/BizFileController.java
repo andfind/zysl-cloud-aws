@@ -304,7 +304,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				fileRequest.setPath(path);
 			}
 			
-			if(fileName.indexOf(BizConstants.DISK_SEPARATOR) > -1){
+			if(fileName.indexOf(".") > -1){
 				fileName = fileName.substring(0,fileName.lastIndexOf("."));
 				fileName += StringUtils.join("_",System.currentTimeMillis(),".pdf");
 				fileRequest.setFileName(fileName);
