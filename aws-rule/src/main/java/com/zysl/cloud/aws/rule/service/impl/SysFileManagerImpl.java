@@ -108,7 +108,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			
-			Object obj = s3FileService.getDetailInfo(s3ObjectBO);
+			Object obj = s3FileService.getBaseInfo(s3ObjectBO);
 			if(obj != null){
 				S3ObjectBO rst = (S3ObjectBO)obj;
 				dto = new SysFileDTO();
