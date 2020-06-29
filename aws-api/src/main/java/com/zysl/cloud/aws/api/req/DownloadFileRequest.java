@@ -33,7 +33,7 @@ public class DownloadFileRequest extends BaseReqeust {
     private String userId;
     //下载文件类型 0：默认，下载文件 1：下载二进制流
     @ApiModelProperty(value = "下载文件类型 0：默认，下载文件 1：下载二进制流", name = "type",required = true,dataType = SwaggerConstants.DATA_TYPE_STRING)
-    private String type;
+    private Integer type;
 
     @Override
     public String toString() {

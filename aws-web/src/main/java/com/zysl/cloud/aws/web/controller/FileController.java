@@ -176,7 +176,8 @@ public class FileController extends BaseController implements FileSrv {
 		log.info(String.format(ESLOG_END_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
 		return baseResponse;
 	}
-
+	
+	@ResponseBody
 	@Override
 	public BaseResponse<DownloadFileDTO> downloadFile(HttpServletRequest request, HttpServletResponse response, DownloadFileRequest downRequest) {
 		return ServiceProvider.call(downRequest, DownloadFileRequestV.class, DownloadFileDTO.class, req ->{
