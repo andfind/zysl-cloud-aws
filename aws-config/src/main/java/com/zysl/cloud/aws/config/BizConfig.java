@@ -30,12 +30,6 @@ public class BizConfig {
     @Value("${pdf.file.bucket.name}")
     public String pdfFileBucket;
 
-    /**
-     * 版本号，测试用，可以不配置
-     **/
-    @Value("${application.version}")
-    public String curVer;
-
     @Value("${aws.config.path}")
     public String awsConfigPath;
 

@@ -1,8 +1,11 @@
 package com.zysl.cloud.aws.biz.service.s3.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.ctrip.framework.apollo.model.ConfigChangeEvent;
+import com.ctrip.framework.apollo.spring.annotation.ApolloConfigChangeListener;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
+import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.S3ServerConfig;
 import com.zysl.cloud.aws.prop.S3ServerProp;
 import com.zysl.cloud.utils.ExceptionUtil;
@@ -16,6 +19,7 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.annotation.PostConstruct;
@@ -54,6 +58,11 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	
 	@Resource
 	private RedisTemplate<Object,Object> redisTemplate;
+	
+	@Resource
+	private BizConfig bizConfig;
+	
+	
 
 	@Override
 	public String getServerNo(String bucketName){
@@ -242,8 +251,9 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	 * @param
 	 * @return void
 	 **/
+	@Override
 	@PostConstruct
-	private void amazonS3ClientInit(){
+	public void amazonS3ClientInit(){
 		log.info("ES_LOG amazonS3ClientInit start");
 		
 		Map<String, S3ServerProp> s3ServerPropMap = new HashMap<>();

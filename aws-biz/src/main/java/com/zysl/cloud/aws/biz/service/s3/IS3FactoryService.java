@@ -148,4 +148,14 @@ public interface IS3FactoryService {
 	 * @return T
 	 **/
 	<T extends S3Response,R extends S3Request>T callS3Method(R r,S3Client s3Client,String methodName,Boolean throwLogicException);
+	
+	/**
+	 * s3client及bucket初始化
+	 * @description
+	 * @author miaomingming
+	 * @date 12:00 2020/7/1
+	 * @param
+	 * @return void
+	 **/
+	void amazonS3ClientInit();
 }

@@ -26,6 +26,9 @@ public class S3ServerProp implements Serializable {
 	private Boolean noSpace;
 	
 	private Map<String,String> bucketMap = new HashMap();
+	
+	
+	
 
 	@Override
 	public String toString() {
