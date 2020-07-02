@@ -32,6 +32,6 @@ public class BizConfig {
 
     @Value("${aws.config.path}")
     public String awsConfigPath;
-
-
+    
+    
 }

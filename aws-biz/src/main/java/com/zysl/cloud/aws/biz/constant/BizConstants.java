@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.biz.constant;
 
+import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.utils.StringUtils;
 import java.util.Date;
@@ -14,6 +15,8 @@ public class BizConstants {
     
     @Autowired
     private WebConfig webConfig;
+    @Autowired
+    private BizConfig bizConfig;
     
     //租后更新bucket列表时间
     public static Date LAST_UPDATE_BUCKET_LIST_DATE = new Date();
@@ -26,9 +29,6 @@ public class BizConstants {
     public static final Integer PDF_MARK_TEXT_WIDTH = 300;
     public static final Integer PDF_MARK_TEXT_HEIGHT = 300;
 
-    
-//    // 分享默认目录
-//    public static final String SHARE_DEFAULT_FOLDER = "share";
     
     // 分片下载单次最大字节数，bizconfig启动时会初始化
     public static long MULTI_DOWNLOAD_FILE_MAX_SIZE = 0L;
@@ -57,6 +57,7 @@ public class BizConstants {
         }catch (Exception e){
             log.error("init.multipartDownloadMaxFileSize.error:{}",webConfig.getMultipartDownloadMaxFileSize());
         }
+        
     }
     
 }

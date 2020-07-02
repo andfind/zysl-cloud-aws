@@ -2,21 +2,12 @@ package com.zysl.cloud.aws.web.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
-import com.zysl.cloud.aws.api.req.BizFileOfficeToPdfRequest;
-import com.zysl.cloud.aws.api.req.BizFileShareRequest;
-import com.zysl.cloud.aws.api.req.SysDirRequest;
-import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
-import com.zysl.cloud.aws.api.req.SysFileExistRequest;
-import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.req.key.BizKeyOfficeToPdfRequest;
 import com.zysl.cloud.aws.api.req.key.BizKeyShareRequest;
-import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
-import com.zysl.cloud.aws.api.srv.BizFileSrv;
 import com.zysl.cloud.aws.api.srv.BizKeySrv;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
@@ -25,21 +16,15 @@ import com.zysl.cloud.aws.biz.service.IPDFService;
 import com.zysl.cloud.aws.biz.service.IPPTService;
 import com.zysl.cloud.aws.biz.service.IWordService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
-import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
 import com.zysl.cloud.aws.config.BizConfig;
+import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
-import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
-import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
-import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
-import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
-import com.zysl.cloud.aws.web.validator.SysFileExistRequestV;
-import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyOfficeRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyShareRequestV;
@@ -48,16 +33,12 @@ import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BaseResponse;
-import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.swing.text.html.HTML.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
@@ -70,8 +51,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 @RestController
 public class BizKeyController extends BaseController implements BizKeySrv {
 	
-	@Autowired
-	private WebConfig webConfig;
 	@Autowired
 	private ISysKeyManager sysKeyManager;
 	@Autowired
@@ -86,6 +65,8 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 	private IS3KeyService s3KeyService;
 	@Autowired
 	private IS3FactoryService s3FactoryService;
+	@Autowired
+	private LogConfig logConfig;
 	
 	
 	@Override
@@ -167,7 +148,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 	@Override
 	@ResponseBody
 	public BaseResponse<String> shareFileDownload(HttpServletRequest request,HttpServletResponse response, SysKeyDownloadRequest downRequest){
-		log.error("downloadShareFile {} ES_LOG.param", JSON.toJSONString(downRequest));
+		log.info(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(), JSON.toJSONString(downRequest));
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
@@ -175,8 +156,6 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 				return baseResponse;
 			}
 			downRequest.formatPathURI();
-			log.info("downloadShareFile {} [ES_LOG_START]",downRequest.getPath());
-			
 			//step 1.校验是否存在
 			SysKeyDTO sysKeyDTO = sysKeyManager.info(downRequest);
 			if(sysKeyDTO == null){
@@ -196,16 +175,14 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			byte[] bodys = sysKeyManager.getBody(downRequest,null);
 			HttpUtils.downloadFileByte(request,response,getFileName(downRequest),bodys);
 			
-			log.info("downloadShareFile {} [ES_LOG_SUCCESS]",downRequest.getPath());
+			log.info(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(),"END");
 			return null;
 		}catch (AppLogicException e){
-			log.error("shareFileDownload.AppLogicException:{}:", JSON.toJSONString(downRequest),e);
-			log.error("downloadShareFile {} {} [ES_LOG_EXCEPTION]",downRequest.getPath(),ExceptionUtil.getMessage(e));
+			log.warn(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(),ExceptionUtil.getMessage(e),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 		}catch (Exception e){
-			log.error("shareFileDownload.Exception:{}:", JSON.toJSONString(downRequest),e);
-			log.error("downloadShareFile {} {} [ES_LOG_EXCEPTION]",downRequest.getPath(), ExceptionUtil.getMessage(e));
+			log.error(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(),ExceptionUtil.getMessage(e),e);
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;
@@ -225,7 +202,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			//step 1.数据读取
 			byte[] bodys = sysKeyManager.getBody(request,null);
 			if(bodys == null || bodys.length == 0){
-				log.warn("officeToPdf.noSuchKey:{}",request);
+				log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"noSuchKey");
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}
 			
@@ -236,14 +213,14 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 				bodys = pptService.changePPTToPDF(bodys);
 			}
 			if(bodys == null || bodys.length == 0){
-				log.warn("officeToPdf.toPdf.bodys.is.null:{}",request);
+				log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"toPdf.bodys.is.null");
 				throw new AppLogicException("step2",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 			}
 			//step 3.水印
 			if(!StringUtils.isBlank(request.getTextMark())){
 				bodys = pdfService.addPdfTextMark(bodys,request.getTextMark());
 				if(bodys == null || bodys.length == 0){
-					log.warn("officeToPdf.addMark.bodys.is.null:{}",request);
+					log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"addMark.bodys.is.null");
 					throw new AppLogicException("step3",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 				}
 			}
@@ -252,7 +229,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			if(!StringUtils.isBlank(request.getUserPwd()) && !StringUtils.isBlank(request.getOwnerPwd())){
 				bodys = pdfService.addPwd(bodys,request.getUserPwd(),request.getOwnerPwd());
 				if(bodys == null || bodys.length == 0){
-					log.warn("officeToPdf.addPwd.bodys.is.null:{}",request);
+					log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"addPwd.bodys.is.null");
 					throw new AppLogicException("step4",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 				}
 			}
@@ -267,6 +244,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			uploadRequest.setKey(targetKey);
 			uploadRequest.setIsCover(Boolean.TRUE);
 			
+			uploadRequest.setVersionId(null);
 			sysKeyManager.upload(uploadRequest,bodys);
 			
 			//step 6.查询并返回
@@ -293,14 +271,14 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey()) &&
 				Integer.parseInt(tag.getValue()) < 1){
 				//下载次数已下完
-				log.info("ES_LOG {} downloadShareFile.times.is.max",path);
+				log.info(logConfig.getLogTemplate(),"checkAndSetShareDownload",path,"downloadShareFile.times.is.max");
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_MAX_TIMES.getCode());
 			}
 			//判断是否在有效期内
 			if(S3TagKeyEnum.TAG_VALIDITY.getCode().equals(tag.getKey()) &&
 				DateUtils.doCompareDate(new Date(), DateUtils.createDate(tag.getValue())) > 0){
 				//已过有效期
-				log.info("ES_LOG {} downloadShareFile.timeout",path);
+				log.info(logConfig.getLogTemplate(),"checkAndSetShareDownload",path,"downloadShareFile.timeout");
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_TIMEOUT.getCode());
 			}
 			if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey())){

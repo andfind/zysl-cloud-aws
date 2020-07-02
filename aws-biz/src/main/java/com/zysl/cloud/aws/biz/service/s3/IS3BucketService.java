@@ -35,10 +35,10 @@ public interface IS3BucketService {
 	/**
 	 * 创建存储桶bucket
 	 * @param bucketName
-	 * @param serviceNo
+	 * @param serverNo
 	 * @return java.lang.Boolean
 	 **/
-	Boolean createBucket(String bucketName, String serviceNo);
+	Boolean createBucket(String bucketName, String serverNo);
 
 
 	/**

@@ -12,6 +12,7 @@ import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
+import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
@@ -38,11 +39,11 @@ public class S3BucketServiceImpl implements IS3BucketService {
 	@Autowired
 	private IS3FileService fileService;
 	@Autowired
-	private IS3KeyService s3KeyService;
+	private LogConfig logConfig;
 
 	@Override
 	public List<Bucket> getBucketList(S3Client s3){
-		log.info("=getBucketList=");
+		log.info(logConfig.getLogTemplate(),"getBucketList-param",s3.serviceName(),"param");
 		ListBucketsRequest request = ListBucketsRequest.builder().build();
 		ListBucketsResponse response = s3FactoryService.callS3Method(request,s3,S3Method.LIST_BUCKETS);
 
@@ -51,7 +52,7 @@ public class S3BucketServiceImpl implements IS3BucketService {
 
 	@Override
 	public List<String> getS3Buckets(String serviceNo){
-		log.info("=getS3Buckets={}",serviceNo);
+		log.info(logConfig.getLogTemplate(),"getS3Buckets-param","param",serviceNo);
 		List<String> list = new ArrayList<>();
 		Map<String, String> map = s3FactoryService.getBucketServerNoMap();
 		if(map != null && !map.isEmpty()){
@@ -62,26 +63,26 @@ public class S3BucketServiceImpl implements IS3BucketService {
 			}
 		}
 
-		log.info("---buskets:{}", list.size());
+		log.info(logConfig.getLogTemplate(),"getS3Buckets","rst",list.size());
 		return list;
 	}
 
 	@Override
-	public Boolean createBucket(String bucketName, String serviceNo) {
-		log.info("---createBucket:---bucketName:{},serviceName:{}",bucketName, serviceNo);
-		S3Client s3 = s3FactoryService.getS3ClientByServerNo(serviceNo);
+	public Boolean createBucket(String bucketName, String serverNo) {
+		log.info(logConfig.getLogTemplate(),"createBucket-param",bucketName,serverNo);
+		S3Client s3 = s3FactoryService.getS3ClientByServerNo(serverNo);
 
 		//判断bucket是否存在
 		if(s3FactoryService.isExistBucket(bucketName)){
-			log.info("---createBucket.is.exist--bucketName:{},serviceName:{}",bucketName, serviceNo);
+			log.info(logConfig.getLogTemplate(),"createBucket",bucketName,"createBucket.is.exist");
 			throw new AppLogicException(ErrCodeEnum.S3_CREATE_BUCKET_EXIST.getCode());
 		}
 
 		CreateBucketRequest s3r = CreateBucketRequest.builder().bucket(bucketName).build();
 		CreateBucketResponse response = s3FactoryService.callS3Method(s3r,s3,S3Method.CREATE_BUCKETS);
 
-		log.info("--createBucket.success--fileName:{}", response.location());
-		s3FactoryService.addBucket(bucketName,serviceNo);
+		log.info(logConfig.getLogTemplate(),"createBucket",bucketName,StringUtils.join("success:",response.location()));
+		s3FactoryService.addBucket(bucketName,serverNo);
 
 		//启用版本控制
 		SetFileVersionRequest request = new SetFileVersionRequest();
@@ -95,7 +96,7 @@ public class S3BucketServiceImpl implements IS3BucketService {
 
 	@Override
 	public Boolean setBucketVersion(SetFileVersionRequest request) {
-		log.info("setBucketVersion-param:",JSON.toJSONString(request));
+		log.info(logConfig.getLogTemplate(),"getS3Buckets-param",request.getBucketName(),request);
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(request.getBucketName());
 		//启动文件夹的版本控制,,//BucketVersioningStatus.ENABLED
 		PutBucketVersioningRequest s3r = PutBucketVersioningRequest.builder()
@@ -105,15 +106,15 @@ public class S3BucketServiceImpl implements IS3BucketService {
 												.build())
 												.build();
 		s3FactoryService.callS3Method(s3r,s3,S3Method.PUT_BUCKET_VERSIONING);
-		log.info("修改版本控制成功:{}", request.getBucketName());
-
+		log.info(logConfig.getLogTemplate(),"getS3Buckets",request.getBucketName(),"success");
+		
 		return Boolean.TRUE;
 
 	}
 
 	@Override
 	public Boolean putBucketTag(S3ObjectBO t) {
- 		log.info("s3bucket.putBucketTag.param:{}", t);
+		log.info(logConfig.getLogTemplate(),"putBucketTag-param",t.getBucketName(),t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -167,7 +168,7 @@ public class S3BucketServiceImpl implements IS3BucketService {
 	
 	@Override
 	public void getBucketInfo(String bucketName){
-		log.info("ES_LOG getBucketInfo-param {}",bucketName);
+		log.info(logConfig.getLogTemplate(),"getBucketInfo-param",bucketName,bucketName);
 		//获取s3初始化对象
 //		S3Client s3 = s3FactoryService.getS3ClientByBucket(bucketName);
 //
@@ -183,12 +184,13 @@ public class S3BucketServiceImpl implements IS3BucketService {
 	
 	@Override
 	public void delete(S3Client s3Client,String bucketName){
-		log.info("ES_LOG delete-param {}",bucketName);
+		log.info(logConfig.getLogTemplate(),"delete",bucketName,"param");
+		
 		//删除bucket
 		DeleteBucketRequest request = DeleteBucketRequest.builder().bucket(bucketName).build();
 		s3FactoryService.callS3Method(request, s3Client, S3Method.DELETE_BUCKET);
 		
-		log.info("ES_LOG delete-rsp {}",bucketName);
+		log.info(logConfig.getLogTemplate(),"delete",bucketName,"success");
 	}
 	
 }

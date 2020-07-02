@@ -2,39 +2,31 @@ package com.zysl.cloud.aws.web.controller;
 
 import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.api.dto.PartInfoDTO;
-import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.dto.SysKeyFileDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
-import com.zysl.cloud.aws.api.req.DownloadFileRequest;
-import com.zysl.cloud.aws.api.req.SysDirRequest;
-import com.zysl.cloud.aws.api.req.SysFileDownloadRequest;
-import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCopyRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyCreateRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDeleteListRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyDownloadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyExistRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyPageRequest;
-import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
-import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyRequest;
+import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.api.srv.SysKeySrv;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
-import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
+import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
-import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.web.utils.HttpUtils;
-import com.zysl.cloud.aws.web.validator.SysFileExistRequestV;
-import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyCopyRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyDeleteListRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyExistRequestV;
@@ -42,6 +34,7 @@ import com.zysl.cloud.aws.web.validator.SysKeyMultiUploadRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyPageRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
@@ -55,7 +48,6 @@ import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
-import org.springframework.util.ObjectUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -69,7 +61,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	@Autowired
 	private WebConfig webConfig;
 	@Autowired
-	private IS3KeyService s3KeyService;
+	private LogConfig logConfig;
 	
 	@Override
 	public BaseResponse<SysKeyDTO> create(SysKeyCreateRequest request){
@@ -109,7 +101,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			if(!validator(baseResponse,downRequest, SysKeyRequestV.class)){
 				return baseResponse;
 			}
-			log.info("download {} [ES_LOG_START]", downRequest.getPath());
+			log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), JSON.toJSONString(downRequest));
 			
 			SysKeyRequest sysKeyRequest = BeanCopyUtil.copy(downRequest,SysKeyRequest.class);
 			List<TagBO> tagBOList = sysKeyManager.tagList(sysKeyRequest);
@@ -133,15 +125,15 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 
 			//从头信息取Range:bytes=0-1000
 			String range = request.getHeader("Range");
-			log.info("download {} Range={}",downRequest.getPath(),range);
+			log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), range);
 			//对Range数值做校验
 			Long[] byteLength = HttpUtils.checkRange(range);
 
 			if(StringUtils.isBlank(range)){
-				log.info("{}--range is null",downRequest.getPath());
+				log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), "range is null");
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
 				if(sysKeyDTO.getSize() > byteLength[1]){
-					log.info("fileSize:{},range:{},key:{}",sysKeyDTO.getSize(),range,downRequest.getPath());
+					log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), String.format("fileSize:%s",sysKeyDTO.getSize()));
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
 					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m只能分片下载.");
 					return baseResponse;
@@ -167,11 +159,10 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			//下载数据
 			HttpUtils.downloadFileByte(request,response,fileName,bodys,contentType);
 			log.info("baseResponse:{}", JSON.toJSONString(baseResponse));
-			log.info("download {} [ES_LOG_SUCCESS]",downRequest.getPath());
+			log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), "SUCCESS");
 			return null;
 		}catch (AppLogicException e){
-			log.error("download.AppLogicException:",e);
-			log.error("download {} {} [ES_LOG_EXCEPTION]",downRequest.getPath(),e.getMessage());
+			log.warn(logConfig.getLogTemplate(),"download",downRequest.getPath(), ExceptionUtil.getMessage(e),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
@@ -181,8 +172,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			}
 			return baseResponse;
 		}catch (Exception e){
-			log.error("download.Exception:",e);
-			log.error("download {} {} [ES_LOG_EXCEPTION]",downRequest.getPath(),e.getMessage());
+			log.error(logConfig.getLogTemplate(),"download",downRequest.getPath(), ExceptionUtil.getMessage(e),e);
 			baseResponse.setMsg(e.getMessage());
 			response.setStatus(RespCodeEnum.FAILED.getCode());
 			return baseResponse;
@@ -367,7 +357,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			if(req.getUserId().equals(owner)){
 				return Boolean.TRUE;
 			}
-			log.warn("ES_LOG {} checkOwner.error:{}",req.getPath(),req.getUserId());
+			log.warn(logConfig.getLogTemplate(),"checkOwner",req.getPath(),req.getUserId());
 			return Boolean.FALSE;
 		}
 		return Boolean.TRUE;
