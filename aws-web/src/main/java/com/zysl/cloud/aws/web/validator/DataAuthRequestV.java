@@ -1,11 +1,8 @@
 package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.aws.api.dto.OPAuthDTO;
-import com.zysl.cloud.aws.api.dto.TagDTO;
 import com.zysl.cloud.utils.StringUtils;
-import com.zysl.cloud.utils.constants.SwaggerConstants;
 import com.zysl.cloud.utils.validator.IValidator;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import javax.validation.constraints.NotBlank;
 import lombok.Getter;

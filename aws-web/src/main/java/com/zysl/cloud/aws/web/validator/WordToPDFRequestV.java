@@ -1,14 +1,8 @@
 package com.zysl.cloud.aws.web.validator;
 
-import com.zysl.cloud.utils.constants.SwaggerConstants;
 import com.zysl.cloud.utils.validator.IValidator;
 import com.zysl.cloud.utils.validator.impl.LengthChar;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
-import java.io.Serializable;
 import java.util.List;
-import javax.validation.constraints.Max;
-import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;

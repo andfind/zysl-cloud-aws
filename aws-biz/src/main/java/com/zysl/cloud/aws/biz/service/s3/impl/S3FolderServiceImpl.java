@@ -10,6 +10,7 @@ import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
+import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.domain.bo.ObjectInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
@@ -36,11 +37,14 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	private IS3FactoryService s3FactoryService;
 	@Autowired
 	private IS3FileService fileService;
+	@Autowired
+	private LogConfig logConfig;
 
 
 	@Override
 	public S3ObjectBO create(S3ObjectBO t){
-		log.info("s3folder.create.param:{}", t);
+		log.info(logConfig.getLogTemplate(),"createFolder-param",t.getPath(),t);
+		
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
 		PutObjectRequest.Builder request = PutObjectRequest.builder()
@@ -55,8 +59,8 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 		RequestBody requestBody = RequestBody.empty();
 		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request.build(), requestBody, s3, S3Method.PUT_OBJECT);
-		log.debug("s3folder.create.response:{}", response);
-
+		log.info(logConfig.getLogTemplate(),"createFolder-response",t.getPath(),response);
+		
 		t.setVersionId(this.getLastVersion(t));
 
 		return t;
@@ -65,7 +69,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public void delete(S3ObjectBO t){
-		log.info("s3folder.delete.param:{}", t);
+		log.info(logConfig.getLogTemplate(),"deleteFolder-response",t.getPath(),t);
 
 		//查询目录下的文件信息
 		S3ObjectBO s3ObjectBO = getDetailInfo(t);
@@ -126,8 +130,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public boolean copy(S3ObjectBO src,S3ObjectBO dest){
-		log.info("s3folder.move.param.src:{}，dest:{}", JSON.toJSONString(src), JSON.toJSONString(dest));
-		
+		log.info(logConfig.getLogTemplate(),"copyFolder-param",src.getPath(),dest.getPath());
 		
 		//在查询顶层目录下的对象信息
 		S3ObjectBO detailInfo = getDetailInfo(src);
@@ -138,15 +141,13 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		 * 不在一台服务器则下载上传，在则用原生复制接口
 		 */
 		if(s3FactoryService.judgeBucket(src.getBucketName(), dest.getBucketName())){
-			log.debug("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
-
+			log.info(logConfig.getLogTemplate(),"copyFolder",src.getPath(),"same.bucket");
 			//先复制顶层目录
 			fileService.copy(src, dest);
 
 			return copyObject(detailInfo, src, dest);
 		}else{
-			log.debug("s3folder.copy.judgeBucket.返回true,两个bucket在同一台服务器");
-
+			log.info(logConfig.getLogTemplate(),"copyFolder",src.getPath(),"not.same.bucket");
 			//上传顶层目录
 			String destKey = getDestKey(src.getPath(), dest.getPath());
 			S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),destKey);
@@ -267,7 +268,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getDetailInfo(S3ObjectBO t){
-		log.info("s3folder.getDetailInfo.param:{}", t);
+		log.info(logConfig.getLogTemplate(),"getDetailInfoFolder-param",t.getPath(),t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -299,15 +300,13 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public List<S3ObjectBO> getVersions(S3ObjectBO t){
-		log.info("s3folder.getVersions.param:{}", t);
-
+		log.info(logConfig.getLogTemplate(),"getVersions-param",t.getPath(),t);
 		return fileService.getVersions(t);
 	}
 
 	@Override
 	public S3ObjectBO rename(S3ObjectBO t) {
-		log.info("s3folder.rename.param:{}", t);
-
+		log.info(logConfig.getLogTemplate(),"rename-param",t.getPath(),t);
 		//重新上传目录，同时修改标签
 		S3ObjectBO s3ObjectBO = this.create(t);
 		s3ObjectBO.setTagFilename(t.getTagFilename());
@@ -319,14 +318,14 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
-		log.info("s3folder.getLastVersion.param:{}", t);
-
+		log.info(logConfig.getLogTemplate(),"getLastVersion-param",t.getPath(),t);
+		
 		return fileService.getLastVersion(t);
 	}
 	
 	@Override
 	public S3ObjectBO list(S3ObjectBO t, MyPage myPage){
-		log.info("s3folder.list.param:{}", t);
+		log.info(logConfig.getLogTemplate(),"listFolder-param",t.getPath(),t);
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		

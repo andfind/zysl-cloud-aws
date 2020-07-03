@@ -9,8 +9,8 @@ import com.zysl.cloud.aws.api.enums.OPAuthTypeEnum;
 import com.zysl.cloud.aws.api.req.CopyObjectsRequest;
 import com.zysl.cloud.aws.api.req.CreateFolderRequest;
 import com.zysl.cloud.aws.api.req.DelObjectRequest;
+import com.zysl.cloud.aws.api.req.ObjectRenameRequest;
 import com.zysl.cloud.aws.api.req.QueryObjectsRequest;
-import com.zysl.cloud.aws.api.req.*;
 import com.zysl.cloud.aws.api.srv.FolderSrv;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
@@ -20,20 +20,23 @@ import com.zysl.cloud.aws.domain.bo.ObjectInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.BizUtil;
-import com.zysl.cloud.aws.web.validator.*;
+import com.zysl.cloud.aws.web.validator.CopyObjectsRequestV;
+import com.zysl.cloud.aws.web.validator.CreateFolderRequestV;
+import com.zysl.cloud.aws.web.validator.DelObjectRequestV;
+import com.zysl.cloud.aws.web.validator.ObjectRenameRequestV;
+import com.zysl.cloud.aws.web.validator.QueryObjectsRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @CrossOrigin

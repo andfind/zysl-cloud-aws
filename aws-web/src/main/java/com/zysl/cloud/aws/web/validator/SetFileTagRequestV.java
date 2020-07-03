@@ -3,12 +3,11 @@ package com.zysl.cloud.aws.web.validator;
 import com.zysl.cloud.aws.api.dto.KeyVersionDTO;
 import com.zysl.cloud.aws.api.dto.TagDTO;
 import com.zysl.cloud.utils.validator.IValidator;
+import java.util.List;
+import javax.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.util.CollectionUtils;
-
-import javax.validation.constraints.NotBlank;
-import java.util.List;
 
 /**
  * 修改文件tage入参对象

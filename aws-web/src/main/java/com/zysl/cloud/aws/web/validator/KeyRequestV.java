@@ -6,8 +6,11 @@ import java.util.List;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotBlank;
-import org.hibernate.validator.constraints.Length;
+import lombok.Getter;
+import lombok.Setter;
 
+@Setter
+@Getter
 public class KeyRequestV implements IValidator {
 
 

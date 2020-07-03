@@ -1,5 +1,6 @@
 package com.zysl.cloud.aws.web.validator;
 
+import com.zysl.cloud.aws.config.ValidatorConfig;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.validator.IValidator;
 import com.zysl.cloud.utils.validator.impl.LengthChar;
@@ -19,10 +20,10 @@ public class BaseBucketRequestV implements IValidator {
 
 	@Override
 	public void customizedValidate(List<String> errors, Integer userCase){
-		String pattern = "^[a-zA-Z0-9.\\-_]{3,63}$";
+		String pattern = ValidatorConfig.S3_BUCKET_VALID_PATTERN;//"^[a-z0-9.\\-_]{3,63}$";
 		//判断存储桶是否满足命名规则
 		if(StringUtils.isNotBlank(bucketName) && !Pattern.compile(pattern).matcher(bucketName).matches()){
-			errors.add("存储桶不满足命名规则.");
+			errors.add(ValidatorConfig.S3_BUCKET_VALID_DESC);
 		}
 	}
 }

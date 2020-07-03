@@ -1,21 +1,16 @@
 package com.zysl.cloud.aws.web.validator;
 
-import com.zysl.cloud.aws.api.req.key.SysKeyDeleteRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
+import com.zysl.cloud.aws.config.ValidatorConfig;
 import com.zysl.cloud.aws.domain.bo.PathUriBO;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
-import com.zysl.cloud.aws.web.constants.WebConstants;
-import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.StringUtils;
-import com.zysl.cloud.utils.constants.SwaggerConstants;
 import com.zysl.cloud.utils.validator.IValidator;
-import io.swagger.annotations.ApiModelProperty;
 import java.util.List;
 import java.util.regex.Pattern;
 import javax.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.util.CollectionUtils;
 
 @Getter
 @Setter
@@ -34,14 +29,14 @@ public class SysKeyCopyRequestV implements IValidator {
 		
 		if(srcBO != null && StringUtils.isNotEmpty(srcBO.getKey()) && srcBO.getKey().endsWith(BizConstants.PATH_SEPARATOR)
 			&& destBO != null && StringUtils.isNotEmpty(destBO.getKey()) && !destBO.getKey().endsWith(BizConstants.PATH_SEPARATOR)){
-			errors.add("destPath为对象时srcPath不能是目录.");
+			errors.add(ValidatorConfig.COPY_OBJECT_CHECK_MSG);
 		}
 	}
 	
 	
 	private PathUriBO checkPath(List<String> errors,String path,String msgName){
 		if(StringUtils.isEmpty(path)){
-			errors.add(msgName + "不能为空.");
+			errors.add(msgName + " can not null.");
 		}
 		
 		PathUriBO pathUriBO = ObjectFormatUtils.checkS3PathURINotNull(path,errors);
@@ -49,11 +44,11 @@ public class SysKeyCopyRequestV implements IValidator {
 			return pathUriBO;
 		}
 		
-		if(!Pattern.matches(WebConstants.S3_BUCKET_VALID_PATTERN, pathUriBO.getHost())){
-			errors.add(WebConstants.S3_BUCKET_VALID_DESC);
+		if(!Pattern.matches(ValidatorConfig.S3_BUCKET_VALID_PATTERN, pathUriBO.getHost())){
+			errors.add(ValidatorConfig.S3_BUCKET_VALID_DESC);
 		}
-		if(!Pattern.matches(WebConstants.S3_KEY_VALID_PATTERN, pathUriBO.getKey())){
-			errors.add(WebConstants.S3_KEY_VALID_DESC);
+		if(!Pattern.matches(ValidatorConfig.S3_KEY_VALID_PATTERN, pathUriBO.getKey())){
+			errors.add(ValidatorConfig.S3_KEY_VALID_DESC);
 		}
 		return pathUriBO;
 	}

@@ -1,7 +1,6 @@
 package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.aws.biz.constant.BizConstants;
-import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.validator.IValidator;
 import java.util.List;
 import javax.validation.constraints.Max;

@@ -1,17 +1,12 @@
 package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.aws.api.req.MultipartUploadRequest;
-import com.zysl.cloud.utils.common.BaseReqeust;
-import com.zysl.cloud.utils.constants.SwaggerConstants;
 import com.zysl.cloud.utils.validator.IValidator;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.List;
+import javax.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.util.CollectionUtils;
-
-import javax.validation.constraints.NotBlank;
-import java.util.List;
 
 /**
  * 断点续传完成确认入参

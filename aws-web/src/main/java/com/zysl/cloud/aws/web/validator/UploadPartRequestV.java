@@ -1,12 +1,11 @@
 package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.utils.validator.IValidator;
-import lombok.Getter;
-import lombok.Setter;
-
+import java.util.List;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.util.List;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * 断点续传入参

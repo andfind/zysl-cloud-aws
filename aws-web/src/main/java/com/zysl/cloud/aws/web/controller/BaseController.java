@@ -1,9 +1,7 @@
 package com.zysl.cloud.aws.web.controller;
 
-import com.zysl.cloud.aws.api.req.SysDirRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
-import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.SpringContextUtil;
 import com.zysl.cloud.utils.StringUtils;

@@ -1,7 +1,7 @@
 package com.zysl.cloud.aws.web.validator;
 
 import com.zysl.cloud.aws.api.req.SysFileRequest;
-import com.zysl.cloud.aws.web.constants.WebConstants;
+import com.zysl.cloud.aws.config.ValidatorConfig;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.validator.IValidator;
 import java.util.List;
@@ -24,11 +24,11 @@ public class SysFileArrayRequestV implements IValidator {
 			//path不能为空
 			if(StringUtils.isEmpty(request.getPath())){
 				errors.add("path不能为空.");
-			}else if(!Pattern.matches(WebConstants.VALID_PATH_PATTERN, request.getPath())){
-				errors.add(WebConstants.VALID_PATH_DESC);
+			}else if(!Pattern.matches(ValidatorConfig.VALID_PATH_PATTERN, request.getPath())){
+				errors.add(ValidatorConfig.VALID_PATH_DESC);
 			}
-			if(StringUtils.isNotEmpty(request.getFileName()) && !Pattern.matches(WebConstants.VALID_FILE_NAME_PATTERN, request.getFileName())){
-				errors.add(WebConstants.VALID_FILE_NAME_DESC);
+			if(StringUtils.isNotEmpty(request.getFileName()) && !Pattern.matches(ValidatorConfig.VALID_FILE_NAME_PATTERN, request.getFileName())){
+				errors.add(ValidatorConfig.VALID_FILE_NAME_DESC);
 			}
 			
 			if(!errors.isEmpty()){

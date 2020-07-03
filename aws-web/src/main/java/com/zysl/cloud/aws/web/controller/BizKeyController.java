@@ -19,7 +19,6 @@ import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
 import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.LogConfig;
-import com.zysl.cloud.aws.config.WebConfig;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysKeyManager;

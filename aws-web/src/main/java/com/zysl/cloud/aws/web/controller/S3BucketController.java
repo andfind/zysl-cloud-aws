@@ -6,7 +6,6 @@ import com.zysl.cloud.aws.api.req.GetBucketsRequest;
 import com.zysl.cloud.aws.api.req.SetFileVersionRequest;
 import com.zysl.cloud.aws.api.srv.S3BucketSrv;
 import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
-import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.rule.service.ISysBucketManager;
 import com.zysl.cloud.aws.web.validator.BaseBucketRequestV;
 import com.zysl.cloud.aws.web.validator.CreateBucketRequestV;
@@ -28,15 +27,13 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 	@Autowired
 	private IS3BucketService s3BucketService;
 	@Autowired
-	private IS3FactoryService s3FactoryService;
-	@Autowired
 	private ISysBucketManager sysBucketManager;
 
 
 	@Override
 	public BaseResponse<String> createBucket(BaseBucketRequest request){
 		return ServiceProvider.call(request, CreateBucketRequestV.class, String.class,req->{
-			s3BucketService.createBucket(req.getBucketName(),req.getServerNo());
+			//s3BucketService.createBucket(req.getBucketName(),req.getServerNo());
 			return request.getBucketName();
 		},"createBucket");
 	}
