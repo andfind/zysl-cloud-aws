@@ -1,7 +1,7 @@
 aws:
   s3:
     servers:
-      - {serverNo: s000,
+      - {serverNo: s002,
          endpoint: http://s3.amazonaws.com,
          accessKey: AKIA5CS5Z7CLYENLPW7A,
          secretKey: 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,
