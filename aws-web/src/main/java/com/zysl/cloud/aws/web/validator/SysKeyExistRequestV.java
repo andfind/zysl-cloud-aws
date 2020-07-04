@@ -44,11 +44,11 @@ public class SysKeyExistRequestV implements IValidator {
 			|| StringUtils.isEmpty(pathUriBO.getScheme())
 			|| StringUtils.isEmpty(pathUriBO.getHost())
 			){
-			errors.add(" path format error.");
+			errors.add(ValidatorConfig.AWS_PATH_FORMAT_ERROR_DESC);
 		}
 		if(StringUtils.isNotEmpty(pathUriBO.getKey())){
 			if(!pathUriBO.getKey().endsWith(BizConstants.PATH_SEPARATOR)){
-				errors.add("path can not object.");
+				errors.add(ValidatorConfig.AWS_FILE_EXIST_CHEK_KEY_DESC);
 			}
 			if(!Pattern.matches(ValidatorConfig.S3_KEY_VALID_PATTERN, pathUriBO.getKey())){
 				errors.add(ValidatorConfig.S3_KEY_VALID_DESC);

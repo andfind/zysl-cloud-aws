@@ -33,7 +33,7 @@ public class S3BucketController extends BaseController implements S3BucketSrv {
 	@Override
 	public BaseResponse<String> createBucket(BaseBucketRequest request){
 		return ServiceProvider.call(request, CreateBucketRequestV.class, String.class,req->{
-			//s3BucketService.createBucket(req.getBucketName(),req.getServerNo());
+			s3BucketService.createBucket(req.getBucketName(),req.getServerNo());
 			return request.getBucketName();
 		},"createBucket");
 	}

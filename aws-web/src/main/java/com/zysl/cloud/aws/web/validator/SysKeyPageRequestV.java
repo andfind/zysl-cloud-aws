@@ -25,7 +25,7 @@ public class SysKeyPageRequestV implements IValidator {
 			|| StringUtils.isEmpty(pathUriBO.getScheme())
 			|| StringUtils.isEmpty(pathUriBO.getHost())
 			){
-			errors.add("path format error.");
+			errors.add(ValidatorConfig.AWS_PATH_FORMAT_ERROR_DESC);
 			return;
 		}
 		if(!Pattern.matches(ValidatorConfig.S3_BUCKET_VALID_PATTERN, pathUriBO.getHost())){

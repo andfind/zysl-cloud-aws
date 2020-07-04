@@ -19,13 +19,17 @@ public class ValidatorConfig {
 	//存储桶名称校验正则入参路径正则校验及返回描述
 	public static  String S3_BUCKET_VALID_PATTERN = "^[0-9a-z\\-_]{3,63}$";
 	public static  String S3_BUCKET_VALID_DESC = "存储桶不满足命名规则.";
-	//入参fileName正则校验及返回描述
+	//入参key正则校验及返回描述
 	public static  String S3_KEY_VALID_PATTERN = "[^\\*\\|\\?\\\\<>:\"]+$";
+	public static  String S3_KEY_OBJECT_VALID_PATTERN = "[^\\*\\|\\?\\\\<>:\"]+(?<!a)$";
+	
 	public static  String S3_KEY_VALID_DESC = "key不能输入以下字符\\ : \" | * ? < >";
 	
 	
 	public static String COPY_OBJECT_CHECK_MSG="destPath为对象时srcPath不能是目录";
 	
+	public static String AWS_PATH_FORMAT_ERROR_DESC = "文件系统path格式化异常.";
+	public static String AWS_FILE_EXIST_CHEK_KEY_DESC = "文件是否存在校验路径列表格式.";
 	
 	@Value("${bucket.name.format.msg}")
 	public void setBucketFormatMsg(String msg){
@@ -40,7 +44,7 @@ public class ValidatorConfig {
 	
 	@Value("${file.name.format.msg}")
 	public void setFileNameFormatMsg(String msg){
-		S3_BUCKET_VALID_DESC = msg;
+		VALID_FILE_NAME_DESC = msg;
 	}
 	
 	
@@ -53,4 +57,17 @@ public class ValidatorConfig {
 	public void setCopyObjectCheckMsg(String msg){
 		COPY_OBJECT_CHECK_MSG = msg;
 	}
+	
+	
+	@Value("${aws.path.format.msg}")
+	public void setAwsPathFormatErrorDesc(String msg){
+		AWS_PATH_FORMAT_ERROR_DESC = msg;
+	}
+	
+	
+	@Value("${aws.file.exist.key.check.msg}")
+	public void setAwsFileExistChekKeyDesc(String msg){
+		AWS_FILE_EXIST_CHEK_KEY_DESC = msg;
+	}
+	
 }

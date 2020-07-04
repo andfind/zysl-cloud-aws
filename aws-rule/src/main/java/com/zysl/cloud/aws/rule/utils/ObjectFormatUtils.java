@@ -9,6 +9,7 @@ import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
+import com.zysl.cloud.aws.config.ValidatorConfig;
 import com.zysl.cloud.aws.domain.bo.PathUriBO;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
@@ -152,7 +153,7 @@ public class ObjectFormatUtils {
 			|| StringUtils.isEmpty(pathUriBO.getScheme())
 			|| StringUtils.isEmpty(pathUriBO.getHost())
 			|| StringUtils.isEmpty(pathUriBO.getKey())){
-			errors.add("path格式化异常.");
+			errors.add(ValidatorConfig.AWS_PATH_FORMAT_ERROR_DESC);
 		}
 		return pathUriBO;
 	}
