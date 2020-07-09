@@ -220,28 +220,38 @@ public class FileController extends BaseController implements FileSrv {
 	@ResponseBody
 	@Override
 	public BaseResponse<DownloadFileDTO> downloadFile(HttpServletRequest request, HttpServletResponse response, DownloadFileRequest downRequest) {
-		return ServiceProvider.call(downRequest, DownloadFileRequestV.class, DownloadFileDTO.class, req ->{
+		BaseResponse<DownloadFileDTO> baseResponse = new BaseResponse<>();
+		baseResponse.setSuccess(Boolean.FALSE);
+//		return ServiceProvider.call(downRequest, DownloadFileRequestV.class, DownloadFileDTO.class, req ->{
+		String totalFileKey = StringUtils.join(downRequest.getBucketName(),downRequest.getFileId(),"#",downRequest.getVersionId());
+		try{
+			if(!validator(baseResponse,downRequest, DownloadFileRequestV.class)){
+				return baseResponse;
+			}
+			
+			log.info("download {} [ES_LOG_START]",totalFileKey);
+			
 			S3ObjectBO t = new S3ObjectBO();
-			t.setBucketName(req.getBucketName());
-			setPathAndFileName(t, req.getFileId());
-			t.setVersionId(req.getVersionId());
-
-
+			t.setBucketName(downRequest.getBucketName());
+			setPathAndFileName(t, downRequest.getFileId());
+			t.setVersionId(downRequest.getVersionId());
+			
+			
 			//数据权限校验
 			fileService.checkDataOpAuth(t, OPAuthTypeEnum.READ.getCode());
 			
 			S3ObjectBO s3ObjectBO = (S3ObjectBO) fileService.getInfoAndBody(t);
-			checkOwner(req,s3ObjectBO);
-
+			checkOwner(downRequest,s3ObjectBO);
+			
 			byte[] bytes = s3ObjectBO.getBodys();
-			log.info("--下载接口返回的文件数据大小--", bytes.length);
-			if(DownTypeEnum.BASE64.getCode().equals(req.getType())){
+			log.info("download {} [ES_LOG]bytes.length:{}",totalFileKey,bytes != null ? bytes.length : 0);
+			if(DownTypeEnum.BASE64.getCode().equals(downRequest.getType())){
 				DownloadFileDTO downloadFileDTO = new DownloadFileDTO();
-
+				
 				BASE64Encoder encoder = new BASE64Encoder();
 				//返回加密
 				downloadFileDTO.setData(encoder.encode(bytes));
-				return downloadFileDTO;
+				baseResponse.setModel(downloadFileDTO);
 			}else {
 				//获取标签中的文件名称
 				String tagValue = S3Utils.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
@@ -249,7 +259,27 @@ public class FileController extends BaseController implements FileSrv {
 				HttpUtils.downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
 				return null;
 			}
-		},"download");
+			
+			baseResponse.setSuccess(Boolean.TRUE);
+			return baseResponse;
+		}catch (AppLogicException e){
+			log.error("download.AppLogicException:",e);
+			log.error("download {} {} [ES_LOG_EXCEPTION]",totalFileKey,e.getMessage());
+			baseResponse.setMsg(e.getMessage());
+			baseResponse.setCode(e.getExceptionCode());
+			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
+				response.setStatus(RespCodeEnum.NOT_EXISTED.getCode());
+			}else{
+				response.setStatus(RespCodeEnum.FAILED.getCode());
+			}
+			return baseResponse;
+		}catch (Exception e){
+			log.error("download.Exception:",e);
+			log.error("download {} {} [ES_LOG_EXCEPTION]",totalFileKey,e.getMessage());
+			baseResponse.setMsg(e.getMessage());
+			response.setStatus(RespCodeEnum.FAILED.getCode());
+			return baseResponse;
+		}
 	}
 	
 	//临时数据校验，是否对象拥有者
