@@ -59,7 +59,7 @@ public class DataAuthRequestV implements IValidator {
 		final String CLASS_SEPARATOR = ":";
 		//数据组间隔符
 		final String ITEM_SEPARATOR = "_";
-		//key-value间隔符
+		//bucketKey-value间隔符
 		final String KV_SEPARATOR = "=";
 
 		if(StringUtils.isBlank(str)

@@ -1,6 +1,5 @@
 package com.zysl.cloud.aws.biz.service.s3.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
@@ -18,7 +17,7 @@ import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.DateUtils;
-import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.IOException;
@@ -31,7 +30,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
-import software.amazon.awssdk.awscore.AwsRequestOverrideConfiguration;
 import software.amazon.awssdk.awscore.exception.AwsServiceException;
 import software.amazon.awssdk.core.ResponseBytes;
 import software.amazon.awssdk.core.exception.SdkClientException;
@@ -39,6 +37,7 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
+import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
@@ -96,7 +95,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO create(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"createFile-param",t.getPath(),t);
+		LogHelper.info(getClass(),"createFile.param",t.bucketKey(),t.toString());
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
 		PutObjectRequest.Builder request = PutObjectRequest.builder()
@@ -111,7 +110,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 
 		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request.build(),RequestBody.fromBytes(t.getBodys()),s3Client, S3Method.PUT_OBJECT);
-		log.info(logConfig.getLogTemplate(),"createFile-response",t.getPath(),response);
+		LogHelper.info(getClass(),"createFile.response",t.getPath(),response);
 
 		t.setVersionId(this.getLastVersion(t));
 		return t;
@@ -155,7 +154,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public String createMultipartUpload(S3ObjectBO t) {
-		log.info("s3file.createMultipartUpload.param:{}", t);
+		LogHelper.info(getClass(),"createMultipartUpload.param", t.bucketKey(),t.toString());
 		
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
@@ -167,13 +166,15 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 												.build();
 
 		CreateMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.CREATE_MULTIPART_UPLOAD);
-
+		
+		LogHelper.info(getClass(),"createMultipartUpload.response", t.bucketKey(),response);
+		
 		return response.uploadId();
 	}
 
 	@Override
 	public S3ObjectBO uploadPart(S3ObjectBO t) {
-		log.info("s3file.uploadPart.param:{}", t);
+		LogHelper.info(getClass(),"uploadPart.param", t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		
@@ -188,12 +189,14 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 		UploadPartResponse response = s3FactoryService.callS3MethodWithBody(request, requestBody, s3, S3Method.UPLOAD_PART);
 		t.setETag(response.eTag());
+		
+		LogHelper.info(getClass(),"uploadPart.response", t.bucketKey(),response);
 		return t;
 	}
 
 	@Override
 	public S3ObjectBO completeMultipartUpload(S3ObjectBO t) {
-		log.info("s3file.completeMultipartUpload.param:{}", t);
+		LogHelper.info(getClass(),"completeMultipartUpload.param", t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -216,8 +219,10 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 						.build();
 
 		CompleteMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.COMPLETE_MULTIPART_UPLOAD);
-
 		t.setVersionId(response.versionId());
+		
+		LogHelper.info(getClass(),"completeMultipartUpload.response", t.bucketKey(),response);
+		
 		return t;
 	}
 	
@@ -225,7 +230,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void abortMultipartUpload(S3ObjectBO t) {
-		log.info("s3file.abortMultipartUpload.param:{}", t);
+		LogHelper.info(getClass(),"abortMultipartUpload.param", t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		
@@ -234,15 +239,18 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 											.key(StringUtils.join(t.getPath(), t.getFileName()))
 											.uploadId(t.getUploadId())
 											.build();
-			
-		s3FactoryService.callS3Method(request, s3, S3Method.ABORT_MULTIPART_UPLOAD);
+		
+		AbortMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.ABORT_MULTIPART_UPLOAD);
+		
+		LogHelper.info(getClass(),"completeMultipartUpload.response", t.bucketKey(),response);
 	}
 
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
-		log.info(logConfig.getLogTemplate(),"getLastVersion-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getLastVersion.param", t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3ObjectBO s3ObjectBO = this.getBaseInfo(t);
+		
 		if(s3ObjectBO != null && s3ObjectBO.getVersionId() != null){
 			return  s3ObjectBO.getVersionId();
 		}
@@ -251,8 +259,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public List<FilePartInfoBO> listParts(S3ObjectBO t) {
-		log.info("s3file.listParts.param:{}", t);
-
+		LogHelper.info(getClass(),"listParts.param", t.bucketKey(),t.toString());
+		
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -263,6 +271,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				.build();
 
 		ListPartsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_PARTS);
+		LogHelper.info(getClass(),"listParts.response", t.bucketKey(),response);
+		
 		List<Part> partList = response.parts();
 
 		List<FilePartInfoBO> filePartInfoBOS = Lists.newArrayList();
@@ -281,8 +291,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public String getMultiUploadId(S3ObjectBO t) {
-		log.info("s3file.getMultiUploadId.param:{}", t);
-
+		LogHelper.info(getClass(),"getMultiUploadId.param", t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		
@@ -292,7 +301,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				.prefix(StringUtils.join(t.getPath(),t.getFileName()))
 				.build();
 		ListMultipartUploadsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_MULTIPART_UPLOADS);
-
+		LogHelper.info(getClass(),"getMultiUploadId.response", t.bucketKey(),response);
+		
 		List<MultipartUpload> uploads = response.uploads();
 		if(!CollectionUtils.isEmpty(uploads)){
 			MultipartUpload multipartUpload = uploads.get(0);
@@ -304,7 +314,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void delete(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"deleteFile-param",t.getPath(),t);
+		LogHelper.info(getClass(),"deleteObject.param", t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -349,14 +359,14 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 										.build();
 			//文件删除
 			DeleteObjectsResponse response = s3FactoryService.callS3Method(deleteObjectsRequest, s3, S3Method.DELETE_OBJECTS);
-			log.info(logConfig.getLogTemplate(),"deleteFile-response",t.getPath(),response);
+			LogHelper.info(getClass(),"deleteObject.param", t.bucketKey(),response);
 		}
 		
 	}
 
 	@Override
 	public void modify(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"modifyFile-param",t.getPath(),t);
+		LogHelper.info(getClass(),"modifyFile.param",t.bucketKey(),t.toString());
 		//目前修改文件标签信息
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
@@ -378,7 +388,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 
 		PutObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(),s3,S3Method.PUT_OBJECT_TAGGING);
-		log.info(logConfig.getLogTemplate(),"modifyFile-response",t.getPath(),response);
+		LogHelper.info(getClass(),"modifyFile.response",t.bucketKey(),response);
 
 	}
 
@@ -389,14 +399,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO copy(S3ObjectBO src,S3ObjectBO dest){
-		log.info(logConfig.getLogTemplate(),"copyFile-param",src.getPath(),dest.getPath());
-		
+		LogHelper.info(getClass(),"copyFile.response",src.bucketKey(),dest.bucketKey());
 		//设置源文件路径，转码
 		String copySourceUrl = null;
 		try{
 			copySourceUrl = src.getBucketName() + BizConstants.PATH_SEPARATOR + src.getPath() + src.getFileName();
 			copySourceUrl = java.net.URLEncoder.encode(copySourceUrl, "utf-8");
-			log.info("copySourceUrl:{}",copySourceUrl);
+			LogHelper.info(getClass(),"copyFile.copySourceUrl",src.bucketKey(),copySourceUrl);
 		
 		}catch (Exception e){
 			throw new AppLogicException(ErrCodeEnum.S3_COPY_SOURCE_ENCODE_ERROR.getCode());
@@ -407,7 +416,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		 * 不在一台服务器则下载上传，在则复制
 		 */
 		if(s3FactoryService.judgeBucket(src.getBucketName(), dest.getBucketName())){
-			log.debug("s3file.copy.judgeBucket.返回true,两个bucket在同一台服务器");
+			LogHelper.info(getClass(),"copyFile",src.bucketKey(),"serverNo is same");
 			//获取s3初始化对象
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(src.getBucketName(),Boolean.TRUE);
 
@@ -423,7 +432,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			}
 			
 			CopyObjectResponse response = s3FactoryService.callS3Method(request.build(),s3,S3Method.COPY_OBJECT);
-			log.debug("s3file.copy.response:{}", response);
+			LogHelper.info(getClass(),"copyFile.response",src.bucketKey(),response);
 			dest.setVersionId(response.versionId());
 		}else{
 			log.debug("s3file.copy.judgeBucket.返回false,两个bucket不在同一台服务器");
@@ -438,16 +447,17 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void move(S3ObjectBO src,S3ObjectBO dest){
-		log.info(logConfig.getLogTemplate(),"moveFile-param",src.getPath(),dest.getPath());
+		LogHelper.info(getClass(),"moveFile.param",src.getPath(),dest.getPath());
 		//先复制文件
 		this.copy(src, dest);
 		//再删除文件
 		this.delete(src);
+		LogHelper.info(getClass(),"moveFile.success",src.getPath(),dest.getPath());
 	}
 
 	@Override
 	public S3ObjectBO getBaseInfo(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"getBaseInfo-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getBaseInfo.param",t.bucketKey(),t.toString());
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
 		HeadObjectRequest.Builder request = HeadObjectRequest.builder()
@@ -458,7 +468,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		}
 
 		HeadObjectResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
-		log.info(logConfig.getLogTemplate(),"getBaseInfo-response",t.getPath(),response);
+		LogHelper.info(getClass(),"getBaseInfo.response",t.bucketKey(),response);
 		
 		if(response != null){
 			t.setVersionId(response.versionId());
@@ -468,6 +478,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			t.setContentEncoding(response.contentEncoding());
 			t.setContentLanguage(response.contentLanguage());
 			t.setContentType(response.contentType());
+			
+			LogHelper.info(getClass(),"getBaseInfo.rst",t.bucketKey(),t.toString());
 			return t;
 		}
 		
@@ -476,7 +488,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getDetailInfo(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"getDetailInfo-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getDetailInfo.param",t.bucketKey(),t.toString());
 		
 		//查询文件基础信息
 		getBaseInfo(t);
@@ -489,7 +501,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getInfoAndBody(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"getInfoAndBody-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getInfoAndBody.param",t.bucketKey(),t.toString());
 		//查询文件基础信息
 		getDetailInfo(t);
 
@@ -512,7 +524,8 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
 			
 			byte[] bytes = objectAsBytes.asByteArray();
-			log.info("ES_LOG {} bytes.length:{},date1:{},date2:{}", t.key(),bytes.length,date1,date2);
+			LogHelper.info(getClass(),"getInfoAndBody.bytes.length",t.bucketKey(),(bytes == null ? "0" : bytes.length + ""));
+			
 			if(DateUtils.doCompareDate(date1, date2) < 0){
 				//进行解码
 				BASE64Decoder decoder = new BASE64Decoder();
@@ -520,7 +533,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				try {
 					fileContent = decoder.decodeBuffer(new String(bytes));
 				} catch (IOException e) {
-					log.error(logConfig.getLogTemplate(),"getInfoAndBody",t.getPath(),"IOException");
+					LogHelper.info(getClass(),"getInfoAndBody",t.bucketKey(),"IOException");
 				}
 				t.setBodys(fileContent);
 				return t;
@@ -529,20 +542,20 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 				return t;
 			}
 		}catch (NoSuchKeyException e){
-			log.warn(logConfig.getLogTemplate(),"getInfoAndBody",t.getPath(),"NoSuchKeyException");
+			LogHelper.warn(getClass(),"getInfoAndBody",t.bucketKey(),"NoSuchKeyException");
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (AwsServiceException | SdkClientException  e){
-			log.warn(logConfig.getLogTemplate(),"getInfoAndBody",t.getPath(), ExceptionUtil.getMessage(e));
+			LogHelper.warn(getClass(),"getInfoAndBody",t.bucketKey(), e.getMessage(),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
 		}catch (Exception e){
-			log.error(logConfig.getLogTemplate(),"getInfoAndBody",t.getPath(), ExceptionUtil.getMessage(e));
+			log.error(logConfig.getLogTemplate(),"getInfoAndBody",t.bucketKey(), e.getMessage(),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}
 	}
 
 	@Override
 	public List<S3ObjectBO> getVersions(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"getVersions-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getVersions.param",t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3Client = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -574,7 +587,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO rename(S3ObjectBO t) {
-		log.info(logConfig.getLogTemplate(),"rename-param",t.getPath(),t);
+		LogHelper.info(getClass(),"rename.param",t.bucketKey(),t.toString());
 
 		//先查询文件内容
 		S3ObjectBO s3ObjectBO = this.getInfoAndBody(t);
@@ -588,11 +601,12 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 
 	@Override
 	public void checkDataOpAuth(S3ObjectBO s3ObjectBO,String opAuthTypes){
-		log.info(logConfig.getLogTemplate(),"checkDataOpAuth-param",s3ObjectBO.getPath(),s3ObjectBO);
+		LogHelper.info(getClass(),"checkDataOpAuth.param",s3ObjectBO.bucketKey(),s3ObjectBO.toString());
 		String tokenAuth = dataAuthUtils.getUserAuth();
 
 		//没传则不校验
 		if(StringUtils.isBlank(tokenAuth)){
+			LogHelper.info(getClass(),"checkDataOpAuth",s3ObjectBO.bucketKey(),"tokenAuth is null");
 			return ;
 		}
 
@@ -602,6 +616,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			//读取对象的标签--权限列表
 			objAuths = S3Utils.getTagValue(getTags(s3ObjectBO),S3TagKeyEnum.USER_AUTH.getCode());
 			if(dataAuthUtils.checkAuth(opAuthTypes,objAuths)){
+				LogHelper.info(getClass(),"checkDataOpAuth.checkAuth.1",s3ObjectBO.bucketKey(),objAuths);
 				return;
 			}
 		}
@@ -616,6 +631,7 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 			bo.setPath(curPath);
 			objAuths = S3Utils.getTagValue(getTags(s3ObjectBO),S3TagKeyEnum.USER_AUTH.getCode());
 			if(dataAuthUtils.checkAuth(opAuthTypes,objAuths)){
+				LogHelper.info(getClass(),"checkDataOpAuth.checkAuth.2",s3ObjectBO.bucketKey(),objAuths);
 				return;
 			}
 			//截取上层目录
@@ -630,12 +646,13 @@ public class S3FileServiceImpl implements IS3FileService<S3ObjectBO> {
 		if(!CollectionUtils.isEmpty(bucketTags)){
 			objAuths = S3Utils.getTagValue(bucketTags,S3TagKeyEnum.USER_AUTH.getCode());
 			if(dataAuthUtils.checkAuth(opAuthTypes,objAuths)){
+				LogHelper.info(getClass(),"checkDataOpAuth.checkAuth.3",s3ObjectBO.bucketKey(),objAuths);
 				return;
 			}
 		}
 
 		//遍历后还是无法匹配
-		log.warn("check.data.op.auth.failed:s3ObjectBO：{},opAuthTypes:{}", JSON.toJSONString(s3ObjectBO),opAuthTypes);
+		LogHelper.warn(getClass(),"checkDataOpAuth.rst",s3ObjectBO.bucketKey(),"check.data.op.auth.failed");
 		throw new AppLogicException(ErrCodeEnum.OBJECT_OP_AUTH_CHECK_FAILED.getCode());
 	}
 

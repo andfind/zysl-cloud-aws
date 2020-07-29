@@ -3,7 +3,6 @@ package com.zysl.cloud.aws.biz.componet;
 import com.ctrip.framework.apollo.model.ConfigChangeEvent;
 import com.ctrip.framework.apollo.spring.annotation.ApolloConfigChangeListener;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
-import com.zysl.cloud.aws.config.S3ServerConfig;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.annotation.Autowired;

@@ -1,9 +1,7 @@
 package com.zysl.cloud.aws.biz.test;
 
-import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
-import com.zysl.cloud.utils.StringUtils;
-import java.net.URI;
+import com.zysl.cloud.utils.LogHelper;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.regex.Pattern;
@@ -11,23 +9,13 @@ import java.util.regex.Pattern;
 public class Test {
 	public static void main(String[] args){
 		Test test = new Test();
-		try{
-			URI uri = new URI(FileSysTypeEnum.S3.getCode(),"temp","/mmm/a/1.txt","111111");
-			Boolean testa = null;
-			if(testa){
-				System.out.println(uri.toString());
-			}else {
-				System.out.println("---false---");
-			}
-			
-		}catch (Exception e){
-			e.printStackTrace();
-		}
-		
+		test.testUrlEncode();
 		
 	}
 	
+	
 	public void testUrlEncode(){
+		LogHelper.info(getClass(),"test","test","1111");
 		try{
 			String out = URLEncoder.encode("1+ ,{}[]#.txt", StandardCharsets.UTF_8.toString());
 			System.out.println(out);

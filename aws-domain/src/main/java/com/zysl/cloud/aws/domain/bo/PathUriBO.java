@@ -33,7 +33,7 @@ public class PathUriBO implements Serializable {
 			sb.append(", host='").append(host).append('\'');
 		}
 		if (key != null) {
-			sb.append(", key='").append(key).append('\'');
+			sb.append(", bucketKey='").append(key).append('\'');
 		}
 		if (versionId != null) {
 			sb.append(", versionId='").append(versionId).append('\'');

@@ -14,13 +14,11 @@ import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @CrossOrigin
 @RestController
 public class S3BucketController extends BaseController implements S3BucketSrv {

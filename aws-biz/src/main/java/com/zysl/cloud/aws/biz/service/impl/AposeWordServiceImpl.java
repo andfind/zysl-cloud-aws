@@ -7,6 +7,7 @@ import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.IPDFService;
 import com.zysl.cloud.aws.biz.service.IWordService;
 import com.zysl.cloud.aws.config.BizConfig;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -30,8 +31,7 @@ public class AposeWordServiceImpl implements IWordService {
 
     @Override
     public byte[] changeWordToPDF(byte[] inBuff,Boolean imgMarkSign, String textMark){
-        log.info("===changeWordToPDF===imgMarkSign:{},textMark:{},inBuff.length",imgMarkSign,textMark, inBuff == null ? 0: inBuff.length);
-
+        LogHelper.info(getClass(),"changeWordToPDF","changeWordToPDF",String.format("imgMarkSign:%s,textMark:%s",imgMarkSign,textMark));
         if(inBuff == null || inBuff.length == 0){
             return null;
         }
@@ -49,7 +49,8 @@ public class AposeWordServiceImpl implements IWordService {
 
             return outBuff;
         }catch (Exception e){
-            log.error("转换pdf时office异常:",e);
+            LogHelper.error(getClass(),"changeWordToPDF","changeWordToPDF","异常",e);
+    
             throw new AppLogicException(ErrCodeEnum.WORD_FILE_TO_PDF_ERROR.getCode());
         }finally {
             try {
@@ -57,14 +58,14 @@ public class AposeWordServiceImpl implements IWordService {
                     os.close();
                 }
             } catch (IOException e) {
-                log.error("===changeWordToPDF===stream close error ：{}", e);
+                LogHelper.error(getClass(),"changeWordToPDF","os.close","异常",e);
             }
         }
     }
 
     @Override
     public byte[] changeWordToByApose(byte[] inBuff,Integer toFormatType){
-        log.info("===inBuff.length:{}",inBuff == null ? 0 : inBuff.length);
+        LogHelper.error(getClass(),"changeWordToByApose","changeWordToByApose","length:"+(inBuff == null ? 0 : inBuff.length));
         if(inBuff == null || inBuff.length == 0 ){
             return null;
         }
@@ -86,7 +87,7 @@ public class AposeWordServiceImpl implements IWordService {
             
             return outBuff;
         }catch (Exception e){
-            log.error("===changeWordToPDFByApose=== error ：{}", e);
+            LogHelper.error(getClass(),"changeWordToPDFByApose","changeWordToPDFByApose","异常",e);
             throw new AppLogicException(ErrCodeEnum.WORD_FILE_TO_PDF_ERROR.getCode());
         }finally {
             try {
@@ -97,15 +98,14 @@ public class AposeWordServiceImpl implements IWordService {
                     is.close();
                 }
             } catch (IOException e) {
-                log.error("===changeWordToPDFByApose===stream close error ：{}", e);
+                LogHelper.error(getClass(),"changeWordToPDFByApose","os.close","异常",e);
             }
         }
     }
     
     @Override
     public byte[] changeWordToPDF(byte[] inBuff){
-        log.info("===changeWordToPDF===inBuff.length",inBuff == null ? 0: inBuff.length);
-    
+        LogHelper.error(getClass(),"changeWordToPDF","changeWordToPDF","length:"+(inBuff == null ? 0 : inBuff.length));
         if(inBuff == null || inBuff.length == 0){
             return null;
         }
@@ -119,6 +119,7 @@ public class AposeWordServiceImpl implements IWordService {
             return outBuff;
         }catch (Exception e){
             log.error("转换pdf时office异常:",e);
+            LogHelper.error(getClass(),"changeWordToPDF","changeWordToPDF","异常",e);
             throw new AppLogicException(ErrCodeEnum.WORD_FILE_TO_PDF_ERROR.getCode());
         }finally {
             try {
@@ -126,7 +127,7 @@ public class AposeWordServiceImpl implements IWordService {
                     os.close();
                 }
             } catch (IOException e) {
-                log.error("===changeWordToPDF===stream close error ：{}", e);
+                LogHelper.error(getClass(),"changeWordToPDF","os.close","异常",e);
             }
         }
     }
@@ -143,7 +144,7 @@ public class AposeWordServiceImpl implements IWordService {
             result = true;
             is.close();
         } catch (Exception e) {
-            log.error("--apose校验异常：{}--", e);
+            LogHelper.error(getClass(),"getLicense","getLicense","异常",e);
             throw new AppLogicException(ErrCodeEnum.APOSE_SIGN_CHECK_ERROR.getCode());
         }
         return result;

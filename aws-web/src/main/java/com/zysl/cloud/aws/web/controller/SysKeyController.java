@@ -35,6 +35,7 @@ import com.zysl.cloud.aws.web.validator.SysKeyPageRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
@@ -45,14 +46,12 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @RestController
 public class SysKeyController extends BaseController implements SysKeySrv {
 	
@@ -62,6 +61,8 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 	private WebConfig webConfig;
 	@Autowired
 	private LogConfig logConfig;
+	@Autowired
+	private HttpUtils httpUtils;
 	
 	@Override
 	public BaseResponse<SysKeyDTO> create(SysKeyCreateRequest request){
@@ -81,7 +82,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			Boolean isCover = request.getIsCover() != null ? request.getIsCover() : Boolean.TRUE;
 			request.setIsCover(isCover);
 			
-			byte[] bodys = HttpUtils.getBytesFromHttpRequest(httpServletRequest,request);
+			byte[] bodys = httpUtils.getBytesFromHttpRequest(httpServletRequest,request);
 			
 			sysKeyManager.upload(request,bodys);
 			
@@ -101,7 +102,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			if(!validator(baseResponse,downRequest, SysKeyRequestV.class)){
 				return baseResponse;
 			}
-			log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), JSON.toJSONString(downRequest));
+			LogHelper.info(getClass(),"download",downRequest.getPath(), JSON.toJSONString(downRequest));
 			
 			SysKeyRequest sysKeyRequest = BeanCopyUtil.copy(downRequest,SysKeyRequest.class);
 			List<TagBO> tagBOList = sysKeyManager.tagList(sysKeyRequest);
@@ -125,15 +126,15 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 
 			//从头信息取Range:bytes=0-1000
 			String range = request.getHeader("Range");
-			log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), range);
+			LogHelper.info(getClass(),"download.range",downRequest.getPath(), range);
 			//对Range数值做校验
-			Long[] byteLength = HttpUtils.checkRange(range);
+			Long[] byteLength = httpUtils.checkRange(range);
 
 			if(StringUtils.isBlank(range)){
-				log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), "range is null");
+				LogHelper.info(getClass(),"download",downRequest.getPath(), "range is null");
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
 				if(sysKeyDTO.getSize() > byteLength[1]){
-					log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), String.format("fileSize:%s",sysKeyDTO.getSize()));
+					LogHelper.info(getClass(),"download",downRequest.getPath(), String.format("fileSize:%s",sysKeyDTO.getSize()));
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
 					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m只能分片下载.");
 					return baseResponse;
@@ -157,12 +158,11 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 				contentType = DownTypeEnum.VIDEO.getContentType();
 			}
 			//下载数据
-			HttpUtils.downloadFileByte(request,response,fileName,bodys,contentType);
-			log.info("baseResponse:{}", JSON.toJSONString(baseResponse));
-			log.info(logConfig.getLogTemplate(),"download",downRequest.getPath(), "SUCCESS");
+			httpUtils.downloadFileByte(request,response,fileName,bodys,contentType);
+			LogHelper.info(getClass(),"download",downRequest.getPath(), "SUCCESS");
 			return null;
 		}catch (AppLogicException e){
-			log.warn(logConfig.getLogTemplate(),"download",downRequest.getPath(), ExceptionUtil.getMessage(e),e);
+			LogHelper.warn(getClass(),"download",downRequest.getPath(), ExceptionUtil.getMessage(e),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
@@ -172,7 +172,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			}
 			return baseResponse;
 		}catch (Exception e){
-			log.error(logConfig.getLogTemplate(),"download",downRequest.getPath(), ExceptionUtil.getMessage(e),e);
+			LogHelper.error(getClass(),"download",downRequest.getPath(), ExceptionUtil.getMessage(e),e);
 			baseResponse.setMsg(e.getMessage());
 			response.setStatus(RespCodeEnum.FAILED.getCode());
 			return baseResponse;
@@ -296,13 +296,21 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			Boolean isCover = request.getIsCover() != null ? request.getIsCover() : Boolean.TRUE;
 			request.setIsCover(isCover);
 			
-			byte[] bodys = HttpUtils.getBytesFromHttpRequest(httpServletRequest,request);
+			byte[] bodys = httpUtils.getBytesFromHttpRequest(httpServletRequest,request);
 			
 			//格式：bytes=开始位置/总大小，例如  bytes=0/1200
 			String range = httpServletRequest.getHeader("Range");
 			long totalSize = 0;
 			if(StringUtils.isNotEmpty(range)){
 				totalSize = Long.parseLong(range.substring(range.indexOf("/") + 1));
+			}
+			LogHelper.info(getClass(),"multiUpload",request.getEsLogMsg(), range);
+			
+			//是否覆盖
+			if(request.getIsCover() != null && !request.getIsCover()
+				&& sysKeyManager.info(request) != null){
+				LogHelper.info(getClass(),"multiUpload",request.getPath(),"can.not.cover.but.exist");
+				throw new AppLogicException(ErrCodeEnum.S3_BUCKET_OBJECT_EXIST.getCode());
 			}
 			
 			Boolean isComplite = sysKeyManager.multiUpload(request,bodys,totalSize);
@@ -357,7 +365,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			if(req.getUserId().equals(owner)){
 				return Boolean.TRUE;
 			}
-			log.warn(logConfig.getLogTemplate(),"checkOwner",req.getPath(),req.getUserId());
+			LogHelper.warn(getClass(),"checkOwner",req.getPath(),req.getUserId());
 			return Boolean.FALSE;
 		}
 		return Boolean.TRUE;

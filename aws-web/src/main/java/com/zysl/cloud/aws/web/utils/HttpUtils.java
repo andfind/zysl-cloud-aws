@@ -1,16 +1,13 @@
 package com.zysl.cloud.aws.web.utils;
 
-import com.zysl.cloud.aws.api.dto.SysKeyDTO;
 import com.zysl.cloud.aws.api.enums.DownTypeEnum;
 import com.zysl.cloud.aws.api.req.SysFileUploadRequest;
 import com.zysl.cloud.aws.api.req.key.SysKeyUploadRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
-import com.zysl.cloud.aws.config.WebConfig;
-import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
-import com.zysl.cloud.utils.enums.RespCodeEnum;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -18,7 +15,6 @@ import java.net.URLEncoder;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
@@ -40,7 +36,8 @@ public class HttpUtils {
 	 * @param range
 	 * @return java.lang.String
 	 **/
-	public static Long[] checkRange(String range){
+	public Long[] checkRange(String range){
+		LogHelper.info(getClass(),"checkRange",range,"param");
 		long max = BizConstants.MULTI_DOWNLOAD_FILE_MAX_SIZE -1;
 		log.info("range:{},max:{}",range,max);
 		Long[] byteLength = new Long[2];
@@ -53,7 +50,7 @@ public class HttpUtils {
 		try{
 			String[] ranges = range.substring(6).split("-");
 			if(ranges.length != 2){
-				log.error("multi.download.range.format.error:{}",range);
+				LogHelper.error(getClass(),"checkRange",range,"multi.download.range.format.error");
 				throw new AppLogicException(ErrCodeEnum.MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR.getCode());
 			}
 			if(StringUtils.isNotBlank(ranges[0])){
@@ -68,10 +65,10 @@ public class HttpUtils {
 			
 			byteLength[0] = start;
 			byteLength[1] = end;
-			log.info("start:{},end:{}",start,end);
+			LogHelper.info(getClass(),"checkRange",range,"end");
 			return byteLength;
 		}catch (Exception e){
-			log.error("multi.download.range.format.error:{},",range,e);
+			LogHelper.error(getClass(),"checkRange",range,"error",e);
 			throw new AppLogicException(ErrCodeEnum.MULTI_DOWNLOAD_FILE_FORMAT_RANGE_ERROR.getCode());
 		}
 	}
@@ -87,11 +84,11 @@ public class HttpUtils {
 	 * @param bodys
 	 * @return void
 	 **/
-	public static void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys){
+	public void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys){
 		downloadFileByte(request,response,fileName,bodys, DownTypeEnum.FILE.getContentType());
 	}
 	
-	public static void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys,String contentType){
+	public void downloadFileByte(HttpServletRequest request, HttpServletResponse response, String fileName,byte[] bodys,String contentType){
 		try {
 			//1下载文件流
 			OutputStream outputStream = response.getOutputStream();
@@ -108,12 +105,12 @@ public class HttpUtils {
 			outputStream.close();
 			
 		} catch (IOException e) {
-			log.error("ES_LOG_EXCEPTION {} IOException:{}", fileName, ExceptionUtil.getMessage(e));
+			LogHelper.error(getClass(),"downloadFileByte",request.getRequestURI().toString(),"error",e);
 			throw new AppLogicException(ErrCodeEnum.DOWNLOAD_FILE_ERROR.getCode());
 		}
 	}
 	
-	public static void setFileName(HttpServletRequest request, HttpServletResponse response, String fileName){
+	public void setFileName(HttpServletRequest request, HttpServletResponse response, String fileName){
 		//获取浏览器名（IE/Chome/firefox）
 		String userAgent = request.getHeader("User-Agent");
 		try{
@@ -126,7 +123,7 @@ public class HttpUtils {
 			}
 			response.setHeader("Content-Disposition", "attachment;fileName="+fileName);
 		}catch (UnsupportedEncodingException e){
-			log.warn("ES_LOG {} UnsupportedEncodingException", fileName,e);
+			LogHelper.error(getClass(),"downloadFileByte",request.getRequestURI().toString(),"UnsupportedEncodingException");
 		}
 	}
 	/**
@@ -156,17 +153,17 @@ public class HttpUtils {
 	 * @param httpServletRequest
 	 * @return byte[]
 	 **/
-	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest)throws AppLogicException{
+	public byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest)throws AppLogicException{
 		try {
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
 			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
 			return multipartFile == null ? null : multipartFile.getBytes();
 		} catch (IOException e) {
-			log.error("--uploadFile获取文件流异常--：{}", e);
+			LogHelper.error(getClass(),"getBytesFromHttpRequest",httpServletRequest.getRequestURI().toString(),"IOException",e);
 			throw new AppLogicException("获取文件流异常");
 		}
 	}
-	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysFileUploadRequest request)throws AppLogicException{
+	public byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysFileUploadRequest request)throws AppLogicException{
 		try {
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
 			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
@@ -175,12 +172,12 @@ public class HttpUtils {
 			}
 			return multipartFile.getBytes();
 		} catch (IOException e) {
-			log.error("--uploadFile获取文件流异常--：{}", e);
+			LogHelper.error(getClass(),"getBytesFromHttpRequest",httpServletRequest.getRequestURI().toString(),"IOException",e);
 			throw new AppLogicException("获取文件流异常");
 		}
 	}
 	
-	public static byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysKeyUploadRequest request)throws AppLogicException{
+	public byte[] getBytesFromHttpRequest(HttpServletRequest httpServletRequest, SysKeyUploadRequest request)throws AppLogicException{
 		try {
 			MultipartHttpServletRequest multipartHttpServletRequest = (MultipartHttpServletRequest)httpServletRequest;
 			MultipartFile multipartFile = multipartHttpServletRequest.getFile("file");
@@ -189,7 +186,7 @@ public class HttpUtils {
 			}
 			return multipartFile.getBytes();
 		} catch (IOException e) {
-			log.error("--uploadFile获取文件流异常--：{}", e);
+			LogHelper.error(getClass(),"getBytesFromHttpRequest",httpServletRequest.getRequestURI().toString(),"IOException",e);
 			throw new AppLogicException("获取文件流异常");
 		}
 	}

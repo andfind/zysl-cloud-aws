@@ -1,11 +1,9 @@
 package com.zysl.cloud.aws.biz.service.s3.impl;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.constant.S3Method;
-import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FolderService;
@@ -14,20 +12,24 @@ import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.domain.bo.ObjectInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.MyPage;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.stream.Collectors;
+import software.amazon.awssdk.services.s3.model.CommonPrefix;
+import software.amazon.awssdk.services.s3.model.ListObjectsRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsResponse;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.PutObjectResponse;
+import software.amazon.awssdk.services.s3.model.S3Object;
+import software.amazon.awssdk.services.s3.model.Tagging;
 
 @Slf4j
 @Service("s3FolderService")
@@ -43,7 +45,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO create(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"createFolder-param",t.getPath(),t);
+		LogHelper.info(getClass(),"createFolder.param",t.bucketKey(),t.toString());
 		
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName(),Boolean.TRUE);
 
@@ -59,7 +61,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 		RequestBody requestBody = RequestBody.empty();
 		PutObjectResponse response = s3FactoryService.callS3MethodWithBody(request.build(), requestBody, s3, S3Method.PUT_OBJECT);
-		log.info(logConfig.getLogTemplate(),"createFolder-response",t.getPath(),response);
+		LogHelper.info(getClass(),"createFolder.response",t.bucketKey(),response);
 		
 		t.setVersionId(this.getLastVersion(t));
 
@@ -69,7 +71,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public void delete(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"deleteFolder-response",t.getPath(),t);
+		LogHelper.info(getClass(),"deleteFolder.response",t.bucketKey(),t.toString());
 
 		//查询目录下的文件信息
 		S3ObjectBO s3ObjectBO = getDetailInfo(t);
@@ -130,7 +132,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public boolean copy(S3ObjectBO src,S3ObjectBO dest){
-		log.info(logConfig.getLogTemplate(),"copyFolder-param",src.getPath(),dest.getPath());
+		LogHelper.info(getClass(),"copyFolder.param",src.bucketKey(),dest.bucketKey());
 		
 		//在查询顶层目录下的对象信息
 		S3ObjectBO detailInfo = getDetailInfo(src);
@@ -141,13 +143,13 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		 * 不在一台服务器则下载上传，在则用原生复制接口
 		 */
 		if(s3FactoryService.judgeBucket(src.getBucketName(), dest.getBucketName())){
-			log.info(logConfig.getLogTemplate(),"copyFolder",src.getPath(),"same.bucket");
+			LogHelper.info(getClass(),"copyFolder",src.bucketKey(),"same.bucket");
 			//先复制顶层目录
 			fileService.copy(src, dest);
 
 			return copyObject(detailInfo, src, dest);
 		}else{
-			log.info(logConfig.getLogTemplate(),"copyFolder",src.getPath(),"not.same.bucket");
+			LogHelper.info(getClass(),"copyFolder",src.getPath(),"not.same.bucket");
 			//上传顶层目录
 			String destKey = getDestKey(src.getPath(), dest.getPath());
 			S3ObjectBO destBO = createS3ObjectBO(dest.getBucketName(),destKey);
@@ -170,6 +172,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	 * @return boolean
 	 **/
 	private boolean copyObject(S3ObjectBO detailInfo, S3ObjectBO src,S3ObjectBO dest){
+		LogHelper.info(getClass(),"copyObject.param",src.bucketKey(),dest.bucketKey());
 		//子文件
 		List<ObjectInfoBO> fileList = detailInfo.getFileList();
 		//文件直接复制
@@ -212,6 +215,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	 * @return boolean
 	 **/
 	public boolean uploadObject(S3ObjectBO detailInfo, S3ObjectBO src,S3ObjectBO dest){
+		LogHelper.info(getClass(),"uploadObject.param",src.bucketKey(),dest.bucketKey());
 		//子文件
 		List<ObjectInfoBO> fileList = detailInfo.getFileList();
 		//文件直接上传
@@ -268,7 +272,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public S3ObjectBO getDetailInfo(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"getDetailInfoFolder-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getDetailInfoFolder.param",t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 
@@ -288,25 +292,28 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		}
 		//查询目录下的对象信息
 		ListObjectsResponse response = s3FactoryService.callS3Method(request,s3, S3Method.LIST_OBJECTS);
+		LogHelper.info(getClass(),"getDetailInfoFolder.response",t.bucketKey(),response);
 		//目录及文件列表
 		setFileListAndFolderList(t,response.commonPrefixes(),response.contents());
 
 		//查询目录的标签信息
 		List<TagBO> tagList = fileService.getTags(t);
 		t.setTagList(tagList);
+		
+		LogHelper.info(getClass(),"getDetailInfoFolder.rst",t.bucketKey(),t.toString());
 		return t;
 	}
 
 
 	@Override
 	public List<S3ObjectBO> getVersions(S3ObjectBO t){
-		log.info(logConfig.getLogTemplate(),"getVersions-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getVersions.param",t.bucketKey(),t.toString());
 		return fileService.getVersions(t);
 	}
 
 	@Override
 	public S3ObjectBO rename(S3ObjectBO t) {
-		log.info(logConfig.getLogTemplate(),"rename-param",t.getPath(),t);
+		LogHelper.info(getClass(),"rename.param",t.bucketKey(),t.toString());
 		//重新上传目录，同时修改标签
 		S3ObjectBO s3ObjectBO = this.create(t);
 		s3ObjectBO.setTagFilename(t.getTagFilename());
@@ -318,14 +325,14 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 
 	@Override
 	public String getLastVersion(S3ObjectBO t) {
-		log.info(logConfig.getLogTemplate(),"getLastVersion-param",t.getPath(),t);
+		LogHelper.info(getClass(),"getLastVersion.param",t.bucketKey(),t.toString());
 		
 		return fileService.getLastVersion(t);
 	}
 	
 	@Override
 	public S3ObjectBO list(S3ObjectBO t, MyPage myPage){
-		log.info(logConfig.getLogTemplate(),"listFolder-param",t.getPath(),t);
+		LogHelper.info(getClass(),"listFolder.param",t.bucketKey(),t.toString());
 		//获取s3初始化对象
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(t.getBucketName());
 		
@@ -344,6 +351,8 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 		while (response == null || response.isTruncated()){
 			request.marker(nextMarker);
 			response = s3FactoryService.callS3Method(request.build(),s3, S3Method.LIST_OBJECTS);
+			LogHelper.info(getClass(),"listFolder.response",t.bucketKey(),response);
+			
 			nextMarker = response.nextMarker();
 			if(!CollectionUtils.isEmpty(response.contents())){
 				totalRecords += response.contents().size();
@@ -364,6 +373,7 @@ public class S3FolderServiceImpl implements IS3FolderService<S3ObjectBO> {
 	}
 	
 	public boolean setFileListAndFolderList(S3ObjectBO t,List<CommonPrefix> prefixes,List<S3Object> objectList){
+		LogHelper.info(getClass(),"setFileListAndFolderList.param",t.bucketKey(),t.toString());
 		//objectList是否存在本身路径对象
 		boolean isExistLocalPath = Boolean.FALSE;
 		List<ObjectInfoBO> folderList = Lists.newArrayList();

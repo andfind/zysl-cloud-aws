@@ -116,7 +116,7 @@ public class ObjectFormatUtils {
 	/**
 	 * 入参path格式化
 	 * scheme://编号或IP/完整路径#版本号
-	 * 完整路径格式:  /bucket/key   或者   /目录/文件
+	 * 完整路径格式:  /bucket/bucketKey   或者   /目录/文件
 	 * @description
 	 * @author miaomingming
 	 * @date 15:38 2020/6/16
@@ -126,7 +126,7 @@ public class ObjectFormatUtils {
 	public static PathUriBO formatS3PathURI(String pathUri){
 		try{
 			PathUriBO bo = new PathUriBO();
-			//bucket 及 key
+			//bucket 及 bucketKey
 			URI uri = new URI(pathUri);
 			bo.setScheme(uri.getScheme());
 			bo.setVersionId(uri.getFragment());

@@ -60,6 +60,7 @@ import com.zysl.cloud.aws.web.validator.SetFileTagRequestV;
 import com.zysl.cloud.aws.web.validator.ShareFileRequestV;
 import com.zysl.cloud.aws.web.validator.UploadFileRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.SpringContextUtil;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
@@ -77,7 +78,6 @@ import java.util.UUID;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -90,7 +90,6 @@ import sun.misc.BASE64Decoder;
 import sun.misc.BASE64Encoder;
 
 
-@Slf4j
 @CrossOrigin
 @RestController()
 public class FileController extends BaseController implements FileSrv {
@@ -105,10 +104,8 @@ public class FileController extends BaseController implements FileSrv {
 	private WebConfig webConfig;
 	@Autowired
 	private DataAuthUtils dataAuthUtils;
-	
-	private static final String ESLOG_START_FORMAT_STRING = "%s %s [ES_LOG_START]";
-	private static final String ESLOG_ERROR_FORMAT_STRING = "%s %s %s [ES_LOG_EXCEPTION]";
-	private static final String ESLOG_END_FORMAT_STRING = "%s %s [ES_LOG_SUCCESS]";
+	@Autowired
+	private HttpUtils httpUtils;
 	
 	
 	@GetMapping("/curVer")
@@ -137,7 +134,7 @@ public class FileController extends BaseController implements FileSrv {
 			try {
 				bytes = decoder.decodeBuffer(request.getData());
 			} catch (IOException e) {
-				log.info("---uploadFile流转换异常：{}--", e);
+				LogHelper.error(getClass(),"uploadFile",request.getEsLogMsg(),"IOException");
 			}
 			t.setBodys(bytes);
 			//设置标签信息
@@ -165,13 +162,15 @@ public class FileController extends BaseController implements FileSrv {
 	public BaseResponse<UploadFieDTO> uploadFile(HttpServletRequest request) {
 		BaseResponse<UploadFieDTO> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
+		String bucket = request.getParameter("bucketName");
+		String fileId =  request.getParameter("fileId");
+		String bucketKey = StringUtils.join(bucket,":",fileId);
 		try{
 			S3ObjectBO s3Object = new S3ObjectBO();
 			s3Object.setBucketName(request.getParameter("bucketName"));
 			setPathAndFileName(s3Object,request.getParameter("fileId"));
 			
-			
-			log.info(String.format(ESLOG_START_FORMAT_STRING, "upload",StringUtils.join(s3Object.getBucketName(),":",request.getParameter("fileId"))));
+			LogHelper.info(getClass(),"uploadFile",bucketKey,"start");
 			//数据权限校验
 			fileService.checkDataOpAuth(s3Object, OPAuthTypeEnum.READ.getCode());
 			
@@ -180,7 +179,7 @@ public class FileController extends BaseController implements FileSrv {
 			try {
 				bytes = multipartHttpServletRequest.getFile("file").getBytes();
 			} catch (IOException e) {
-				log.error("--uploadFile获取文件流异常--：{}", e);
+				LogHelper.error(getClass(),"uploadFile",bucketKey,"IOException");
 				throw new AppLogicException("获取文件流异常");
 			}
 			s3Object.setBodys(bytes);
@@ -205,15 +204,15 @@ public class FileController extends BaseController implements FileSrv {
 			
 			baseResponse.setModel(uploadFieDTO);
 		}catch (AppLogicException e){
-			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
+			LogHelper.error(getClass(),"uploadFile",bucketKey,e.getMessage(),e);
 			baseResponse.setCode(e.getExceptionCode());
 			baseResponse.setMsg(e.getMessage());
 		}catch (Exception e){
-			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
+			LogHelper.error(getClass(),"uploadFile",bucketKey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 		}
 		
-		log.info(String.format(ESLOG_END_FORMAT_STRING, "upload",StringUtils.join(request.getParameter("bucketName"),":",request.getParameter("fileId"))));
+		LogHelper.info(getClass(),"uploadFile",bucketKey,"success");
 		return baseResponse;
 	}
 	
@@ -222,14 +221,13 @@ public class FileController extends BaseController implements FileSrv {
 	public BaseResponse<DownloadFileDTO> downloadFile(HttpServletRequest request, HttpServletResponse response, DownloadFileRequest downRequest) {
 		BaseResponse<DownloadFileDTO> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
-//		return ServiceProvider.call(downRequest, DownloadFileRequestV.class, DownloadFileDTO.class, req ->{
-		String totalFileKey = StringUtils.join(downRequest.getBucketName(),downRequest.getFileId(),"#",downRequest.getVersionId());
+		String totalFileKey = StringUtils.join(downRequest.getBucketName(),":",downRequest.getFileId(),"#",downRequest.getVersionId());
 		try{
 			if(!validator(baseResponse,downRequest, DownloadFileRequestV.class)){
 				return baseResponse;
 			}
 			
-			log.info("download {} [ES_LOG_START]",totalFileKey);
+			LogHelper.info(getClass(),"downloadFile",totalFileKey,"start");
 			
 			S3ObjectBO t = new S3ObjectBO();
 			t.setBucketName(downRequest.getBucketName());
@@ -244,7 +242,8 @@ public class FileController extends BaseController implements FileSrv {
 			checkOwner(downRequest,s3ObjectBO);
 			
 			byte[] bytes = s3ObjectBO.getBodys();
-			log.info("download {} [ES_LOG]bytes.length:{}",totalFileKey,bytes != null ? bytes.length : 0);
+			LogHelper.info(getClass(),"downloadFile.bodys.length",totalFileKey,bytes != null ? bytes.length : 0);
+			
 			if(DownTypeEnum.BASE64.getCode().equals(downRequest.getType())){
 				DownloadFileDTO downloadFileDTO = new DownloadFileDTO();
 				
@@ -256,15 +255,14 @@ public class FileController extends BaseController implements FileSrv {
 				//获取标签中的文件名称
 				String tagValue = S3Utils.getTagValue(s3ObjectBO.getTagList(), S3TagKeyEnum.FILE_NAME.getCode());
 				String fileId = StringUtils.isEmpty(tagValue) ? t.getFileName() : tagValue;
-				HttpUtils.downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
+				httpUtils.downloadFileByte(request,response,fileId,s3ObjectBO.getBodys());
 				return null;
 			}
 			
 			baseResponse.setSuccess(Boolean.TRUE);
 			return baseResponse;
 		}catch (AppLogicException e){
-			log.error("download.AppLogicException:",e);
-			log.error("download {} {} [ES_LOG_EXCEPTION]",totalFileKey,e.getMessage());
+			LogHelper.error(getClass(),"downloadFile",totalFileKey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
@@ -274,8 +272,7 @@ public class FileController extends BaseController implements FileSrv {
 			}
 			return baseResponse;
 		}catch (Exception e){
-			log.error("download.Exception:",e);
-			log.error("download {} {} [ES_LOG_EXCEPTION]",totalFileKey,e.getMessage());
+			LogHelper.error(getClass(),"downloadFile",totalFileKey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			response.setStatus(RespCodeEnum.FAILED.getCode());
 			return baseResponse;
@@ -293,7 +290,8 @@ public class FileController extends BaseController implements FileSrv {
 					return;
 				}
 			}
-			log.warn("check.owner.error,file:{},userId:{}",s3ObjectBO.getBucketName()+s3ObjectBO.getFileName(),req.getUserId());
+			LogHelper.info(getClass(),"checkOwner",String.format("key:%s,userId:%s",
+					s3ObjectBO.getBucketName()+s3ObjectBO.getFileName(),req.getUserId()),"checkOwner.failed");
 			throw new AppLogicException(ErrCodeEnum.OBJECT_OP_AUTH_CHECK_FAILED.getCode());
 		}
 	}
@@ -315,14 +313,14 @@ public class FileController extends BaseController implements FileSrv {
 				if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey()) &&
 						Integer.parseInt(tag.getValue()) < 1){
 					//下载次数已下完
-					log.info("--shareDownloadFile文件载次数已下完：--");
+					LogHelper.info(getClass(),"shareDownloadFile",s3ObjectBO.bucketKey(),"times.is.max");
 					return null;
 				}
 				//判断是否在有效期内
 				if(S3TagKeyEnum.TAG_VALIDITY.getCode().equals(tag.getKey()) &&
 						DateUtils.doCompareDate(new Date(), DateUtils.createDate(tag.getValue())) > 0){
 					//已过有效期
-					log.info("--shareDownloadFile文件已过有效期：--");
+					LogHelper.info(getClass(),"shareDownloadFile",s3ObjectBO.bucketKey(),"outtime");
 					return null;
 				}
 				if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey())){
@@ -347,7 +345,7 @@ public class FileController extends BaseController implements FileSrv {
 				outputStream.flush();
 				outputStream.close();
 			} catch (IOException e) {
-				log.info("--文件下载异常：--", e);
+				LogHelper.error(getClass(),"shareDownloadFile",s3ObjectBO.bucketKey(),"IOException");
 				throw new AppLogicException("文件流处理异常");
 			}
 			//在重新设置文件标签
@@ -407,8 +405,7 @@ public class FileController extends BaseController implements FileSrv {
 			t.setBucketName(request.getBucketName());
 			setPathAndFileName(t, request.getFileId());
 			t.setVersionId(request.getVersionId());
-			log.info(String.format(ESLOG_START_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
-			
+			LogHelper.info(getClass(),"getVideo",request.getEsLogMsg(),"start");
 			
 			//数据权限校验
 			fileService.checkDataOpAuth(t, OPAuthTypeEnum.READ.getCode());
@@ -424,7 +421,7 @@ public class FileController extends BaseController implements FileSrv {
 				out.write(bytes);
 				out.flush();
 			} catch (IOException e) {
-				log.error("--文件流转换异常：--", e);
+				LogHelper.error(getClass(),"getVideo",request.getEsLogMsg(),"IOException");
 			}finally {
 				try {
 					out.close();
@@ -433,14 +430,14 @@ public class FileController extends BaseController implements FileSrv {
 				}
 				out = null;
 			}
-			log.info(String.format(ESLOG_END_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
+			LogHelper.info(getClass(),"getVideo",request.getEsLogMsg(),"end");
 			return ;
 		}catch (AppLogicException e){
-			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
+			LogHelper.error(getClass(),"getVideo",request.getEsLogMsg(),e.getMessage(),e);
 			baseResponse.setCode(e.getExceptionCode());
 			baseResponse.setMsg(e.getMessage());
 		}catch (Exception e){
-			log.info(String.format(ESLOG_ERROR_FORMAT_STRING, "getVideo",request.getEsLogMsg()));
+			LogHelper.error(getClass(),"getVideo",request.getEsLogMsg(),e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 		}
     }
@@ -706,7 +703,7 @@ public class FileController extends BaseController implements FileSrv {
 						fileService.getBaseInfo(bo);
 						return Boolean.TRUE;
 					}catch (AppLogicException e){
-						log.warn("NoSuchKeyException:{}:{}",bucket,req.getFileName());
+						LogHelper.warn(getClass(),"isExistFile",req.getEsLogMsg(),"NoSuchKey");
 					}
 
 				}
@@ -739,7 +736,7 @@ public class FileController extends BaseController implements FileSrv {
 			String range = request.getHeader("Range");
 			
 			//对Range数值做校验
-			Long[] byteLength = HttpUtils.checkRange(range);
+			Long[] byteLength = httpUtils.checkRange(range);
 			
 			S3ObjectBO t = new S3ObjectBO();
 			t.setBucketName(downRequest.getBucketName());
@@ -762,15 +759,15 @@ public class FileController extends BaseController implements FileSrv {
 			String fileId = StringUtils.isEmpty(tagValue) ? t.getFileName() : tagValue;
 			
 			//下载数据
-			HttpUtils.downloadFileByte(request, response, fileId, s3ObjectBO.getBodys());
+			httpUtils.downloadFileByte(request, response, fileId, s3ObjectBO.getBodys());
 
 			return null;
 		}catch (AppLogicException e){
-			log.error("multiDownloadFile.AppLogicException:",e);
+			LogHelper.error(getClass(),"multiDownloadFile",StringUtils.join(downRequest.getBucketName(),downRequest.getFileId()),e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			return baseResponse;
 		}catch (Exception e){
-			log.error("multiDownloadFile.Exception:",e);
+			LogHelper.error(getClass(),"multiDownloadFile",StringUtils.join(downRequest.getBucketName(),downRequest.getFileId()),e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			return baseResponse;
 		}
@@ -802,7 +799,7 @@ public class FileController extends BaseController implements FileSrv {
 	public BaseResponse<MultipartUploadRequest> uploadPart(HttpServletRequest request) {
 		BaseResponse<MultipartUploadRequest> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
-		
+		String bucketKey = StringUtils.join(request.getParameter("bucketName"),"/",request.getParameter("fileId"));
 		try{
 			S3ObjectBO t = new S3ObjectBO();
 			t.setBucketName(request.getParameter("bucketName"));
@@ -816,7 +813,7 @@ public class FileController extends BaseController implements FileSrv {
 			try {
 				bytes = multipartHttpServletRequest.getFile("file").getBytes();
 			} catch (IOException e) {
-				log.error("--uploadFile获取文件流异常--：{}", e);
+				LogHelper.error(getClass(),"uploadPart",bucketKey,"IOException");
 				throw new AppLogicException("获取文件流异常");
 			}
 			t.setBodys(bytes);
@@ -828,9 +825,11 @@ public class FileController extends BaseController implements FileSrv {
 			
 			baseResponse.setModel(response);
 		}catch (AppLogicException e){
+			LogHelper.error(getClass(),"uploadPart",bucketKey,e.getMessage(),e);
 			baseResponse.setCode(e.getExceptionCode());
 			baseResponse.setMsg(e.getMessage());
 		}catch (Exception e){
+			LogHelper.error(getClass(),"uploadPart",bucketKey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;

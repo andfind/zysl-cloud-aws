@@ -91,7 +91,12 @@ public class S3ObjectBO extends BaseFileBO implements Serializable {
 	 * @param
 	 * @return java.lang.String
 	 **/
-	public String key(){
-		return StringUtils.join(this.getBucketName(),":",this.getPath());
+	public String bucketKey(){
+		String key = StringUtils.join(this.getBucketName(),":",this.getPath(),"/",this.getFileName());
+		
+		if(StringUtils.isNotEmpty(this.getVersionId())){
+			key = StringUtils.join(key,"#",this.getVersionId());
+		}
+		return key;
 	}
 }

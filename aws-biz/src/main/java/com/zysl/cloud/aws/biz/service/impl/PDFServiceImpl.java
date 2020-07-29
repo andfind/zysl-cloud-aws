@@ -13,10 +13,9 @@ import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.IPDFService;
 import com.zysl.cloud.aws.config.BizConfig;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.OutputStream;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +65,7 @@ public class PDFServiceImpl implements IPDFService {
     
             return outBuff;
         }catch (Exception e){
-            log.error("pdf加图片水印异常:{}",e);
+            LogHelper.error(getClass(),"addPdfImgMark","pdf加图片水印异常","异常",e);
             throw new AppLogicException("paf add ImgMark error.");
         }
     }
@@ -108,7 +107,7 @@ public class PDFServiceImpl implements IPDFService {
     
             return outBuff;
         }catch (Exception e){
-            log.error("pdf加文字水印异常:{}",e);
+            LogHelper.error(getClass(),"addPdfTextMark","pdf加文字水印异常","异常",e);
             throw new AppLogicException(ErrCodeEnum.PDF_ADD_TEXT_MARK_ERROR.getCode());
         }
     }
@@ -132,7 +131,7 @@ public class PDFServiceImpl implements IPDFService {
 
             return outBuff;
         }catch (Exception e){
-            log.error("===addPwd===error:{}",e);
+            LogHelper.error(getClass(),"addPwd","pdf加文字密码异常","异常",e);
             throw new AppLogicException(ErrCodeEnum.PDF_ADD_PWD_ERROR.getCode());
         }finally {
         }

@@ -6,6 +6,7 @@ import com.aspose.slides.SaveFormat;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.IPPTService;
 import com.zysl.cloud.aws.config.BizConfig;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -49,7 +50,7 @@ public class AposePPTServiceImpl implements IPPTService {
         
             return outBuff;
         }catch (Exception e){
-            log.error("===changePPTToPDF=== error ：{}", e);
+            LogHelper.error(getClass(),"changePPTToPDF","changePPTToPDF","length:"+inBuff.length,e);
             throw new AppLogicException(ErrCodeEnum.PPT_FILE_TO_PDF_ERROR.getCode());
         }finally {
             try {
@@ -77,7 +78,7 @@ public class AposePPTServiceImpl implements IPPTService {
             result = true;
             is.close();
         } catch (Exception e) {
-            log.error("--apose校验异常：{}--", e);
+            LogHelper.error(getClass(),"apose","getLicense","校验异常",e);
             throw new AppLogicException(ErrCodeEnum.APOSE_SIGN_CHECK_ERROR.getCode());
         }
         return result;

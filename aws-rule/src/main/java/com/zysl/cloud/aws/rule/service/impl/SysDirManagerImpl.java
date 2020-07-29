@@ -20,6 +20,7 @@ import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
@@ -54,7 +55,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 	
 	@Override
 	public List<SysFileDTO> list(SysDirListRequest request, MyPage myPage){
-		log.info("list-param:{}",request);
+		LogHelper.info(getClass(),"listDir.param",request.getPath(),request);
 		List<SysFileDTO> list = new ArrayList<>();
 		
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
@@ -97,7 +98,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 	
 	@Override
 	public void copy(SysDirRequest source,SysDirRequest target,Boolean isOverWrite){
-		log.info("copy-source:{},target:{}",source,target);
+		LogHelper.info(getClass(),"copyDir.param",source.getPath(),source + "->" + target);
 		List<SysFileDTO> list = null;
 		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
 			SysDirListRequest request = BeanCopyUtil.copy(source,SysDirListRequest.class);
@@ -137,7 +138,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 	
 	@Override
 	public void delete(SysDirRequest request){
-		log.info("delete-request:{}",request);
+		LogHelper.info(getClass(),"deleteDir.param",request.getPath(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = new S3ObjectBO();
 			ObjectFormatUtils.setBucketAndPath(s3ObjectBO,request.getPath());
@@ -147,7 +148,7 @@ public class SysDirManagerImpl implements ISysDirManager {
 	
 	@Override
 	public void move(SysDirRequest source,SysDirRequest target){
-		log.info("move-source:{},target:{}",source,target);
+		LogHelper.info(getClass(),"moveDir.param",source.getPath(),source + "->" + target);
 		//判断是否目标地址是否存在,存在则不覆盖
 		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 			S3ObjectBO s3ObjectBO = new S3ObjectBO();

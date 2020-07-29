@@ -12,7 +12,6 @@ import com.zysl.cloud.aws.api.req.SysFileMultiRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiStartRequest;
 import com.zysl.cloud.aws.api.req.SysFileMultiUploadRequest;
 import com.zysl.cloud.aws.api.req.SysFileRequest;
-import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.enums.S3TagKeyEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FileService;
@@ -25,7 +24,7 @@ import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.rule.service.ISysFileManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
-import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.util.ArrayList;
@@ -47,13 +46,13 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public void copy(SysFileRequest source, SysFileRequest target, Boolean isOverWrite) {
-		log.info("copy-source:{},target:{}",source,target);
+		LogHelper.info(getClass(),"copyFile.param",source.getEsLogMsg(),source + "->" + target);
 		//不覆盖
 		if(isOverWrite == null || !isOverWrite){
 			if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 				Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
 				if(obj != null){
-					log.info("-copy.target.is.exist:{}",target);
+					LogHelper.info(getClass(),"copyFile.rst",source.getEsLogMsg(),"copy.target.is.exist");
 					return;
 				}
 			}
@@ -64,11 +63,11 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public void move(SysFileRequest source, SysFileRequest target) {
-		log.info("move-source:{},target:{}",source,target);
+		LogHelper.info(getClass(),"moveFile.param",source.getEsLogMsg(),source + "->" + target);
 		if(FileSysTypeEnum.S3.getCode().equals(target.getType())){
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(target));
 			if(obj != null  ){
-				log.info("-move.target.is.exist:{}",target);
+				LogHelper.warn(getClass(),"moveFile.rst",source.getEsLogMsg(),"move.target.is.exist");
 				throw new AppLogicException(ErrCodeEnum.MOVE_TARGET_EXIST.getCode());
 			}
 
@@ -76,12 +75,12 @@ public class SysFileManagerImpl implements ISysFileManager {
 		if(FileSysTypeEnum.S3.getCode().equals(source.getType())){
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(source));
 			if(obj == null){
-				log.info("-move.source.is.not.exist:{}",source);
+				LogHelper.warn(getClass(),"moveFile.rst",source.getEsLogMsg(),"move.source.is.not.exist");
 				throw new AppLogicException(ErrCodeEnum.MOVE_SOURCE_NOT_EXIST.getCode());
 			}
 			S3ObjectBO rst = (S3ObjectBO)obj;
 			if(rst.getContentLength() > webConfig.getCopyMaxFileSize() * 1024 * 1024L){
-				log.warn("move-source.size.must.lower.then:{}M",webConfig.getCopyMaxFileSize());
+				LogHelper.warn(getClass(),"moveFile.rst",source.getEsLogMsg(),"source.size.must.lower.then " + webConfig.getCopyMaxFileSize());
 				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_SIZE_TOO_LONG.getCode());
 			}
 		}
@@ -95,6 +94,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public void delete(SysFileRequest request) {
+		LogHelper.warn(getClass(),"deleteFile.param",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			s3ObjectBO.setDeleteStore(DeleteStoreEnum.NOCOVER.getCode());
@@ -104,6 +104,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public SysFileDTO info(SysFileRequest request){
+		LogHelper.info(getClass(),"infoFile.param",request.getEsLogMsg(),request);
 		SysFileDTO dto  = null;
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
@@ -125,6 +126,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 				if(StringUtils.isNotEmpty(verNo)){
 					dto.setVersionNo(Integer.parseInt(verNo));
 				}
+				LogHelper.info(getClass(),"infoFile.rst",request.getEsLogMsg(),dto);
 				return dto;
 			}
 			
@@ -135,11 +137,12 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public void upload(SysFileRequest request,byte[] bodys,Boolean isOverWrite){
-		log.info("upload-source:{}",request);
+		LogHelper.info(getClass(),"uploadFile.rst",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			Object obj = s3FileService.getBaseInfo(ObjectFormatUtils.createS3ObjectBO(request));
 			if(obj != null && isOverWrite != null && !isOverWrite){
-				log.info("-upload.source.is.exist:{}",request);
+				LogHelper.info(getClass(),"uploadFile.rst",request.getEsLogMsg(),"upload.source.is.exist");
+				return;
 			}
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			s3ObjectBO.setBodys(bodys);
@@ -155,6 +158,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	}
 	
 	private String createVersionNo(S3ObjectBO s3ObjectBO){
+		LogHelper.info(getClass(),"createVersionNo.param",s3ObjectBO.bucketKey(),s3ObjectBO);
 		int verNoInt = 1;
 		Object obj = s3FileService.getDetailInfo(s3ObjectBO);
 		if (obj != null ) {
@@ -166,7 +170,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 						verNoInt =  Integer.parseInt(verNo) + 1;
 					}
 				}catch (NumberFormatException e){
-					log.warn("ES_LOG {} {}",s3ObjectBO, "createVersionNo:"+ExceptionUtil.getMessage(e));
+					LogHelper.warn(getClass(),"createVersionNo",s3ObjectBO.bucketKey(),"NumberFormatException");
 				}
 			}
 		}
@@ -176,7 +180,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public byte[] getFileBodys(SysFileRequest request,String range){
-		log.info("getFileBodys-source:{}",request);
+		LogHelper.info(getClass(),"getFileBodys.param",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(request);
 			s3ObjectBO.setRange(range);
@@ -190,7 +194,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public List<SysFileDTO> listVersions(SysFileListRequest request){
-		log.info("listVersions-source:{}",request);
+		LogHelper.info(getClass(),"listVersions.param",request.getEsLogMsg(),request);
 		List<SysFileDTO> rstList = new ArrayList<>();
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
@@ -207,6 +211,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 				rstList.add(dto);
 			}
 			
+			LogHelper.info(getClass(),"listVersions.rst",request.getEsLogMsg(),rstList);
 			return rstList;
 		}
 		
@@ -215,7 +220,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public String multiUploadStart(SysFileMultiStartRequest request){
-		log.info("multiUploadStart-source:{}",request);
+		LogHelper.info(getClass(),"multiUploadStart.param",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
@@ -223,7 +228,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 			//已存在分片上传对象
 			FilePartInfoDTO dto = multiUploadInfo(request);
 			if(dto != null){
-				log.warn("multiUploadStart.exist:{}",request);
+				LogHelper.info(getClass(),"multiUploadStart.param",request.getEsLogMsg(),"multiUploadStart.exist");
 				throw new AppLogicException(ErrCodeEnum.MULTI_UPLOAD_START_FILE_EXIST.getCode());
 			}
 			
@@ -236,7 +241,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public void multiUploadAbort(SysFileMultiRequest request){
-		log.info("multiUploadAbort-source:{}",request);
+		LogHelper.info(getClass(),"multiUploadAbort.param",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
@@ -248,7 +253,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public String multiUploadBodys(SysFileMultiUploadRequest request,byte[] bodys){
-		log.info("multiUploadUpload-source:{}",request);
+		LogHelper.info(getClass(),"multiUploadUpload.param",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
@@ -264,7 +269,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public void multiUploadComplete(SysFileMultiCompleteRequest request){
-		log.info("multiUploadComplete-source:{}",request);
+		LogHelper.info(getClass(),"multiUploadComplete.param",request.getEsLogMsg(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			S3ObjectBO s3ObjectBO = ObjectFormatUtils.createS3ObjectBO(fileRequest);
@@ -277,7 +282,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 	
 	@Override
 	public FilePartInfoDTO multiUploadInfo(SysFileMultiStartRequest request){
-		log.info("multiUploadInfoList-source:{}",request);
+		LogHelper.info(getClass(),"multiUploadInfoList.param",request.getEsLogMsg(),request);
 		FilePartInfoDTO dto = null;
 		if(FileSysTypeEnum.S3.getCode().equals(request.getType())){
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
@@ -286,6 +291,7 @@ public class SysFileManagerImpl implements ISysFileManager {
 			String uploadId = s3FileService.getMultiUploadId(s3ObjectBO);
 			
 			if(StringUtils.isBlank(uploadId)){
+				LogHelper.info(getClass(),"multiUploadInfoList.rst",request.getEsLogMsg(),"uploadId is null");
 				return null;
 			}
 			dto = new FilePartInfoDTO();

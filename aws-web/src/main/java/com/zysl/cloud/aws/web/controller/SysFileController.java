@@ -1,6 +1,5 @@
 package com.zysl.cloud.aws.web.controller;
 
-import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.api.dto.FilePartInfoDTO;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.req.SysDirListRequest;
@@ -37,6 +36,7 @@ import com.zysl.cloud.aws.web.validator.SysFileRenameRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileUploadRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
@@ -46,13 +46,11 @@ import com.zysl.cloud.utils.service.provider.ServiceProvider;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @RestController
 public class SysFileController extends BaseController implements SysFileSrv {
 	
@@ -66,6 +64,8 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	private IS3FileService s3FileService;
 	@Autowired
 	private ReqDefaultUtils reqDefaultUtils;
+	@Autowired
+	private HttpUtils httpUtils;
 	
 	@Override
 	public BaseResponse<String> mkdir(SysDirRequest request) {
@@ -181,7 +181,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			reqDefaultUtils.setFileSystemDefault(request);
 			SysFileRequest fileRequest = BeanCopyUtil.copy(request,SysFileRequest.class);
 			
-			byte[] bytes = HttpUtils.getBytesFromHttpRequest(httpServletRequest,request);
+			byte[] bytes = httpUtils.getBytesFromHttpRequest(httpServletRequest,request);
 			
 			boolean isOverWrite = request.getIsOverWrite() == null || request.getIsOverWrite() == 1 ? Boolean.TRUE : Boolean.FALSE;
 			
@@ -199,13 +199,12 @@ public class SysFileController extends BaseController implements SysFileSrv {
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		reqDefaultUtils.setFileSystemDefault(downRequest);
-
+		String bucketKey = StringUtils.join(downRequest.getPath(),downRequest.getFileName());
 		try{
 			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
 				return baseResponse;
 			}
-			log.info("download {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
-
+			LogHelper.info(getClass(),"download",bucketKey,"start");
 			//临时权限校验
 			if(!checkOwner(downRequest)){
 				baseResponse.setCode(ErrCodeEnum.OBJECT_OP_AUTH_CHECK_FAILED.getCode());
@@ -223,15 +222,15 @@ public class SysFileController extends BaseController implements SysFileSrv {
 
 			//从头信息取Range:bytes=0-1000
 			String range = request.getHeader("Range");
-			log.info("download {} Range={}",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),range);
+			LogHelper.info(getClass(),"download.range",bucketKey,range);
 			//对Range数值做校验
-			Long[] byteLength = HttpUtils.checkRange(range);
+			Long[] byteLength = httpUtils.checkRange(range);
 
 			if(StringUtils.isBlank(range)){
-				log.info("{}--range is null",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+				LogHelper.info(getClass(),"download.range",bucketKey,"range is null");
 				byteLength[1] = webConfig.getDownloadMaxFileSize() * 1024 * 1024L;
 				if(fileDTO.getSize() > byteLength[1]){
-					log.info("fileSize:{},range:{},file:{}",fileDTO.getSize(),range,StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+					LogHelper.info(getClass(),"download.fileSize",bucketKey,fileDTO.getSize());
 					baseResponse.setCode(RespCodeEnum.ILLEGAL_PARAMETER.getCode());
 					baseResponse.setMsg("文件大小超过" + webConfig.getDownloadMaxFileSize() + "m只能分片下载.");
 					return baseResponse;
@@ -252,13 +251,11 @@ public class SysFileController extends BaseController implements SysFileSrv {
 
 
 			//下载数据
-			HttpUtils.downloadFileByte(request,response,fileDTO.getFileName(),bodys);
-			log.info("baseResponse:{}", JSON.toJSONString(baseResponse));
-			log.info("download {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			httpUtils.downloadFileByte(request,response,fileDTO.getFileName(),bodys);
+			LogHelper.info(getClass(),"download.rst",bucketKey,"success");
 			return null;
 		}catch (AppLogicException e){
-			log.error("download.AppLogicException:",e);
-			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
+			LogHelper.error(getClass(),"download.rst",bucketKey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
@@ -268,8 +265,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 			}
 			return baseResponse;
 		}catch (Exception e){
-			log.error("download.Exception:",e);
-			log.error("download {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
+			LogHelper.error(getClass(),"download.rst",bucketKey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			response.setStatus(RespCodeEnum.FAILED.getCode());
 			return baseResponse;
@@ -287,7 +283,7 @@ public class SysFileController extends BaseController implements SysFileSrv {
 	@Override
 	public BaseResponse<String> multiUploadData(HttpServletRequest httpServletRequest, SysFileMultiUploadRequest request) {
 		return ServiceProvider.call(request, SysFileMultiRequestV.class, String.class , req -> {
-			byte[] bytes = HttpUtils.getBytesFromHttpRequest(httpServletRequest);
+			byte[] bytes = httpUtils.getBytesFromHttpRequest(httpServletRequest);
 			
 			if(request.getPartNumber() == null){
 				request.setPartNumber(1);

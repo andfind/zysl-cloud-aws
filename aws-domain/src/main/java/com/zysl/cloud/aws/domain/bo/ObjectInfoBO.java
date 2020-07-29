@@ -33,7 +33,7 @@ public class ObjectInfoBO implements Serializable {
             sb.append("bucket='").append(bucket).append('\'');
         }
         if (key != null) {
-            sb.append(", key='").append(key).append('\'');
+            sb.append(", bucketKey='").append(key).append('\'');
         }
         if (uploadTime != null) {
             sb.append(", uploadTime=").append(uploadTime);

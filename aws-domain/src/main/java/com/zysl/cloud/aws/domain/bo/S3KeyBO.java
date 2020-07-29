@@ -1,8 +1,6 @@
 package com.zysl.cloud.aws.domain.bo;
 
-import com.zysl.cloud.utils.StringUtils;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import lombok.Getter;
@@ -88,7 +86,7 @@ public class S3KeyBO implements Serializable {
 			sb.append("bucket='").append(bucket).append('\'');
 		}
 		if (key != null) {
-			sb.append(", key='").append(key).append('\'');
+			sb.append(", bucketKey='").append(key).append('\'');
 		}
 		if (contentEncoding != null) {
 			sb.append(", contentEncoding='").append(contentEncoding).append('\'');

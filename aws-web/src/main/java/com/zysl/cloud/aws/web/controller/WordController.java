@@ -10,18 +10,17 @@ import com.zysl.cloud.aws.biz.service.IWordService;
 import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.utils.BizUtil;
 import com.zysl.cloud.aws.web.validator.WordToPDFRequestV;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.service.provider.ServiceProvider;
 import javax.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-@Slf4j
 @CrossOrigin
 @RestController
 public class WordController extends BaseController implements WordSrv {
@@ -37,6 +36,7 @@ public class WordController extends BaseController implements WordSrv {
 	@Override
 	public BaseResponse<WordToPDFDTO> changeWordToPdf(@RequestBody WordToPDFRequest request){
 		return ServiceProvider.call(request, WordToPDFRequestV.class,WordToPDFDTO.class,req->{
+			String bucketKey = StringUtils.join(request.getBucketName(),":",request.getFileName());
 			//step 1.读取源文件--
 			//调用s3接口下载文件内容
 			S3ObjectBO queryBO = new S3ObjectBO();
@@ -46,14 +46,14 @@ public class WordController extends BaseController implements WordSrv {
 			S3ObjectBO s3ObjectBO = (S3ObjectBO)fileService.getInfoAndBody(queryBO);
 
 			if(s3ObjectBO == null || s3ObjectBO.getBodys() == null || s3ObjectBO.getBodys().length == 0){
-				log.info("===未查询到数据文件:{}===",request.getFileName());
+				LogHelper.info(getClass(),"changeWordToPdf",bucketKey,"source is not exist");
 				throw new AppLogicException(ErrCodeEnum.WORD_FILE_NOT_EXIST.getCode());
 			}
 
 			//step 2.word转pdf、加水印 300,300
 			String fileName = BizUtil.getTmpFileNameWithoutSuffix(request.getFileName());
 			byte[] outBuff = wordService.changeWordToPDF(s3ObjectBO.getBodys(),false, request.getTextMark());
-			log.info("===changeToPDF===outBuff,fileName:{},outBuff.length:{}", request.getFileName(),outBuff == null ? 0 : outBuff.length);
+			LogHelper.info(getClass(),"changeWordToPdf.pdf.length",bucketKey,outBuff == null ? 0 : outBuff.length);
 			if(outBuff == null || outBuff.length == 0){
 				throw new AppLogicException(ErrCodeEnum.WORD_FILE_TO_PDF_SIZE_ZERO.getCode());
 			}
@@ -61,7 +61,7 @@ public class WordController extends BaseController implements WordSrv {
 			//step 3.实现加密
 			if(!StringUtils.isBlank(request.getUserPwd()) && !StringUtils.isBlank(request.getOwnerPwd())){
 				byte[] addPwdOutBuff = pdfService.addPwd(outBuff,request.getUserPwd(),request.getOwnerPwd());
-				log.info("===addPwd===file add pwd success.fileName:{},addPwdOutBuff.length:{}",request.getFileName(),addPwdOutBuff == null ? 0 : addPwdOutBuff.length);
+				LogHelper.info(getClass(),"changeWordToPdf.pdf.pwd.length",bucketKey,addPwdOutBuff == null ? 0 : addPwdOutBuff.length);
 				if(addPwdOutBuff == null || addPwdOutBuff.length == 0){
 					throw new AppLogicException(ErrCodeEnum.WORD_FILE_TO_PDF_ENCRYPTION_SIZE_ZERO.getCode());
 				}
@@ -82,7 +82,8 @@ public class WordController extends BaseController implements WordSrv {
 			dto.setBucketName(request.getBucketName());
 			dto.setFileName(fileName + ".pdf");
 			dto.setVersionId(addFileRst.getVersionId());
-
+			
+			LogHelper.info(getClass(),"changeWordToPdf.rst",bucketKey,dto);
 			return dto;
 		});
 	}

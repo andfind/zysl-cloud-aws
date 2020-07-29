@@ -28,7 +28,7 @@ public class DataAuthUtils {
 	private final String CLASS_SEPARATOR = ":";
 	//数据组间隔符
 	private final String ITEM_SEPARATOR = "_";
-	//key-value间隔符
+	//bucketKey-value间隔符
 	private final String KV_SEPARATOR = "=";
 
 	@Autowired
@@ -276,7 +276,7 @@ public class DataAuthUtils {
 
 		List<String> list = test.getRealAuths(tokenAuth,objectAuth);
 
-		list.forEach((key)->System.out.println("key=" + key ));
+		list.forEach((key)->System.out.println("bucketKey=" + key ));
 
 	}
 }

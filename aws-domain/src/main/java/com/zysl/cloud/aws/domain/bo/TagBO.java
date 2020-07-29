@@ -24,7 +24,7 @@ public class TagBO implements Serializable {
     @Override
     public String toString() {
         return "TagBO{" +
-                "key='" + key + '\'' +
+                "bucketKey='" + key + '\'' +
                 ", value='" + value + '\'' +
                 '}';
     }

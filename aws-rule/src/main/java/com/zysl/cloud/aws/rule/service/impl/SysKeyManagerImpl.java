@@ -27,7 +27,7 @@ import com.zysl.cloud.aws.rule.service.ISysKeyManager;
 import com.zysl.cloud.aws.rule.utils.ObjectFormatUtils;
 import com.zysl.cloud.aws.utils.DateUtils;
 import com.zysl.cloud.utils.BeanCopyUtil;
-import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
@@ -60,7 +60,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public void create(SysKeyCreateRequest request){
-		log.info(logConfig.getLogTemplate(),"create-param",request.getPath(),request);
+		LogHelper.info(getClass(),"createKey.param",request.getPath(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getScheme())){
 			SysKeyUploadRequest sysKeyUploadRequest = BeanCopyUtil.copy(request,SysKeyUploadRequest.class);
 			sysKeyUploadRequest.setIsCover(Boolean.TRUE);
@@ -72,7 +72,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 					bodys = decoder.decodeBuffer(request.getData());
 				}
 			} catch (IOException e) {
-				log.error(logConfig.getLogTemplate(),"createKey",request.getPath(),"base64.to.bytes.ioException");
+				LogHelper.error(getClass(),"createKey",request.getPath(),"base64.to.bytes.ioException");
 			}
 			
 			//没有上传base64 或者 上传后转化成功
@@ -84,7 +84,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public void upload(SysKeyUploadRequest request,byte[] bodys){
-		log.info(logConfig.getLogTemplate(),"upload-param",request.getPath(),request);
+		LogHelper.info(getClass(),"uploadKey.param",request.getPath(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getScheme())){
 			S3KeyBO keyBO = BeanCopyUtil.copy(request,S3KeyBO.class);
 			keyBO.setBucket(request.getHost());
@@ -94,6 +94,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			if(request.getIsCover() == null || !request.getIsCover()){
 				//判断是否存在，存在则返回
 				if(s3KeyService.getBaseInfo(s3,keyBO) != null){
+					LogHelper.info(getClass(),"uploadKey",request.getPath(),"source is exist");
 					throw new AppLogicException(ErrCodeEnum.S3_BUCKET_OBJECT_EXIST.getCode());
 				}
 			}
@@ -111,7 +112,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public SysKeyDTO info(SysKeyRequest request){
-		log.info(logConfig.getLogTemplate(),"info-param",request.getPath(),request);
+		LogHelper.info(getClass(),"infoKey.param",request.getPath(),request);
 		SysKeyDTO dto = null;
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 		  	S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
@@ -126,12 +127,13 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			dto = ObjectFormatUtils.s3KeyBO2SysKeyDTO(s3KeyBO,s3KeyService.getTagList(s3,keyBO));
 		}
 		
+		LogHelper.info(getClass(),"infoKey.rst",request.getPath(),dto);
 		return dto;
 	}
 	
 	@Override
 	public List<SysKeyFileDTO> infoList(SysKeyRequest request, MyPage myPage){
-		log.info(logConfig.getLogTemplate(),"infoList-param",request.getPath(),request);
+		LogHelper.info(getClass(),"infoKeyList.param",request.getPath(),request);
 		List<SysKeyFileDTO> list = new ArrayList<>();
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
@@ -153,7 +155,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public 	List<SysKeyDTO> versionList(SysKeyRequest request, MyPage myPage){
-		log.info(logConfig.getLogTemplate(),"versionList-param",request.getPath(),request);
+		LogHelper.info(getClass(),"versionList.param",request.getPath(),request);
 		List<SysKeyDTO> list = new ArrayList<>();
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
@@ -174,7 +176,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public void delete(SysKeyDeleteRequest request){
-		log.info(logConfig.getLogTemplate(),"delete-param",request.getPath(),request);
+		LogHelper.info(getClass(),"deleteKey.param",request.getPath(),request);
 		if(FileSysTypeEnum.S3.getCode().equals(request.getScheme())){
 			S3KeyBO keyBO = BeanCopyUtil.copy(request,S3KeyBO.class);
 			keyBO.setBucket(request.getHost());
@@ -214,7 +216,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 		if(CollectionUtils.isEmpty(request.getPathList())){
 			return;
 		}
-		log.info(logConfig.getLogTemplate(),"deleteList-param.size",request.getPathList().size(),request);
+		LogHelper.info(getClass(),"deleteList.param.size",request.getPathList().size() + "",request);
 		
 		List<S3KeyBO> keys = new ArrayList<>();
 		String bucket = null;
@@ -237,7 +239,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public byte[] getBody(SysKeyRequest request,String range){
-		log.info(logConfig.getLogTemplate(),"getBody-param",request.getPath(),request);
+		LogHelper.info(getClass(),"getBody.param",request.getPath(),request);
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 		    S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
 		    keyBO.setBucket(request.getHost());
@@ -247,7 +249,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			if(s3KeyService.getInfoAndBody(s3,keyBO) != null){
 				Date date1 = keyBO.getLastModified();
 				Date date2 = DateUtils.createDate(bizConfig.DOWNLOAD_TIME);
-				log.info(logConfig.getLogTemplate(),"getBody",request.getPath(),String.format("lastModified:%s",date1));
+				LogHelper.info(getClass(),"getBody",request.getPath(),String.format("lastModified:%s",date1));
 				
 				//有一批数据写入时是直接base64的所以要解码
 				if(DateUtils.doCompareDate(date1, date2) < 0 && keyBO.getBodys() != null){
@@ -256,7 +258,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 						BASE64Decoder decoder = new BASE64Decoder();
 						return decoder.decodeBuffer(new String(keyBO.getBodys()));
 					} catch (IOException e) {
-						log.error(logConfig.getLogTemplate(),"getBody",request.getPath(),"base64.to.bytes.ioException");
+						LogHelper.error(getClass(),"getBody",request.getPath(),"base64.to.bytes.ioException");
 					}
 				}else {
 					return keyBO.getBodys();
@@ -268,13 +270,15 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public List<TagBO> tagList(SysKeyRequest request){
-		log.info(logConfig.getLogTemplate(),"tagList-param",request.getPath(),request);
+		LogHelper.info(getClass(),"tagList.param",request.getPath(),request);
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
 			keyBO.setBucket(request.getHost());
 			
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
-			return s3KeyService.getTagList(s3,keyBO);
+			List<TagBO>  tagBOList = s3KeyService.getTagList(s3,keyBO);
+			LogHelper.info(getClass(),"tagList.rst",request.getPath(),tagBOList);
+			return tagBOList;
 		}
 		
 		return null;
@@ -284,12 +288,13 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public void copy(SysKeyRequest source,SysKeyRequest target,Boolean isCover){
-		log.info(logConfig.getLogTemplate(),"copy",source.getPath(),target.getPath());
+		LogHelper.info(getClass(),"copyKey.param",source.getPath(),target.getPath());
 		MyPage myPage = new MyPage(1,1);
 		//step 1.判断数据源是否存在
 		if(FileSysTypeEnum.S3.getCode().equals(source.getScheme())){
 			List<SysKeyFileDTO> dtoList = this.infoList(BeanCopyUtil.copy(source,SysKeyRequest.class),myPage);
 			if(CollectionUtils.isEmpty(dtoList)){
+				LogHelper.info(getClass(),"copyKey.rst",source.getPath(),"source is not exist");
 				throw new AppLogicException(ErrCodeEnum.COPY_SOURCE_NOT_EXIST.getCode());
 			}
 		}
@@ -298,6 +303,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			if(isCover == null || !isCover){
 				List<SysKeyFileDTO> dtoList = this.infoList(BeanCopyUtil.copy(target,SysKeyRequest.class),myPage);
 				if(!CollectionUtils.isEmpty(dtoList)){
+					LogHelper.info(getClass(),"copyKey.rst",source.getPath(),"target is exist");
 					throw new AppLogicException(ErrCodeEnum.COPY_TARGET_EXIST.getCode());
 				}
 			}
@@ -316,7 +322,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public void multiAbort(SysKeyRequest request){
-		log.info(logConfig.getLogTemplate(),"multiAbort-param",request.getPath(),request);
+		LogHelper.info(getClass(),"multiAbort.param",request.getPath(),request);
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
 			keyBO.setBucket(request.getHost());
@@ -336,7 +342,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public List<PartInfoDTO> multiList(SysKeyRequest request){
-		log.info(logConfig.getLogTemplate(),"multiList-param",request.getPath(),request);
+		LogHelper.info(getClass(),"multiList.param",request.getPath(),request);
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
 			keyBO.setBucket(request.getHost());
@@ -361,31 +367,22 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	
 	@Override
 	public Boolean multiUpload(SysKeyMultiUploadRequest request,byte[] bodys,Long contentLength){
-		log.info(logConfig.getLogTemplate(),"multiUpload-param",request.getPath(),request);
+		LogHelper.info(getClass(),"multiUpload.param",request.getPath(),request);
 		if (FileSysTypeEnum.S3.getCode().equals(request.getScheme())) {
 			S3Client s3 = s3FactoryService.getS3ClientByBucket(request.getHost());
 			
 			S3KeyBO keyBO = BeanCopyUtil.copy(request, S3KeyBO.class);
 			keyBO.setBucket(request.getHost());
 			
+			
 			//step 1.检查是否存在分片对象->不存在则创建
 			String uploadId = s3KeyService.getMultiUploadId(s3,keyBO);
 			if(StringUtils.isEmpty(uploadId)){
-				//标签
-				List<TagBO> tagList = new ArrayList<>();
-				tagList.add(new TagBO(S3TagKeyEnum.VERSION_NUMBER.getCode(),createVersionNo(keyBO)));
-				if(StringUtils.isNotEmpty(request.getFileName())){
-					tagList.add(new TagBO(S3TagKeyEnum.FILE_NAME.getCode(),request.getFileName()));
-				}
-				
-				keyBO.setTagList(tagList);
 				uploadId = s3KeyService.createMultipartUpload(s3,keyBO);
-			}else if(request.getIsCover() != null && !request.getIsCover()){
-				log.info(logConfig.getLogTemplate(),"multiUpload",request.getPath(),"not.cover.but.exist");
-				throw new AppLogicException(ErrCodeEnum.S3_BUCKET_OBJECT_EXIST.getCode());
 			}
 			keyBO.setUploadId(uploadId);
 			
+			LogHelper.info(getClass(),"multiUpload.uploadId",request.getPath(),uploadId);
 			//step 2.上传分片数据，将提交的文件流按片切割
 			int partNumber = 1;
 			int partMax = webConfig.uploadMultiPartSize * 1024 * 1024;
@@ -409,6 +406,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 			
 			//step 3.全部上传完成后，提交合成
 			if(contentLength == null || contentLength <= 0){
+				LogHelper.info(getClass(),"multiUpload.rst",request.getPath(),"contentLength is null or zero");
 				return Boolean.FALSE;
 			}
 			List<FilePartInfoBO>  list = s3KeyService.listParts(s3,keyBO);
@@ -419,6 +417,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 					FilePartInfoBO bo = list.get(i);
 					//非最后一片的大小 小于规定分片大小
 					if(bo.getSize().longValue() < partMax && i != list.size() - 1){
+						LogHelper.info(getClass(),"multiUpload.rst",request.getPath(),"one is small");
 						return Boolean.FALSE;
 					}
 					count += bo.getSize().longValue();
@@ -428,15 +427,26 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 				
 				if(count >= contentLength){
 					keyBO.setETagList(eTagList);
-					log.info(logConfig.getLogTemplate(),"multiUpload",request.getPath(),"completeMultipartUpload");
+					
+					LogHelper.info(getClass(),"multiUpload.step",request.getPath(),"completeMultipartUpload");
 					s3KeyService.completeMultipartUpload(s3,keyBO);
+					
+					//标签
+					List<TagBO> tagList = new ArrayList<>();
+					tagList.add(new TagBO(S3TagKeyEnum.VERSION_NUMBER.getCode(),createVersionNo(keyBO)));
+					if(StringUtils.isNotEmpty(request.getFileName())){
+						tagList.add(new TagBO(S3TagKeyEnum.FILE_NAME.getCode(),request.getFileName()));
+					}
+					keyBO.setTagList(tagList);
+					
+					LogHelper.info(getClass(),"multiUpload.complete",request.getPath(),"success");
 					return Boolean.TRUE;
 				}
 			}
 			
 			
 		}
-		
+		LogHelper.info(getClass(),"multiUpload.rst",request.getPath(),"end");
 		
 		return Boolean.FALSE;
 	}
@@ -454,7 +464,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	 * @return void
 	 **/
 	private void copyDir(S3Client sourceClient,S3Client targetClient,S3KeyBO srcBo,String srcKey, S3KeyBO targetBo){
-		log.info(logConfig.getLogTemplate(),"copyDir-param",srcBo.getKey(),targetBo.getKey());
+		LogHelper.info(getClass(),"copyDir.param",srcBo.getKey(),targetBo.getKey());
 		MyPage myPage = new MyPage(1,BizConstants.MAX_PAGE_SIE);
 		boolean hasNext = Boolean.TRUE;
 		
@@ -495,7 +505,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	 * @return void
 	 **/
 	private void copyFile(S3Client sourceClient,S3Client targetClient,S3KeyBO srcBo,String srcKey, S3KeyBO targetBo){
-		log.info(logConfig.getLogTemplate(),"copyFile-param",srcBo.getKey(),targetBo.getKey());
+		LogHelper.info(getClass(),"copyFile.param",srcBo.getKey(),targetBo.getKey());
 		//默认文件->目录
 		String targetKey = targetBo.getKey();
 		//目标为目录
@@ -512,10 +522,10 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 		
 		//同一个s3服务器
 		if(s3FactoryService.judgeBucket(srcBo.getBucket(),target.getBucket())){
-			log.info(logConfig.getLogTemplate(),"copyFile-param",srcBo.getKey(),"same.bucket");
+			LogHelper.info(getClass(),"copyFile.param",srcBo.getKey(),"same.bucket");
 			s3KeyService.copy(sourceClient,srcBo,target);
 		}else{
-			log.info(logConfig.getLogTemplate(),"copyFile-param",srcBo.getKey(),"not.same.bucket");
+			LogHelper.info(getClass(),"copyFile.param",srcBo.getKey(),"not.same.bucket");
 			SysKeyUploadRequest sysKeyRequest = BeanCopyUtil.copy(target,SysKeyUploadRequest.class);
 			byte[] bodys = this.getBody(sysKeyRequest,null);
 			
@@ -539,6 +549,9 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 	private String createVersionNo(S3KeyBO keyBO){
 		int verNoInt = 1;
 		S3Client s3 = s3FactoryService.getS3ClientByBucket(keyBO.getBucket());
+		if(s3KeyService.getBaseInfo(s3,keyBO) == null){
+			return String.valueOf(verNoInt);
+		}
 		//查询信息
 		List<TagBO> tagBOList = s3KeyService.getTagList(s3,keyBO);
 		String verNo = S3Utils.getTagValue(tagBOList, S3TagKeyEnum.VERSION_NUMBER.getCode());
@@ -548,7 +561,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 				verNoInt =  Integer.parseInt(verNo) + 1;
 			}
 		}catch (NumberFormatException e){
-			log.info(logConfig.getLogTemplate(),"createVersionNo",keyBO.getKey(),"NumberFormatException");
+			LogHelper.info(getClass(),"createVersionNo",keyBO.getKey(),"NumberFormatException");
 		}
 		
 		return String.valueOf(verNoInt);

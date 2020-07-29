@@ -1,6 +1,5 @@
 package com.zysl.cloud.aws.web.controller;
 
-import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
 import com.zysl.cloud.aws.api.dto.SysFileDTO;
 import com.zysl.cloud.aws.api.req.BizFileOfficeToPdfRequest;
@@ -29,6 +28,7 @@ import com.zysl.cloud.aws.web.utils.ReqDefaultUtils;
 import com.zysl.cloud.aws.web.validator.SysFileExistRequestV;
 import com.zysl.cloud.aws.web.validator.SysFileRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BaseResponse;
@@ -67,6 +67,8 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	private IPDFService pdfService;
 	@Autowired
 	private IPPTService pptService;
+	@Autowired
+	private HttpUtils httpUtils;
 	
 	
 	@Override
@@ -112,7 +114,6 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	public	BaseResponse<SysFileDTO> shareFile(@RequestBody BizFileShareRequest request){
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
-			//TODO--调用复制接口，分享后key可以指定名称，不指定则返回UUID作为名称
 			//复制源文件信息
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(request);
 			
@@ -166,15 +167,16 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	@Override
 	@ResponseBody
 	public BaseResponse<String> shareFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downRequest){
-		log.error("shareFileDownload.param:{}:", JSON.toJSONString(downRequest));
+		String pathkey = StringUtils.join(downRequest.getPath(),"/",downRequest.getFileName());
+		LogHelper.info(getClass(),"shareFileDownload",pathkey,downRequest);
+		
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
 			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
 				return baseResponse;
 			}
-			
-			log.info("shareFileDownload {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			LogHelper.info(getClass(),"shareFileDownload",pathkey,"start");
 			
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(downRequest);
 			S3ObjectBO s3ObjectBO = (S3ObjectBO) s3FileService.getInfoAndBody(src);
@@ -184,17 +186,15 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			s3FileService.modify(s3ObjectBO);
 			
 			//执行下载
-			HttpUtils.downloadFileByte(request,response,downRequest.getFileName(),s3ObjectBO.getBodys());
-			log.info("shareFileDownload {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			httpUtils.downloadFileByte(request,response,downRequest.getFileName(),s3ObjectBO.getBodys());
+			LogHelper.info(getClass(),"shareFileDownload",pathkey,"success");
 			return null;
 		}catch (AppLogicException e){
-			log.error("shareFileDownload.AppLogicException:{}:", JSON.toJSONString(downRequest),e);
-			log.error("shareFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
+			LogHelper.error(getClass(),"shareFileDownload",pathkey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 		}catch (Exception e){
-			log.error("shareFileDownload.Exception:{}:", JSON.toJSONString(downRequest),e);
-			log.error("shareFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
+			LogHelper.error(getClass(),"shareFileDownload",pathkey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;
@@ -203,14 +203,16 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	@Override
 	@ResponseBody
 	public BaseResponse<String> videoFileDownload(HttpServletRequest request,HttpServletResponse response, SysFileDownloadRequest downRequest){
-		log.error("vedioFileDownload.param:{}:", JSON.toJSONString(downRequest));
+		String pathkey = StringUtils.join(downRequest.getPath(),"/",downRequest.getFileName());
+		LogHelper.info(getClass(),"videoFileDownload",pathkey,downRequest);
+		
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
 			if(!validator(baseResponse,downRequest, SysFileRequestV.class)){
 				return baseResponse;
 			}
-			log.info("videoFileDownload {} [ES_LOG_START]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			LogHelper.info(getClass(),"videoFileDownload",pathkey,"start");
 			
 			S3ObjectBO src = ObjectFormatUtils.createS3ObjectBO(downRequest);
 			S3ObjectBO s3ObjectBO = (S3ObjectBO) s3FileService.getInfoAndBody(src);
@@ -225,7 +227,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				out.write(s3ObjectBO.getBodys());
 				out.flush();
 			} catch (IOException e) {
-				log.error("--文件流转换异常：--", e);
+				LogHelper.error(getClass(),"videoFileDownload",pathkey,e.getMessage(),e);
 			}finally {
 				try {
 					out.close();
@@ -233,16 +235,14 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				}
 				out = null;
 			}
-			log.info("videoFileDownload {} [ES_LOG_SUCCESS]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()));
+			LogHelper.info(getClass(),"videoFileDownload",pathkey,"surccess");
 			return null;
 		}catch (AppLogicException e){
-			log.error("vedioFileDownload.AppLogicException:{}:", JSON.toJSONString(downRequest),e);
-			log.error("videoFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
+			LogHelper.error(getClass(),"videoFileDownload",pathkey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 		}catch (Exception e){
-			log.error("vedioFileDownload.Exception:{}:", JSON.toJSONString(downRequest),e);
-			log.error("videoFileDownload {} {} [ES_LOG_EXCEPTION]",StringUtils.join(downRequest.getPath(),downRequest.getFileName()),e.getMessage());
+			LogHelper.error(getClass(),"videoFileDownload",pathkey,e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;
@@ -252,6 +252,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 	public BaseResponse<SysFileDTO> officeToPdf(@RequestBody BizFileOfficeToPdfRequest request){
 		return ServiceProvider.call(request, SysFileRequestV.class, SysFileDTO.class, req -> {
 			reqDefaultUtils.setFileSystemDefault(request);
+			String pathkey = StringUtils.join(request.getPath(),"/",request.getFileName());
 			//step 0.校验
 			String fileName = request.getFileName().toLowerCase();
 			if(!(fileName.endsWith("doc") || fileName.endsWith("docx")
@@ -263,7 +264,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			S3ObjectBO rst = (S3ObjectBO)s3FileService.getInfoAndBody(s3ObjectBO);
 			byte[] bodys = rst.getBodys();
 			if(bodys == null || bodys.length == 0){
-				log.warn("officeToPdf.noSuchKey:{}",request);
+				LogHelper.warn(getClass(),"officeToPdf",pathkey,"noSuchKey");
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}
 			
@@ -274,14 +275,14 @@ public class BizFileController extends BaseController implements BizFileSrv {
 				bodys = pptService.changePPTToPDF(bodys);
 			}
 			if(bodys == null || bodys.length == 0){
-				log.warn("officeToPdf.toPdf.bodys.is.null:{}",request);
+				LogHelper.warn(getClass(),"officeToPdf",pathkey,"toPdf.bodys.is.null");
 				throw new AppLogicException("step2",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 			}
 			//step 3.水印
 			if(!StringUtils.isBlank(request.getTextMark())){
 				bodys = pdfService.addPdfTextMark(bodys,request.getTextMark());
 				if(bodys == null || bodys.length == 0){
-					log.warn("officeToPdf.addMark.bodys.is.null:{}",request);
+					LogHelper.warn(getClass(),"officeToPdf",pathkey,"addMark.bodys.is.null");
 					throw new AppLogicException("step3",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 				}
 			}
@@ -290,7 +291,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			if(!StringUtils.isBlank(request.getUserPwd()) && !StringUtils.isBlank(request.getOwnerPwd())){
 				bodys = pdfService.addPwd(bodys,request.getUserPwd(),request.getOwnerPwd());
 				if(bodys == null || bodys.length == 0){
-					log.warn("officeToPdf.addPwd.bodys.is.null:{}",request);
+					LogHelper.warn(getClass(),"officeToPdf",pathkey,"addPwd.bodys.is.null");
 					throw new AppLogicException("step4",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 				}
 			}
@@ -312,7 +313,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			
 			sysFileManager.upload(fileRequest,bodys,Boolean.TRUE);
 			
-			
+			LogHelper.info(getClass(),"officeToPdf",pathkey,"success");
 			//step 6.查询并返回
 			return sysFileManager.info(fileRequest);
 		},"officeToPdf");
@@ -330,6 +331,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 		if(s3ObjectBO == null || CollectionUtils.isEmpty(s3ObjectBO.getTagList())){
 			throw new AppLogicException(ErrCodeEnum.FILE_IS_NOT_SHARED.getCode());
 		}
+		String pathkey = StringUtils.join(s3ObjectBO.getPath(),"/",s3ObjectBO.getFileName());
 		boolean isExistShareTag = Boolean.FALSE;
 		List<TagBO> tagList = s3ObjectBO.getTagList();
 		List<TagBO> newTagList = Lists.newArrayList();
@@ -338,14 +340,14 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey()) &&
 				Integer.parseInt(tag.getValue()) < 1){
 				//下载次数已下完
-				log.info("--shareDownloadFile.times.is.max:{}--",s3ObjectBO);
+				LogHelper.info(getClass(),"shareDownloadFile",pathkey,"times.is.max");
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_MAX_TIMES.getCode());
 			}
 			//判断是否在有效期内
 			if(S3TagKeyEnum.TAG_VALIDITY.getCode().equals(tag.getKey()) &&
 				DateUtils.doCompareDate(new Date(), DateUtils.createDate(tag.getValue())) > 0){
 				//已过有效期
-				log.info("--shareDownloadFile.times.is.timeout:{}--",s3ObjectBO);
+				LogHelper.info(getClass(),"shareDownloadFile",pathkey,"times.is.timeout");
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_TIMEOUT.getCode());
 			}
 			if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey())){
@@ -358,6 +360,7 @@ public class BizFileController extends BaseController implements BizFileSrv {
 			}
 		}
 		if(!isExistShareTag){
+			LogHelper.info(getClass(),"shareDownloadFile",pathkey,"file.is.not.shared");
 			throw new AppLogicException(ErrCodeEnum.FILE_IS_NOT_SHARED.getCode());
 		}
 		return newTagList;

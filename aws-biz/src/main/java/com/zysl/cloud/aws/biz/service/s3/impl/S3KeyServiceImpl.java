@@ -2,31 +2,21 @@ package com.zysl.cloud.aws.biz.service.s3.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.google.common.collect.Lists;
-import com.zysl.cloud.aws.api.dto.SysFileDTO;
-import com.zysl.cloud.aws.api.enums.DeleteStoreEnum;
-import com.zysl.cloud.aws.api.enums.FileSysTypeEnum;
-import com.zysl.cloud.aws.api.req.SysFileRequest;
 import com.zysl.cloud.aws.biz.constant.BizConstants;
 import com.zysl.cloud.aws.biz.constant.S3Method;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
-import com.zysl.cloud.aws.biz.service.s3.IS3BucketService;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.biz.service.s3.IS3KeyService;
-import com.zysl.cloud.aws.biz.utils.DataAuthUtils;
 import com.zysl.cloud.aws.biz.utils.S3Utils;
-import com.zysl.cloud.aws.config.BizConfig;
 import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.domain.bo.FilePartInfoBO;
 import com.zysl.cloud.aws.domain.bo.S3KeyBO;
-import com.zysl.cloud.aws.domain.bo.S3ObjectBO;
 import com.zysl.cloud.aws.domain.bo.TagBO;
 import com.zysl.cloud.aws.utils.DateUtils;
-import com.zysl.cloud.utils.BeanCopyUtil;
-import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.MyPage;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,20 +33,16 @@ import software.amazon.awssdk.core.sync.ResponseTransformer;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.AbortMultipartUploadResponse;
-import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload;
 import software.amazon.awssdk.services.s3.model.CompletedPart;
 import software.amazon.awssdk.services.s3.model.CopyObjectRequest;
-import software.amazon.awssdk.services.s3.model.CopyObjectResponse;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest;
 import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse;
 import software.amazon.awssdk.services.s3.model.Delete;
-import software.amazon.awssdk.services.s3.model.DeleteBucketRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
-import software.amazon.awssdk.services.s3.model.DeleteObjectsResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.GetObjectTaggingRequest;
@@ -77,7 +63,6 @@ import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 import software.amazon.awssdk.services.s3.model.ObjectVersion;
 import software.amazon.awssdk.services.s3.model.Part;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
-import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectTaggingResponse;
 import software.amazon.awssdk.services.s3.model.S3Object;
@@ -85,7 +70,6 @@ import software.amazon.awssdk.services.s3.model.Tag;
 import software.amazon.awssdk.services.s3.model.Tagging;
 import software.amazon.awssdk.services.s3.model.UploadPartRequest;
 import software.amazon.awssdk.services.s3.model.UploadPartResponse;
-import sun.misc.BASE64Decoder;
 
 @Slf4j
 @Service("s3KeyService")
@@ -98,7 +82,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public S3KeyBO create(S3Client s3Client,S3KeyBO t) {
-		log.info(logConfig.getLogTemplate(),"createKey-param",t.getKey(),t);
+		LogHelper.info(getClass(),"createKey.param",getBucketKey(t),t.toString());
 		
 		//获取目标文件标签内容
 		Tagging tagging = S3Utils.creatTagging(t.getTagList());
@@ -118,14 +102,14 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		}
 		
 		s3FactoryService.callS3MethodWithBody(request.build(), requestBody,s3Client, S3Method.PUT_OBJECT);
-		log.info(logConfig.getLogTemplate(),"createKey",t.getKey(),"success");
+		LogHelper.info(getClass(),"createKey",getBucketKey(t),"success");
 		
 		return t;
 	}
 	
 	@Override
 	public void delete(S3Client s3Client,S3KeyBO t) {
-		log.info(logConfig.getLogTemplate(),"deleteKey-param",t.getKey(),t);
+		LogHelper.info(getClass(),"deleteKey.param",getBucketKey(t),t.toString());
 		if(StringUtils.isNotEmpty(t.getKey())){
 			DeleteObjectRequest request = DeleteObjectRequest.builder()
 				.bucket(t.getBucket())
@@ -136,12 +120,12 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 			s3FactoryService.callS3Method(request, s3Client, S3Method.DELETE_OBJECT);
 		}
 		
-		log.info(logConfig.getLogTemplate(),"deleteKey-param",t.getKey(),"success");
+		LogHelper.info(getClass(),"deleteKey.param",t.getKey(),"success");
 	}
 	
 	@Override
 	public void deleteList(S3Client s3Client, String bucket, List<S3KeyBO> s3KeyBOs) {
-		log.info(logConfig.getLogTemplate(),"deleteKeyList-param","param.size",CollectionUtils.isEmpty(s3KeyBOs) ? 0 : s3KeyBOs.size());
+		LogHelper.info(getClass(),"deleteKeyList.param.s3KeyBOs.size",bucket,CollectionUtils.isEmpty(s3KeyBOs) ? "0" : s3KeyBOs.size() + "");
 		if(!CollectionUtils.isEmpty(s3KeyBOs)){
 			int max=500;
 			List<ObjectIdentifier> objects = Lists.newArrayList();
@@ -160,12 +144,12 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 				}
 			}
 		}
-		log.info(logConfig.getLogTemplate(),"deleteKeyList-param","success.size",CollectionUtils.isEmpty(s3KeyBOs) ? 0 : s3KeyBOs.size());
+		LogHelper.info(getClass(),"deleteKeyList.rst",bucket,"success");
 	}
 	
 	@Override
 	public void deleteAllKey(S3Client s3Client,String bucket){
-		log.info(logConfig.getLogTemplate(),"deleteAllKey-param",bucket,"param");
+		LogHelper.info(getClass(),"deleteAllKey.param",bucket,"param");
 		ListObjectVersionsRequest.Builder request = ListObjectVersionsRequest.builder().bucket(bucket);
 		
 		ListObjectVersionsResponse response = null;
@@ -195,12 +179,12 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 			}
 			this.deleteList(s3Client,bucket,versionList);
 		}
-		log.info(logConfig.getLogTemplate(),"deleteAllKey",bucket,"success");
+		LogHelper.info(getClass(),"deleteAllKey",bucket,"success");
 	}
 	
 	@Override
 	public void copy(S3Client s3Client, S3KeyBO src, S3KeyBO dest) {
-		log.info(logConfig.getLogTemplate(),"copyKey-param",src.getKey(),dest.getKey());
+		LogHelper.info(getClass(),"copyKey.param",getBucketKey(src),getBucketKey(dest));
 		String srcUrl = null;
 		try{
 			srcUrl = java.net.URLEncoder.encode(StringUtils.join(src.getBucket(),BizConstants.PATH_SEPARATOR,src.getKey()), "utf-8");
@@ -215,13 +199,13 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		
 		s3FactoryService.callS3Method(request.build(), s3Client, S3Method.COPY_OBJECT, Boolean.FALSE);
 		
-		log.info(logConfig.getLogTemplate(),"copyKey-success",src.getKey(),dest.getKey());
+		LogHelper.info(getClass(),"copyKey.rst",getBucketKey(src),getBucketKey(dest));
 	}
 	
 	
 	@Override
 	public S3KeyBO getBaseInfo(S3Client s3Client,S3KeyBO t) {
-		log.info(logConfig.getLogTemplate(),"getBaseInfo-param",t.getKey(),t);
+		LogHelper.info(getClass(),"getBaseInfo.param",getBucketKey(t),t.toString());
 		
 		HeadObjectRequest.Builder request = HeadObjectRequest.builder()
 												.bucket(t.getBucket())
@@ -229,7 +213,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 												.versionId(t.getVersionId());
 		
 		HeadObjectResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.HEAD_OBJECT, Boolean.FALSE);
-		log.info(logConfig.getLogTemplate(),"getBaseInfo-response",t.getKey(),response);
+		LogHelper.info(getClass(),"getBaseInfo.responsem",t.getKey(),response);
 		
 		if(response != null){
 			t.setVersionId(response.versionId());
@@ -239,7 +223,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 			t.setContentEncoding(response.contentEncoding());
 			t.setContentType(response.contentType());
 			
-			log.info(logConfig.getLogTemplate(),"getBaseInfo-rst",t.getKey(),t);
+			LogHelper.info(getClass(),"getBaseInfo.rst",getBucketKey(t),t.toString());
 			return t;
 		}
 		
@@ -248,7 +232,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public S3KeyBO getInfoAndBody(S3Client s3Client, S3KeyBO s3KeyBO) {
-		log.info(logConfig.getLogTemplate(),"getInfoAndBody-param",s3KeyBO.getKey(),s3KeyBO);
+		LogHelper.info(getClass(),"getInfoAndBody.param",getBucketKey(s3KeyBO),s3KeyBO.toString());
 		//获取下载对象
 		GetObjectRequest.Builder request = GetObjectRequest.builder()
 												.bucket(s3KeyBO.getBucket())
@@ -270,13 +254,13 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 			
 			return  s3KeyBO;
 		}catch (NoSuchKeyException e){
-			log.warn(logConfig.getLogTemplate(),"getInfoAndBody-NoSuchKeyException",s3KeyBO.getKey(),"NoSuchKeyException");
+			LogHelper.warn(getClass(),"getInfoAndBody.NoSuchKeyException",getBucketKey(s3KeyBO),"NoSuchKeyException");
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (AwsServiceException | SdkClientException e){
-			log.error(logConfig.getLogTemplate(),"getInfoAndBody-SdkClientException",s3KeyBO.getKey(),ExceptionUtil.getMessage(e),e);
+			LogHelper.error(getClass(),"getInfoAndBody.AwsServiceException",getBucketKey(s3KeyBO),e.getMessage(),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_AWS_SERVICE_EXCEPTION.getCode());
 		}catch (Exception e){
-			log.error(logConfig.getLogTemplate(),"getInfoAndBody-Exception",s3KeyBO.getKey(),ExceptionUtil.getMessage(e),e);
+			LogHelper.error(getClass(),"getInfoAndBody.Exception",getBucketKey(s3KeyBO),e.getMessage(),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}
 	}
@@ -284,14 +268,14 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public List<TagBO> getTagList(S3Client s3Client,S3KeyBO t){
-		log.info(logConfig.getLogTemplate(),"getTagList-param",t.getKey(),t);
+		LogHelper.info(getClass(),"getTagList.param",getBucketKey(t),t.toString());
 		//查询文件的标签信息
 		GetObjectTaggingRequest.Builder request = GetObjectTaggingRequest.builder()
 													.bucket(t.getBucket())
 													.key(t.getKey())
 													.versionId(t.getVersionId());
 		GetObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.GET_OBJECT_TAGGING, false);
-		log.info(logConfig.getLogTemplate(),"getTagList-response",t.getKey(),response);
+		LogHelper.info(getClass(),"getTagList.responsem",getBucketKey(t),response);
 		
 		List<TagBO> tagList = Lists.newArrayList();
 		if(null != response){
@@ -305,13 +289,13 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 				});
 			}
 		}
-		log.info(logConfig.getLogTemplate(),"getTagList-rst",t.getKey(),JSON.toJSONString(tagList));
+		LogHelper.info(getClass(),"getTagList.rst",t.getKey(),JSON.toJSONString(tagList));
 		return tagList;
 	}
 	
 	@Override
 	public List<S3KeyBO> getVersions(S3Client s3Client,S3KeyBO t, MyPage myPage) {
-		log.info(logConfig.getLogTemplate(),"getVersions-param",t.getKey(),t);
+		LogHelper.info(getClass(),"getVersions.param",getBucketKey(t),t.toString());
 		int myPageStart = (myPage.getPageNo()-1) * myPage.getPageSize();
 		int myPageEnd =  myPage.getPageNo() * myPage.getPageSize()-1;
 		int curIndex = 0;
@@ -348,13 +332,13 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		}
 		
 		myPage.setTotalRecords(totalRecords);
-		log.info(logConfig.getLogTemplate(),"getVersions-rst",t.getKey(),StringUtils.join("versionList.size:",versionList.size()));
+		LogHelper.info(getClass(),"getVersions.rst",t.getKey(),StringUtils.join("versionList.size:",versionList.size()));
 		return versionList;
 	}
 	
 	@Override
 	public List<S3KeyBO> list(S3Client s3Client, S3KeyBO s3KeyBO, MyPage myPage) {
-		log.info(logConfig.getLogTemplate(),"list-param",s3KeyBO.getKey(),s3KeyBO);
+		LogHelper.info(getClass(),"list.param",getBucketKey(s3KeyBO),s3KeyBO);
 		//查询结果
 		List<S3KeyBO> list = new ArrayList<>();
 		//获取查询对象列表入参
@@ -385,7 +369,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public void setTagList(S3Client s3Client,S3KeyBO t,List<TagBO> tagBOList){
-	    log.info(logConfig.getLogTemplate(), "setTagList-param", t.getKey(), JSON.toJSON(tagBOList));
+	    LogHelper.info(getClass(), "setTagList.param", getBucketKey(t), JSON.toJSON(tagBOList));
 		//查询文件的标签信息
 		PutObjectTaggingRequest.Builder request = PutObjectTaggingRequest.builder()
 													.bucket(t.getBucket())
@@ -393,13 +377,13 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 													.tagging(S3Utils.creatTagging(tagBOList))
 													.versionId(t.getVersionId());
 		PutObjectTaggingResponse response = s3FactoryService.callS3Method(request.build(), s3Client, S3Method.PUT_OBJECT_TAGGING, false);
-		log.info(logConfig.getLogTemplate(), "setTagList-response", t.getKey(), response);
+		LogHelper.info(getClass(), "setTagList.responsem", getBucketKey(t), response);
 		
 	}
 	
 	@Override
 	public String createMultipartUpload(S3Client s3, S3KeyBO s3KeyBO) {
-		log.info(logConfig.getLogTemplate(), "createMultipartUpload-param", s3KeyBO.getKey(), s3KeyBO);
+		LogHelper.info(getClass(), "createMultipartUpload.param", getBucketKey(s3KeyBO), s3KeyBO);
 		//获取目标文件标签内容
 		Tagging tagging = S3Utils.creatTagging(s3KeyBO.getTagList());
 		//获取入参
@@ -410,14 +394,14 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 												.build();
 		
 		CreateMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.CREATE_MULTIPART_UPLOAD);
-		log.info(logConfig.getLogTemplate(), "createMultipartUpload-response", s3KeyBO.getKey(), response);
+		LogHelper.info(getClass(), "createMultipartUpload.response", getBucketKey(s3KeyBO), response);
 		
 		return response.uploadId();
 	}
 	
 	@Override
 	public S3KeyBO uploadPart(S3Client s3, S3KeyBO s3KeyBO) {
-		log.info(logConfig.getLogTemplate(), "uploadPart-param", s3KeyBO.getKey(), s3KeyBO);
+		LogHelper.info(getClass(), "uploadPart.param", getBucketKey(s3KeyBO), s3KeyBO);
 		
 		UploadPartRequest request = UploadPartRequest.builder()
 										.bucket(s3KeyBO.getBucket())
@@ -429,7 +413,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		RequestBody requestBody = RequestBody.fromBytes(s3KeyBO.getBodys());
 		
 		UploadPartResponse response = s3FactoryService.callS3MethodWithBody(request, requestBody, s3, S3Method.UPLOAD_PART);
-		log.info(logConfig.getLogTemplate(), "uploadPart-response", s3KeyBO.getKey(), response);
+		LogHelper.info(getClass(), "uploadPart.responsem", getBucketKey(s3KeyBO), response);
 		
 		s3KeyBO.setETag(response.eTag());
 		return s3KeyBO;
@@ -437,7 +421,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public S3KeyBO completeMultipartUpload(S3Client s3, S3KeyBO s3KeyBO) {
-		log.info(logConfig.getLogTemplate(), "completeMultipartUpload-param", s3KeyBO.getKey(), s3KeyBO);
+		LogHelper.info(getClass(), "completeMultipartUpload.param", getBucketKey(s3KeyBO), s3KeyBO);
 		
 		List<CompletedPart> completedParts = Lists.newArrayList();
 		if(!CollectionUtils.isEmpty(s3KeyBO.getETagList())){
@@ -457,7 +441,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 														.build();
 		
 		CompleteMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.COMPLETE_MULTIPART_UPLOAD);
-		log.info(logConfig.getLogTemplate(), "completeMultipartUpload-response", s3KeyBO.getKey(), response);
+		LogHelper.info(getClass(), "completeMultipartUpload.response", getBucketKey(s3KeyBO), response);
 		
 		s3KeyBO.setVersionId(response.versionId());
 		return s3KeyBO;
@@ -465,7 +449,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 	
 	@Override
 	public void abortMultipartUpload(S3Client s3, S3KeyBO s3KeyBO) {
-		log.info(logConfig.getLogTemplate(), "abortMultipartUpload-param", s3KeyBO.getKey(), s3KeyBO);
+		LogHelper.info(getClass(), "abortMultipartUpload.param", getBucketKey(s3KeyBO), s3KeyBO);
 		
 		AbortMultipartUploadRequest request = AbortMultipartUploadRequest.builder()
 												.bucket(s3KeyBO.getBucket())
@@ -474,12 +458,12 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 												.build();
 		
 		AbortMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.ABORT_MULTIPART_UPLOAD);
-		log.info(logConfig.getLogTemplate(), "abortMultipartUpload-response", s3KeyBO.getKey(), response);
+		LogHelper.info(getClass(), "abortMultipartUpload.response", getBucketKey(s3KeyBO), response);
 	}
 	
 	@Override
 	public List<FilePartInfoBO> listParts(S3Client s3, S3KeyBO s3KeyBO) {
-		log.info(logConfig.getLogTemplate(), "listParts-param", s3KeyBO.getKey(), s3KeyBO);
+		LogHelper.info(getClass(), "listParts.param", getBucketKey(s3KeyBO), s3KeyBO);
 		
 		ListPartsRequest request = ListPartsRequest.builder()
 										.bucket(s3KeyBO.getBucket())
@@ -488,6 +472,7 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 										.build();
 		
 		ListPartsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_PARTS);
+		LogHelper.info(getClass(), "listParts.response", getBucketKey(s3KeyBO), response);
 		List<Part> partList = response.parts();
 		
 		List<FilePartInfoBO> filePartInfoBOS = Lists.newArrayList();
@@ -501,22 +486,24 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 				filePartInfoBOS.add(filePartInfoBO);
 			});
 		}
+		LogHelper.info(getClass(), "listParts.rst", getBucketKey(s3KeyBO), response);
 		return filePartInfoBOS;
 	}
 	@Override
 	public String getMultiUploadId(S3Client s3,S3KeyBO s3KeyBO){
-		log.info(logConfig.getLogTemplate(), "getMultiUploadId-param", s3KeyBO.getKey(), s3KeyBO);
+		LogHelper.info(getClass(), "getMultiUploadId.param", getBucketKey(s3KeyBO), s3KeyBO);
 		
 		ListMultipartUploadsRequest request = ListMultipartUploadsRequest.builder()
 												.bucket(s3KeyBO.getBucket())
 												.prefix(s3KeyBO.getKey())
 												.build();
 		ListMultipartUploadsResponse response = s3FactoryService.callS3Method(request, s3, S3Method.LIST_MULTIPART_UPLOADS);
-		log.info(logConfig.getLogTemplate(), "getMultiUploadId-response", s3KeyBO.getKey(), response);
+		LogHelper.info(getClass(), "getMultiUploadId.response", getBucketKey(s3KeyBO), response);
 		
 		List<MultipartUpload> uploads = response.uploads();
 		if(!CollectionUtils.isEmpty(uploads)){
 			MultipartUpload multipartUpload = uploads.get(0);
+			LogHelper.info(getClass(), "getMultiUploadId.rst", getBucketKey(s3KeyBO), multipartUpload.uploadId());
 			return multipartUpload.uploadId();
 		}
 		return null;
@@ -565,4 +552,11 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		
 	}
 	
+	private String getBucketKey(S3KeyBO t){
+		String bucketKey = StringUtils.join(t.getBucket(),":",t.getKey());
+		if(StringUtils.isNotEmpty(t.getVersionId())){
+			bucketKey = StringUtils.join(bucketKey,"#",t.getVersionId());
+		}
+		return bucketKey;
+	}
 }

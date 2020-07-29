@@ -29,6 +29,7 @@ import com.zysl.cloud.aws.web.validator.SysKeyRequestV;
 import com.zysl.cloud.aws.web.validator.SysKeyShareRequestV;
 import com.zysl.cloud.utils.BeanCopyUtil;
 import com.zysl.cloud.utils.ExceptionUtil;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
 import com.zysl.cloud.utils.common.BaseResponse;
@@ -38,7 +39,6 @@ import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -46,7 +46,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import software.amazon.awssdk.services.s3.S3Client;
 
-@Slf4j
 @RestController
 public class BizKeyController extends BaseController implements BizKeySrv {
 	
@@ -66,6 +65,8 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 	private IS3FactoryService s3FactoryService;
 	@Autowired
 	private LogConfig logConfig;
+	@Autowired
+	private HttpUtils httpUtils;
 	
 	
 	@Override
@@ -147,7 +148,8 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 	@Override
 	@ResponseBody
 	public BaseResponse<String> shareFileDownload(HttpServletRequest request,HttpServletResponse response, SysKeyDownloadRequest downRequest){
-		log.info(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(), JSON.toJSONString(downRequest));
+		LogHelper.info(getClass(),"shareFileDownload",downRequest.getEsLogMsg(), JSON.toJSONString(downRequest));
+		
 		BaseResponse<String> baseResponse = new BaseResponse<>();
 		baseResponse.setSuccess(Boolean.FALSE);
 		try{
@@ -172,16 +174,16 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			
 			//step 4.执行下载
 			byte[] bodys = sysKeyManager.getBody(downRequest,null);
-			HttpUtils.downloadFileByte(request,response,getFileName(downRequest),bodys);
+			httpUtils.downloadFileByte(request,response,getFileName(downRequest),bodys);
 			
-			log.info(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(),"END");
+			LogHelper.info(getClass(),"shareFileDownload",downRequest.getEsLogMsg(),"END");
 			return null;
 		}catch (AppLogicException e){
-			log.warn(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(),ExceptionUtil.getMessage(e),e);
+			LogHelper.warn(getClass(),"shareFileDownload",downRequest.getEsLogMsg(),e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 			baseResponse.setCode(e.getExceptionCode());
 		}catch (Exception e){
-			log.error(logConfig.getLogTemplate(),"shareFileDownload",downRequest.getEsLogMsg(),ExceptionUtil.getMessage(e),e);
+			LogHelper.error(getClass(),"shareFileDownload",downRequest.getEsLogMsg(),e.getMessage(),e);
 			baseResponse.setMsg(e.getMessage());
 		}
 		return baseResponse;
@@ -201,7 +203,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			//step 1.数据读取
 			byte[] bodys = sysKeyManager.getBody(request,null);
 			if(bodys == null || bodys.length == 0){
-				log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"noSuchKey");
+				LogHelper.warn(getClass(),"officeToPdf",request.getEsLogMsg(),"noSuchKey");
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}
 			
@@ -212,14 +214,14 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 				bodys = pptService.changePPTToPDF(bodys);
 			}
 			if(bodys == null || bodys.length == 0){
-				log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"toPdf.bodys.is.null");
+				LogHelper.warn(getClass(),"officeToPdf",request.getEsLogMsg(),"toPdf.bodys.is.null");
 				throw new AppLogicException("step2",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 			}
 			//step 3.水印
 			if(!StringUtils.isBlank(request.getTextMark())){
 				bodys = pdfService.addPdfTextMark(bodys,request.getTextMark());
 				if(bodys == null || bodys.length == 0){
-					log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"addMark.bodys.is.null");
+					LogHelper.warn(getClass(),"officeToPdf",request.getEsLogMsg(),"addMark.bodys.is.null");
 					throw new AppLogicException("step3",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 				}
 			}
@@ -228,7 +230,7 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			if(!StringUtils.isBlank(request.getUserPwd()) && !StringUtils.isBlank(request.getOwnerPwd())){
 				bodys = pdfService.addPwd(bodys,request.getUserPwd(),request.getOwnerPwd());
 				if(bodys == null || bodys.length == 0){
-					log.warn(logConfig.getLogTemplate(),"officeToPdf",request.getEsLogMsg(),"addPwd.bodys.is.null");
+					LogHelper.warn(getClass(),"officeToPdf",request.getEsLogMsg(),"addPwd.bodys.is.null");
 					throw new AppLogicException("step4",ErrCodeEnum.FILE_TO_PDF_BODY_NULL.getCode());
 				}
 			}
@@ -270,14 +272,14 @@ public class BizKeyController extends BaseController implements BizKeySrv {
 			if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey()) &&
 				Integer.parseInt(tag.getValue()) < 1){
 				//下载次数已下完
-				log.info(logConfig.getLogTemplate(),"checkAndSetShareDownload",path,"downloadShareFile.times.is.max");
+				LogHelper.info(getClass(),"checkAndSetShareDownload",path,"downloadShareFile.times.is.max");
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_MAX_TIMES.getCode());
 			}
 			//判断是否在有效期内
 			if(S3TagKeyEnum.TAG_VALIDITY.getCode().equals(tag.getKey()) &&
 				DateUtils.doCompareDate(new Date(), DateUtils.createDate(tag.getValue())) > 0){
 				//已过有效期
-				log.info(logConfig.getLogTemplate(),"checkAndSetShareDownload",path,"downloadShareFile.timeout");
+				LogHelper.info(getClass(),"checkAndSetShareDownload",path,"downloadShareFile.timeout");
 				throw new AppLogicException(ErrCodeEnum.FILE_SHARED_DOWNLOAD_TIMEOUT.getCode());
 			}
 			if(S3TagKeyEnum.TAG_DOWNLOAD_AMOUT.getCode().equals(tag.getKey())){

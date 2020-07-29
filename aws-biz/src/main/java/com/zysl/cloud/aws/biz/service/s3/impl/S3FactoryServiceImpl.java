@@ -1,12 +1,13 @@
 package com.zysl.cloud.aws.biz.service.s3.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.zysl.cloud.aws.biz.enums.ErrCodeEnum;
 import com.zysl.cloud.aws.biz.service.s3.IS3FactoryService;
 import com.zysl.cloud.aws.config.LogConfig;
 import com.zysl.cloud.aws.config.S3ServerConfig;
 import com.zysl.cloud.aws.prop.S3ServerProp;
 import com.zysl.cloud.utils.ExceptionUtil;
-import com.zysl.cloud.utils.StringUtils;
+import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.common.AppLogicException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -17,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
@@ -37,7 +37,6 @@ import software.amazon.awssdk.services.s3.model.S3Request;
 import software.amazon.awssdk.services.s3.model.S3Response;
 import software.amazon.awssdk.utils.AttributeMap;
 
-@Slf4j
 @Service
 public class S3FactoryServiceImpl implements IS3FactoryService {
 
@@ -71,8 +70,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 				}
 			}
 		}
-		
-		log.info(logConfig.getLogTemplate(),"getS3ClientByServerNo",serverNo,"not.exist.serverNo");
+		LogHelper.info(getClass(),"getS3ClientByServerNo",serverNo,"not.exist.serverNo");
 		
 		throw new AppLogicException(ErrCodeEnum.S3_SERVER_NO_NOT_EXIST.getCode());
 	}
@@ -93,7 +91,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 						//写操作但是服务器没有空间
 						if(s3ServerProp.getNoSpace() != null && s3ServerProp.getNoSpace()
 							&& isWrite != null && isWrite){
-							log.warn(logConfig.getLogTemplate(),"getS3ClientByBucket",s3ServerProp.getServerNo(),"s3.serverNo..no.space");
+							LogHelper.warn(getClass(),"getS3ClientByBucket",s3ServerProp.getServerNo(),"s3.serverNo..no.space");
 							throw new AppLogicException(ErrCodeEnum.S3_NO_SPACE_WARN.getCode());
 						}
 						return getS3ClientByServerNo(s3ServerProp.getServerNo());
@@ -102,7 +100,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			}
 		}
 		
-		log.warn(logConfig.getLogTemplate(),"getS3ClientByBucket",bucketName,"s3.bucket..not.exist");
+		LogHelper.warn(getClass(),"getS3ClientByBucket",bucketName,"s3.bucket..not.exist");
 		throw new AppLogicException(ErrCodeEnum.S3_BUCKET_NOT_EXIST.getCode());
 	}
 
@@ -159,7 +157,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 
 	@Override
 	public <T extends S3Response,R extends S3Request>T callS3MethodWithBody(R r, RequestBody requestBody,S3Client s3Client,String methodName) throws AppLogicException{
-		log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,String.format("server:%s,param:%s",s3Client.serviceName(),r));
+		LogHelper.info(getClass(),methodName,r.toString(),String.format("server:%s,param:%s",s3Client.serviceName(),r));
 		long start = System.currentTimeMillis();
 		T response = null;
 		try{
@@ -175,39 +173,41 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 				response = (T)obj;
 			}
 			
-			
 			//结果判断
 			if(response == null || response.sdkHttpResponse() == null ){
-				log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,"no.response");
+				LogHelper.warn(getClass(),methodName,r.toString(),"response is null");
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_RESPONSE.getCode());
 			} else if(!response.sdkHttpResponse().isSuccessful()){
-				log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,String.format("response.status:%s",response.sdkHttpResponse().statusCode()));
+				LogHelper.warn(getClass(),methodName,r.toString(),String.format("response.status:%s",response.sdkHttpResponse().statusCode()));
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_RESPONSE_STATUS_ERROR.getCode());
 			}else{
-				log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,"success");
+				LogHelper.warn(getClass(),methodName,r.toString(),"success");
 			}
 		}catch (NoSuchKeyException e){
-			log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,"NoSuchKeyException");
+			LogHelper.warn(getClass(),methodName,r.toString(),"NoSuchKeyException");
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 		}catch (BucketAlreadyExistsException e){
-			log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,"BucketAlreadyExists");
+			LogHelper.warn(getClass(),methodName,r.toString(),"BucketAlreadyExists");
 			throw new AppLogicException(ErrCodeEnum.S3_CREATE_BUCKET_EXIST.getCode());
 		}catch (IllegalAccessException | IllegalArgumentException e){
-			log.error(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,ExceptionUtil.getMessage(e),e);
+			LogHelper.error(getClass(),methodName,r.toString(),ExceptionUtil.getMessage(e),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_INVOKE_ERROR.getCode());
 		}catch (InvocationTargetException e){
 			if(e.getTargetException() instanceof NoSuchKeyException){
-				log.warn(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,"noSuchKey");
+				LogHelper.warn(getClass(),methodName,r.toString(),"noSuchKey");
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+			}else if(e.getTargetException().getMessage().indexOf("XML") > -1){//getObjectTagging异常
+				LogHelper.warn(getClass(),methodName,r.toString(),e.getTargetException().getMessage(),e);
+				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
 			}else{
-				log.error(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,e.getTargetException().getMessage(),e);
+				LogHelper.error(getClass(),methodName,r.toString(),e.getTargetException().getMessage(),e);
 				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_S3_EXCEPTION.getCode());
 			}
 		}catch (Exception e){
-			log.error(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,StringUtils.join(r,"->",ExceptionUtil.getMessage(e)),e);
+			LogHelper.error(getClass(),methodName,r.toString(),ExceptionUtil.getMessage(e),e);
 			throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_ERROR.getCode());
 		}finally{
-			log.info(logConfig.getLogTemplate(),"callS3MethodWithBody",methodName,String.format("param:%s->use:%d",r,(System.currentTimeMillis()-start)));
+			LogHelper.info(getClass(),methodName,r.toString(),String.format("param:%s->use:%d",r,(System.currentTimeMillis()-start)));
 		}
 		return response;
 	}
@@ -217,15 +217,15 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 
 	@Override
 	public <T extends S3Response,R extends S3Request>T callS3Method(R r,S3Client s3Client,String methodName,Boolean throwLogicException){
-		log.info(logConfig.getLogTemplate(),"callS3Method",methodName,r);
+		LogHelper.info(getClass(),methodName,r.toString(),"param");
 		T response = null;
 		try{
 			response = callS3MethodWithBody(r,null,s3Client,methodName);
 		}catch (AppLogicException e) {//AppLogicException
 			if(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode().equals(e.getExceptionCode())){
-				log.warn(logConfig.getLogTemplate(),"callS3Method",methodName,String.format("param:%s->noSuchKey",r));
+				LogHelper.warn(getClass(),methodName,r.toString(),"noSuchkey");
 			}else{
-				log.warn(logConfig.getLogTemplate(),"callS3Method",methodName,String.format("param:%s->%s",r,ExceptionUtil.getMessage(e)));
+				LogHelper.warn(getClass(),methodName,r.toString(),"otherException",e);
 			}
 			
 			if (throwLogicException) {
@@ -246,7 +246,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	@Override
 	@PostConstruct
 	public void amazonS3ClientInit(){
-		log.info(logConfig.getLogTemplate(),"amazonS3ClientInit","init","start");
+		LogHelper.info(getClass(),"amazonS3ClientInit","init","start");
 		
 		Map<String, S3ServerProp> s3ServerPropMap = new HashMap<>();
 		List<S3ServerProp> s3ServerProps = s3ServerConfig.getServers();
@@ -255,17 +255,16 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 				//bucket列表
 				props.setBucketMap(getBucketList(props.getServerNo(),createS3Client(props)));
 				s3ServerPropMap.put(props.getServerNo(),props);
-
-//				log.info("=amazonS3ClientInit.success:serverNo:{}-->{}=",props.getServerNo(),props.getEndpoint());
-				log.warn(logConfig.getLogTemplate(),"amazonS3ClientInit","init",String.format("serverNo:%s-->%s",props.getServerNo(),props.getEndpoint()));
+				
+				LogHelper.info(getClass(),"amazonS3ClientInit","init",String.format("serverNo:%s-->%s",props.getServerNo(),props.getEndpoint()));
 			}
 		}else{
-			log.warn(logConfig.getLogTemplate(),"amazonS3ClientInit","init","no server found");
+			LogHelper.warn(getClass(),"amazonS3ClientInit","init","no server found");
 		}
 		
 		redisTemplate.opsForValue().set(S3_SERVER_PROP_MAP_NAME,s3ServerPropMap);
 		
-		log.info(logConfig.getLogTemplate(),"amazonS3ClientInit","init","success");
+		LogHelper.info(getClass(),"amazonS3ClientInit","init","success");
 	}
 
 	
@@ -277,7 +276,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 		if(response != null && !CollectionUtils.isEmpty(response.buckets())){
 			response.buckets().forEach(bucket -> {
 				bucketMap.put(bucket.name(),serverNo);
-				log.info(logConfig.getLogTemplate(),"getBucketList","bucket",bucket.name());
+				LogHelper.info(getClass(),"getBucketList","bucket",bucket.name());
 			});
 		}
 		return bucketMap;
@@ -285,7 +284,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 	
 	
 	private S3Client createS3Client(S3ServerProp props){
-		log.info(logConfig.getLogTemplate(),"createS3Client-param",props.getServerNo(),props);
+    LogHelper.info(getClass(), "createS3Client-param", props.getServerNo(), JSON.toJSONString(props));
 		DefaultSdkHttpClientBuilder defaultSdkHttpClientBuilder = new DefaultSdkHttpClientBuilder();
 		AttributeMap attributeMap = AttributeMap.builder()
 			.put(SdkHttpConfigurationOption.TRUST_ALL_CERTIFICATES, true)
@@ -305,7 +304,7 @@ public class S3FactoryServiceImpl implements IS3FactoryService {
 			.region(Region.US_EAST_1)
 			.build();
 		
-		log.info(logConfig.getLogTemplate(),"createS3Client",props.getServerNo(),"success");
+		LogHelper.info(getClass(),"createS3Client",props.getServerNo(),"success");
 		return s3Client;
 	}
 	

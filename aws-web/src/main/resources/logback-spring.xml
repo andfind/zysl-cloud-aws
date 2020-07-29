@@ -7,34 +7,27 @@
     <property name="log.path" value="/data/applogs/zysl-cloud-aws"/>
     <!--控台输出-->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-            <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator"> <!-- 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
-                <expression>return formattedMessage.contains("ES_LOG");</expression>
-            </evaluator>
-            <OnMatch>DENY</OnMatch>
-            <OnMismatch>ACCEPT</OnMismatch>
-        </filter>
         <encoder>
             <pattern>[%d{yyyy-MM-dd HH:mm:ss.SSS}] [${app_name}] [%-20.20thread] [%-5level] [%-40.40logger{40}:%-4.4line] - %msg%n </pattern>
             <charset>UTF-8</charset>
         </encoder>
     </appender>
     <!--控台输出,提交给es-->
-    <appender name="STDOUT-ES" class="ch.qos.logback.core.ConsoleAppender">
+    <!--<appender name="STDOUT-ES" class="ch.qos.logback.core.ConsoleAppender">
         <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-            <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator"> <!-- 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator -->
-                <expression>return formattedMessage.contains("ES_LOG");</expression>
+            <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator"> &lt;!&ndash; 默认为 ch.qos.logback.classic.boolex.JaninoEventEvaluator &ndash;&gt;
+                <expression>return formattedMessage.contains("deal_stage");</expression>
             </evaluator>
             <OnMatch>ACCEPT</OnMatch>
             <OnMismatch>DENY</OnMismatch>
         </filter>
         <encoder>
-            <!--<pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} %-5level ${business_type} ${app_name} %msg%n</pattern>-->
-            <!-- %msg  格式：  "deal_stage":"","object_uuid":"","message":""  -->
-            <pattern>{"deal_time":"%d{yyyy/MM/dd HH:mm:ss}","level":"%-5level","business_type":"${business_type}","app_type":"${app_name}",%msg-[%logger{40}:%line]"}%n</pattern>
+            &lt;!&ndash;<pattern>%d{yyyy/MM/dd HH:mm:ss.SSS} %-5level ${business_type} ${app_name} %msg%n</pattern>&ndash;&gt;
+            &lt;!&ndash; %msg  格式：  "deal_stage":"","object_uuid":"","message":""  &ndash;&gt;
+            <pattern>%msg%n</pattern>
             <charset>UTF-8</charset>
         </encoder>
-    </appender>
+    </appender>-->
 
 
 
@@ -80,7 +73,7 @@
 
     <root level="info">
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="STDOUT-ES"/>
+        <appender-ref ref="INFO_FILE"/>
         <appender-ref ref="ERROR_FILE"/>
     </root>
 </configuration>
