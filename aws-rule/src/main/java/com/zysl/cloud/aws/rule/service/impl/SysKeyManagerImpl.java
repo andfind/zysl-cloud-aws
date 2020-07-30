@@ -261,6 +261,7 @@ public class SysKeyManagerImpl implements ISysKeyManager {
 						LogHelper.error(getClass(),"getBody",request.getPath(),"base64.to.bytes.ioException");
 					}
 				}else {
+					LogHelper.info(getClass(),"getBody.rst.length",request.getPath(),keyBO.getBodys() == null ? 0 : keyBO.getBodys().length);
 					return keyBO.getBodys();
 				}
 			}
