@@ -202,6 +202,7 @@ public class FileController extends BaseController implements FileSrv {
 			uploadFieDTO.setFileName(StringUtils.join(s3ObjectBO.getPath(), s3ObjectBO.getFileName()));
 			uploadFieDTO.setVersionId(s3ObjectBO.getVersionId());
 			
+			baseResponse.setSuccess(Boolean.TRUE);
 			baseResponse.setModel(uploadFieDTO);
 		}catch (AppLogicException e){
 			LogHelper.error(getClass(),"uploadFile",bucketKey,e.getMessage(),e);

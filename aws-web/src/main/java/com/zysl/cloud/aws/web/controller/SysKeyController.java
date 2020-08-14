@@ -38,6 +38,7 @@ import com.zysl.cloud.utils.ExceptionUtil;
 import com.zysl.cloud.utils.LogHelper;
 import com.zysl.cloud.utils.StringUtils;
 import com.zysl.cloud.utils.common.AppLogicException;
+import com.zysl.cloud.utils.common.AppLogicWarn;
 import com.zysl.cloud.utils.common.BasePaginationResponse;
 import com.zysl.cloud.utils.common.BaseResponse;
 import com.zysl.cloud.utils.enums.RespCodeEnum;
@@ -186,7 +187,7 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			request.formatPathURI();
 			SysKeyDTO dto = sysKeyManager.info(BeanCopyUtil.copy(request, SysKeyRequest.class));
 			if(dto == null){
-				throw new AppLogicException(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+				throw new AppLogicWarn(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
 			}
 			//设置返回参数
 			return dto;

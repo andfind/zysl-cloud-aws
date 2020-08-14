@@ -387,13 +387,14 @@ public class S3KeyServiceImpl implements IS3KeyService<S3KeyBO> {
 		//获取目标文件标签内容
 		Tagging tagging = S3Utils.creatTagging(s3KeyBO.getTagList());
 		//获取入参
-		CreateMultipartUploadRequest request = CreateMultipartUploadRequest.builder()
+		CreateMultipartUploadRequest.Builder request = CreateMultipartUploadRequest.builder()
 												.bucket(s3KeyBO.getBucket())
-												.key(s3KeyBO.getKey())
-												.tagging(tagging)
-												.build();
+												.key(s3KeyBO.getKey());
+		if(tagging != null){
+			request.tagging(tagging);
+		}
 		
-		CreateMultipartUploadResponse response = s3FactoryService.callS3Method(request, s3, S3Method.CREATE_MULTIPART_UPLOAD);
+		CreateMultipartUploadResponse response = s3FactoryService.callS3Method(request.build(), s3, S3Method.CREATE_MULTIPART_UPLOAD);
 		LogHelper.info(getClass(), "createMultipartUpload.response", getBucketKey(s3KeyBO), response);
 		
 		return response.uploadId();

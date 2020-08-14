@@ -65,7 +65,7 @@ public class AposeWordServiceImpl implements IWordService {
 
     @Override
     public byte[] changeWordToByApose(byte[] inBuff,Integer toFormatType){
-        LogHelper.error(getClass(),"changeWordToByApose","changeWordToByApose","length:"+(inBuff == null ? 0 : inBuff.length));
+        LogHelper.info(getClass(),"changeWordToByApose","changeWordToByApose","length:"+(inBuff == null ? 0 : inBuff.length));
         if(inBuff == null || inBuff.length == 0 ){
             return null;
         }
@@ -105,7 +105,7 @@ public class AposeWordServiceImpl implements IWordService {
     
     @Override
     public byte[] changeWordToPDF(byte[] inBuff){
-        LogHelper.error(getClass(),"changeWordToPDF","changeWordToPDF","length:"+(inBuff == null ? 0 : inBuff.length));
+        LogHelper.info(getClass(),"changeWordToPDF","changeWordToPDF","length:"+(inBuff == null ? 0 : inBuff.length));
         if(inBuff == null || inBuff.length == 0){
             return null;
         }
