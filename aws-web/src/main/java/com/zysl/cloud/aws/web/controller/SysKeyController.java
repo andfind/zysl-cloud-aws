@@ -109,6 +109,11 @@ public class SysKeyController extends BaseController implements SysKeySrv {
 			List<TagBO> tagBOList = sysKeyManager.tagList(sysKeyRequest);
 			SysKeyDTO sysKeyDTO = sysKeyManager.info(sysKeyRequest);
 			
+			if(sysKeyDTO == null){
+				baseResponse.setCode(ErrCodeEnum.S3_SERVER_CALL_METHOD_NO_SUCH_KEY.getCode());
+				return baseResponse;
+			}
+			
 			//临时权限校验
 			if(!checkOwner(downRequest,tagBOList)){
 				baseResponse.setCode(ErrCodeEnum.OBJECT_OP_AUTH_CHECK_FAILED.getCode());
